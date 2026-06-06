@@ -24,11 +24,18 @@ async function loadProfile() {
 }
 
 async function register(email, password, username) {
+  // 1. 创建用户
   const data = await signUp(email, password);
-  if (data.id) {
-    try { await dbInsert('profiles', { id: data.id, username, role: 'user' }); } catch {}
-  }
-  return data;
+  if (!data.id && !data.user) throw new Error('注册失败');
+  const userId = data.user?.id || data.id;
+  // 2. 自动登录获取有效 session
+  const session = await signIn(email, password);
+  window._currentUser = session.user;
+  // 3. 用有效 token 写入 profile（保留原始大小写）
+  await dbInsert('profiles', { id: userId, username, role: 'user' });
+  window._currentProfile = { id: userId, username, role: 'user' };
+  renderAuthUI();
+  return session;
 }
 
 async function loginUser(email, password) {
@@ -58,11 +65,24 @@ function renderAuthUI() {
     const isAdmin = window._currentProfile.role === 'admin';
     el.innerHTML =
       '<span class="user-badge">' +
-      '<span>' + window._currentProfile.username + '</span>' +
+      '<span class="uname" onclick="editUsername()" title="点击修改用户名" style="cursor:pointer">' + window._currentProfile.username + '</span>' +
       (isAdmin ? '<a href="admin.html" style="font-size:.72rem;color:var(--grn)">[管理]</a>' : '') +
       '<button class="logout-btn" onclick="logoutUser()">退出</button>' +
       '</span>';
   } else {
     el.innerHTML = '<button class="nav-btn" onclick="Auth.open()">登录</button>';
   }
+}
+
+async function editUsername() {
+  const p = window._currentProfile;
+  if (!p) return;
+  const name = prompt('修改用户名（当前：' + p.username + '）', p.username);
+  if (!name || name === p.username) return;
+  try {
+    await dbUpdate('profiles', { username: name }, 'id', p.id);
+    window._currentProfile.username = name;
+    renderAuthUI();
+    UI.toast('用户名已更新');
+  } catch (e) { UI.toast('修改失败: ' + e.message, 'error'); }
 }

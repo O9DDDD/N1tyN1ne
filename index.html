@@ -220,14 +220,10 @@ const Auth = {
         }
         if (typeof register === 'function') {
           await register(email, password, username);
-          errEl.textContent = '注册成功！请直接登录';
-          errEl.style.color = 'var(--grn-bright)';
-          errEl.style.display = 'block';
-          this._isLogin = true;
-          document.getElementById('authTitle').textContent = '登录';
-          document.getElementById('authSubmit').textContent = '登录';
-          document.getElementById('authUsername').style.display = 'none';
-          document.getElementById('authSwitchText').innerHTML = '没有账号？<span onclick="Auth.switchMode()">注册</span>';
+          this.close();
+          if (typeof loadPosts === 'function') loadPosts();
+          if (typeof loadMusic === 'function') loadMusic();
+          UI.toast('注册成功！欢迎，' + username);
         }
       }
     } catch (e) {
