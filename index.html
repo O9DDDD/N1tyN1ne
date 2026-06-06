@@ -4,171 +4,139 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>N1tyN1ne</title>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src *; font-src https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob:; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; media-src * blob:; frame-ancestors 'none';">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="css/style.css">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>🎧</text></svg>">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>♪</text></svg>">
 </head>
 <body>
 
-  <canvas id="particle-canvas"></canvas>
-
-  <!-- Navigation -->
-  <nav id="navbar">
-    <div class="container">
-      <span class="logo">N1tyN1ne</span>
-      <div class="links">
-        <a href="#hero">首页</a>
-        <a href="#blog">博客</a>
-        <a href="#music">音乐</a>
-        <a href="#about">关于</a>
-        <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">
-          <i class="fas fa-moon"></i>
-          <i class="fas fa-sun"></i>
-        </button>
-      </div>
-    </div>
-  </nav>
-
-  <!-- Hero -->
-  <section id="hero">
-    <div class="container">
-      <div class="content">
-        <div class="badge">✦ 个人空间</div>
-        <h1>N1tyN1ne</h1>
-        <p>代码 · 音乐 · 思考 · 生活。这里是属于我的一方天地。</p>
-        <div class="scroll-hint">
-          <span>向下滚动</span>
-          <i class="fas fa-chevron-down" style="font-size:10px"></i>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Blog -->
-  <section id="blog">
-    <div class="container">
-      <h2 class="section-title">📝 博客</h2>
-      <p class="section-subtitle">记录思考，分享见闻</p>
-      <div class="blog-grid" id="blogGrid"></div>
-    </div>
-  </section>
-
-  <!-- Music -->
-  <section id="music">
-    <div class="container">
-      <h2 class="section-title">🎵 音乐</h2>
-      <p class="section-subtitle">听歌是灵魂的深呼吸</p>
-
-      <div class="player-wrap">
-        <div class="player-cover" id="playerCover">
-          <img id="coverImg" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><rect fill='%231a1a2e' width='200' height='200'/><text x='100' y='115' text-anchor='middle' font-size='60'>🎵</text></svg>" alt="cover">
-          <div class="vinyl-spin"></div>
-        </div>
-
-        <div class="player-info">
-          <div class="title" id="songTitle">未选择歌曲</div>
-          <div class="artist" id="songArtist">—</div>
-
-          <div class="player-controls">
-            <button onclick="player.prev()" title="上一首"><i class="fas fa-step-backward"></i></button>
-            <button class="play-btn" onclick="player.togglePlay()" id="playBtn"><i class="fas fa-play"></i></button>
-            <button onclick="player.next()" title="下一首"><i class="fas fa-step-forward"></i></button>
-            <button onclick="player.toggleShuffle()" id="shuffleBtn" title="随机播放" style="font-size:.9rem"><i class="fas fa-random"></i></button>
-            <button onclick="player.toggleRepeat()" id="repeatBtn" title="循环播放" style="font-size:.9rem"><i class="fas fa-repeat"></i></button>
-            <div class="wave-bars" id="waveBars" style="display:none">
-              <span></span><span></span><span></span><span></span><span></span>
-            </div>
-          </div>
-
-          <div class="progress-area">
-            <span id="currentTime">0:00</span>
-            <div class="progress-bar" id="progressBar" onclick="player.seek(event)">
-              <div class="fill" id="progressFill"></div>
-              <div class="thumb" id="progressThumb"></div>
-            </div>
-            <span id="totalTime">0:00</span>
-          </div>
-
-          <div class="player-volume">
-            <i class="fas fa-volume-down" style="font-size:.8rem;color:var(--text-dim)"></i>
-            <input type="range" min="0" max="1" step="0.01" value="0.7" id="volumeSlider" oninput="player.setVolume(this.value)">
-          </div>
-        </div>
-      </div>
-
-      <!-- Playlist -->
-      <div class="playlist">
-        <h4><i class="fas fa-list"></i> 播放列表</h4>
-        <div class="playlist-items" id="playlistItems"></div>
-      </div>
-
-      <!-- Upload -->
-      <div class="upload-area" id="uploadArea">
-        <p><i class="fas fa-cloud-upload-alt" style="font-size:1.2rem;display:block;margin-bottom:8px;color:var(--accent)"></i>
-        点击或拖拽上传音乐文件（MP3 / FLAC / WAV / M4A）</p>
-        <input type="file" id="fileInput" accept="audio/*" multiple>
-      </div>
-    </div>
-  </section>
-
-  <!-- About -->
-  <section id="about">
-    <div class="container">
-      <h2 class="section-title">💫 关于</h2>
-      <p class="section-subtitle">一些关于我的事</p>
-      <div class="about-grid">
-        <div class="about-text">
-          <p>你好，我是 <strong style="color:var(--text-bright)">N1tyN1ne</strong>。</p>
-          <p>一个喜欢折腾代码、热爱音乐的探索者。这个站点是我记录想法和分享音乐的小角落。</p>
-          <p>生活就像代码，总有 bug 需要修复；也像旋律，有高有低才动听。</p>
-          <div class="socials">
-            <a href="https://github.com/O9DDDD" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
-          </div>
-        </div>
-        <div class="about-stats">
-          <div class="stat-card">
-            <div class="num" id="statPosts">0</div>
-            <div class="label">文章</div>
-          </div>
-          <div class="stat-card">
-            <div class="num" id="statTracks">0</div>
-            <div class="label">音乐</div>
-          </div>
-          <div class="stat-card">
-            <div class="num">✦</div>
-            <div class="label">在线</div>
-          </div>
-          <div class="stat-card">
-            <div class="num">∞</div>
-            <div class="label">可能</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Footer -->
-  <footer>
-    &copy; 2026 <span>N1tyN1ne</span> · Built with <span>❤</span>
-  </footer>
-
-  <!-- Post Modal -->
-  <div class="modal-overlay" id="postModal">
-    <div class="modal">
-      <button class="close-btn" onclick="closeModal()"><i class="fas fa-xmark"></i></button>
-      <h2 id="modalTitle"></h2>
-      <div class="meta" id="modalMeta"></div>
-      <div class="body" id="modalBody"></div>
+<!-- ═══ Navigation ═══ -->
+<nav>
+  <div class="container">
+    <span class="logo">N1tyN1ne</span>
+    <div class="links">
+      <a href="#blog">博客</a>
+      <a href="#music">音乐</a>
+      <span id="authUI"></span>
     </div>
   </div>
+</nav>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
-  <script src="js/player.js"></script>
-  <script src="js/blog.js"></script>
-  <script src="js/app.js"></script>
+<!-- ═══ Hero ═══ -->
+<section id="hero" class="block-green">
+  <div class="container">
+    <h1>N1tyN1ne</h1>
+    <p>代码 · 音乐 · 思考 · 生活</p>
+    <div class="hero-btns">
+      <a href="#blog" class="btn btn-primary">浏览博客</a>
+      <a href="#music" class="btn btn-outline">听听音乐</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Blog ═══ -->
+<section id="blog" class="block-black">
+  <div class="container">
+    <h2 class="section-title">博客</h2>
+    <p class="section-subtitle">记录思考，分享见闻</p>
+
+    <div id="postList" class="post-list open">
+      <div class="blog-grid" id="blogGrid"></div>
+    </div>
+
+    <div id="postDetail" class="post-detail">
+      <div class="back" onclick="closePost()"><i class="fas fa-arrow-left"></i> 返回</div>
+      <h1 id="pdTitle"></h1>
+      <div class="pd-meta" id="pdMeta"></div>
+      <div class="body" id="pdBody"></div>
+
+      <div class="comments" id="commentSection">
+        <h3>留言</h3>
+        <div id="commentInputArea"></div>
+        <div id="commentList"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Music ═══ -->
+<section id="music" class="block-green">
+  <div class="container">
+    <h2 class="section-title">音乐</h2>
+    <p class="section-subtitle">听歌是灵魂的深呼吸</p>
+
+    <div class="player-section" style="background:var(--blk-light)">
+      <div class="player-cover" id="playerCover">
+        <img id="coverImg" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><rect fill='%231a1a1a' width='200' height='200'/><text x='100' y='115' text-anchor='middle' font-size='50' fill='%2300d95a'>♪</text></svg>" alt="cover">
+      </div>
+      <div class="player-info">
+        <div class="pi-title" id="songTitle">未选择歌曲</div>
+        <div class="pi-artist" id="songArtist">—</div>
+
+        <div class="controls">
+          <button onclick="player.prev()"><i class="fas fa-step-backward"></i></button>
+          <button class="play-btn" onclick="player.toggle()" id="playBtn"><i class="fas fa-play"></i></button>
+          <button onclick="player.next()"><i class="fas fa-step-forward"></i></button>
+          <button onclick="player.toggleShuffle()" id="shuffleBtn"><i class="fas fa-random"></i></button>
+          <button onclick="player.toggleRepeat()" id="repeatBtn"><i class="fas fa-repeat"></i></button>
+        </div>
+
+        <div class="progress">
+          <span id="currentTime">0:00</span>
+          <div class="progress-bar" id="progressBar" onclick="player.seek(event)">
+            <div class="fill" id="progressFill"></div>
+            <div class="thumb" id="progressThumb"></div>
+          </div>
+          <span id="totalTime">0:00</span>
+        </div>
+
+        <div class="vol">
+          <i class="fas fa-volume-down" style="font-size:.8rem"></i>
+          <input type="range" min="0" max="1" step="0.01" id="volumeSlider" oninput="player.setVolume(this.value)">
+        </div>
+
+        <div class="lyrics-area" id="lyricsContainer">
+          <div class="no-lyrics">暂无歌词</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="playlist">
+      <h4>播放列表</h4>
+      <div class="pl-items" id="playlistItems"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Footer ═══ -->
+<footer>
+  &copy; 2026 N1tyN1ne · Built with <span style="color:var(--grn)">♥</span>
+</footer>
+
+<!-- ═══ Auth Modal ═══ -->
+<div class="auth-overlay" id="authModal">
+  <div class="auth-box">
+    <button class="close-btn" onclick="closeAuth()"><i class="fas fa-xmark"></i></button>
+    <h2 id="authTitle">登录</h2>
+    <div class="error-msg" id="authError"></div>
+    <input type="email" id="authEmail" placeholder="邮箱">
+    <input type="password" id="authPassword" placeholder="密码">
+    <input type="text" id="authUsername" placeholder="用户名" style="display:none">
+    <button class="btn btn-primary" id="authSubmit" onclick="handleAuth()">登录</button>
+    <div class="switch-link">
+      <span id="authSwitchText">没有账号？<span onclick="switchAuth()">注册</span></span>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/player.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>
