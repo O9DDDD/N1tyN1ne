@@ -94,7 +94,7 @@ async function deletePost(id) {
   await loadAdminPosts();
 }
 
-/* ─── Music ─────────────────────────────────────────── */
+/* ─── Music List ──────────────────────────────────── */
 async function loadAdminMusic() {
   try {
     const data = await dbSelect('music', { order: { col: 'created_at', dir: 'desc' } });
@@ -109,38 +109,243 @@ async function loadAdminMusic() {
   } catch {}
 }
 
-function showMusicUpload() { document.getElementById('musicUploader').style.display = 'block'; }
-function cancelMusicUpload() { document.getElementById('musicUploader').style.display = 'none'; }
-
-async function uploadMusic() {
-  const title = document.getElementById('muTitle').value.trim();
-  const artist = document.getElementById('muArtist').value.trim();
-  const duration = document.getElementById('muDuration').value.trim();
-  const audioFile = document.getElementById('muAudio').files[0];
-  const coverFile = document.getElementById('muCover').files[0];
-  const lyricsFile = document.getElementById('muLyrics').files[0];
-  const lyricsText = document.getElementById('muLyricsText').value.trim();
-  if (!title || !audioFile) { alert('歌曲名和音频不能为空'); return; }
-  const btn = document.getElementById('muSubmit');
-  btn.disabled = true; btn.textContent = '上传中...';
-  try {
-    const ts = Date.now();
-    const audioUrl = await uploadFile('music', ts + '_' + audioFile.name, audioFile);
-    let coverUrl = '';
-    if (coverFile) coverUrl = await uploadFile('covers', ts + '_' + coverFile.name, coverFile);
-    let lyrics = lyricsText;
-    if (!lyrics && lyricsFile) lyrics = await lyricsFile.text();
-    await dbInsert('music', { title, artist: artist || '未知', duration, audio_url: audioUrl, cover_url: coverUrl, lyrics: lyrics || '', uploaded_by: window._currentUser.id });
-    ['muTitle','muArtist','muDuration','muAudio','muCover','muLyrics','muLyricsText'].forEach(id => document.getElementById(id).value = '');
-    cancelMusicUpload();
-    await loadAdminMusic();
-  } catch (e) { alert('上传失败: ' + e.message); }
-  finally { btn.disabled = false; btn.textContent = '上传'; }
-}
-
 async function deleteMusic(id) {
   if (!confirm('确定删除？')) return;
   await dbDelete('music', 'id', id);
+  await loadAdminMusic();
+}
+
+/* ─── Batch Music Upload ──────────────────────────── */
+let uploadQueue = [];
+
+function showMusicUpload() {
+  document.getElementById('musicUploader').style.display = 'block';
+  uploadQueue = [];
+  renderQueue();
+  setupDropZone();
+}
+
+let _dropSetup = false;
+function setupDropZone() {
+  if (_dropSetup) return;
+  _dropSetup = true;
+  const zone = document.getElementById('dropZone');
+  zone.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    zone.style.borderColor = 'var(--grn)';
+    zone.style.background = 'rgba(90,124,62,0.06)';
+  });
+  zone.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    zone.style.borderColor = 'var(--border)';
+    zone.style.background = '';
+  });
+  zone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    zone.style.borderColor = 'var(--border)';
+    zone.style.background = '';
+    addFiles(e.dataTransfer.files);
+  });
+}
+
+function cancelMusicUpload() {
+  document.getElementById('musicUploader').style.display = 'none';
+  uploadQueue.forEach(function(e) { if (e.coverUrl) URL.revokeObjectURL(e.coverUrl); });
+  uploadQueue = [];
+  renderQueue();
+}
+
+async function addFiles(files) {
+  var audioFiles = [];
+  var lrcFiles = [];
+  for (var i = 0; i < files.length; i++) {
+    var f = files[i];
+    if (f.name.match(/\.lrc$/i)) {
+      lrcFiles.push(f);
+    } else if (f.type.startsWith('audio/') || f.name.match(/\.(mp3|flac|wav|ogg|m4a|aac)$/i)) {
+      audioFiles.push(f);
+    }
+  }
+  // Read all LRC contents upfront
+  var lrcMap = {};
+  for (var j = 0; j < lrcFiles.length; j++) {
+    var lf = lrcFiles[j];
+    try {
+      var text = await lf.text();
+      var base = lf.name.replace(/\.lrc$/i, '');
+      lrcMap[base] = text.trim();
+    } catch(e) {}
+  }
+
+  for (var k = 0; k < audioFiles.length; k++) {
+    var file = audioFiles[k];
+    var entry = {
+      file: file,
+      title: file.name.replace(/\.[^.]+$/, ''),
+      artist: '未知',
+      coverBlob: null,
+      coverUrl: '',
+      lyrics: '',
+      lyricsSource: 'none',
+      status: 'pending'
+    };
+    uploadQueue.push(entry);
+    renderQueue();
+    entry.status = 'extracting';
+    renderQueue();
+    await extractMetadata(entry);
+
+    // Auto-match LRC by basename (strip both audio and .lrc extension)
+    if (entry.lyricsSource === 'none') {
+      var audioBase = file.name.replace(/\.[^.]+$/, '');
+      if (lrcMap[audioBase]) {
+        entry.lyrics = lrcMap[audioBase];
+        entry.lyricsSource = 'lrcfile';
+      }
+    }
+    entry.status = 'ready';
+    renderQueue();
+  }
+}
+
+function extractMetadata(entry) {
+  return new Promise(function(resolve) {
+    if (typeof jsmediatags === 'undefined') { resolve(); return; }
+    try {
+      jsmediatags.read(entry.file, {
+        onSuccess: function(tag) {
+          var t = tag.tags;
+          if (t.title && t.title.trim()) entry.title = t.title.trim();
+          if (t.artist && t.artist.trim()) entry.artist = t.artist.trim();
+          if (t.picture) {
+            try {
+              var bytes;
+              if (t.picture.data instanceof Uint8Array) bytes = t.picture.data;
+              else if (t.picture.data instanceof ArrayBuffer) bytes = new Uint8Array(t.picture.data);
+              else bytes = new Uint8Array(t.picture.data);
+              var blob = new Blob([bytes], { type: t.picture.format || 'image/jpeg' });
+              entry.coverBlob = blob;
+              entry.coverUrl = URL.createObjectURL(blob);
+            } catch(e) {}
+          }
+          if (t.lyrics && t.lyrics.lyrics && t.lyrics.lyrics.trim()) {
+            entry.lyrics = t.lyrics.lyrics.trim();
+            entry.lyricsSource = 'id3';
+          }
+          renderQueue();
+          resolve();
+        },
+        onError: function() { resolve(); }
+      });
+    } catch(e) { resolve(); }
+  });
+}
+
+function renderQueue() {
+  var el = document.getElementById('uploadQueue');
+  var actions = document.getElementById('muActions');
+  if (!el) return;
+  if (!uploadQueue.length) { el.innerHTML = ''; actions.style.display = 'none'; return; }
+  var readyCount = uploadQueue.filter(function(e) { return e.status === 'ready'; }).length;
+  actions.style.display = 'flex';
+  document.getElementById('muUploadAll').textContent = '全部上传 (' + readyCount + ')';
+
+  el.innerHTML = uploadQueue.map(function(entry, i) {
+    var statusIcon = { pending: '<i class="fas fa-clock" style="color:var(--text-dim)"></i>', extracting: '<i class="fas fa-spinner fa-spin" style="color:var(--grn)"></i>', ready: '<i class="fas fa-check-circle" style="color:var(--grn)"></i>', uploading: '<i class="fas fa-spinner fa-spin" style="color:var(--grn)"></i>', done: '<i class="fas fa-check-circle" style="color:#4ade80"></i>', error: '<i class="fas fa-exclamation-circle" style="color:#ff4444"></i>' }[entry.status] || '';
+    var lyricsBadge = { none: '<span style="font-size:.7rem;color:var(--text-dim)">暂无歌词</span>', id3: '<span style="font-size:.7rem;color:var(--grn)">歌词: ID3 内嵌</span>', lrcfile: '<span style="font-size:.7rem;color:var(--grn)">歌词: LRC 文件匹配</span>', manual: '<span style="font-size:.7rem;color:#facc15">歌词: 手动输入</span>' }[entry.lyricsSource] || '';
+    var statusText = entry.status === 'extracting' ? '读取中...' : (entry.status === 'uploading' ? '上传中...' : (entry.status === 'error' ? (entry.errorMsg || '失败') : ''));
+    var name = entry.file.name.length > 40 ? entry.file.name.slice(0, 37) + '...' : entry.file.name;
+    return '<div class="queue-card" style="display:flex;gap:12px;padding:12px;background:var(--blk);border-radius:6px;border:1px solid var(--border);align-items:flex-start">' +
+      '<div class="qc-cover" style="width:64px;height:64px;border-radius:4px;overflow:hidden;flex-shrink:0;background:var(--blk-mid);display:flex;align-items:center;justify-content:center">' +
+        (entry.coverUrl ? '<img src="' + entry.coverUrl + '" style="width:100%;height:100%;object-fit:cover">' : '<i class="fas fa-music" style="color:var(--text-dim);font-size:1.5rem"></i>') +
+      '</div>' +
+      '<div class="qc-info" style="flex:1;min-width:0">' +
+        '<div style="font-size:.7rem;color:var(--text-dim);margin-bottom:4px">' + escHtml(name) + '</div>' +
+        '<input value="' + escHtml(entry.title) + '" onchange="uploadQueue[' + i + '].title=this.value" placeholder="歌曲名" style="width:100%;padding:6px 8px;background:var(--blk-mid);border:1px solid var(--border);border-radius:4px;color:var(--text-bright);font-size:.85rem;margin-bottom:6px">' +
+        '<input value="' + escHtml(entry.artist) + '" onchange="uploadQueue[' + i + '].artist=this.value" placeholder="艺术家" style="width:100%;padding:6px 8px;background:var(--blk-mid);border:1px solid var(--border);border-radius:4px;color:var(--text-bright);font-size:.85rem;margin-bottom:6px">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">' +
+          lyricsBadge +
+          '<span style="font-size:.7rem;color:var(--text-dim)">' + statusIcon + ' ' + statusText + '</span>' +
+        '</div>' +
+        '<textarea onchange="uploadQueue[' + i + '].lyrics=this.value;if(this.value.trim())uploadQueue[' + i + '].lyricsSource=\'manual\'" placeholder="粘贴 LRC 歌词（可选）..." style="width:100%;padding:6px 8px;background:var(--blk-mid);border:1px solid var(--border);border-radius:4px;color:var(--text-dim);font-size:.78rem;min-height:40px;resize:vertical;font-family:monospace">' + escHtml(entry.lyricsSource !== 'none' ? entry.lyrics : '') + '</textarea>' +
+        (entry.status === 'uploading' ? '<div class="qc-progress-bar" style="height:6px;background:var(--blk-mid);border-radius:3px;margin-top:8px;overflow:hidden"><div style="height:100%;width:' + (entry.progress || 0) + '%;background:var(--grn);border-radius:3px;transition:width .3s"></div></div><div style="font-size:.68rem;color:var(--text-dim);text-align:right;margin-top:2px">' + (entry.progress || 0) + '%</div>' : '') +
+      '</div>' +
+      '<button onclick="removeFromQueue(' + i + ')" style="background:none;border:none;color:var(--text-dim);cursor:pointer;padding:4px;font-size:1rem;flex-shrink:0" title="移除"><i class="fas fa-times"></i></button>' +
+    '</div>';
+  }).join('');
+}
+
+var _escDiv;
+function escHtml(str) {
+  if (!_escDiv) _escDiv = document.createElement('div');
+  _escDiv.textContent = str || '';
+  return _escDiv.innerHTML;
+}
+
+function removeFromQueue(i) {
+  var entry = uploadQueue[i];
+  if (entry && entry.coverUrl) URL.revokeObjectURL(entry.coverUrl);
+  uploadQueue.splice(i, 1);
+  renderQueue();
+}
+
+async function uploadAll() {
+  var ready = uploadQueue.filter(function(e) { return e.status === 'ready'; });
+  if (!ready.length) return;
+  for (var i = 0; i < ready.length; i++) {
+    var entry = ready[i];
+    entry.status = 'uploading';
+    entry.progress = 0;
+    renderQueue();
+    try {
+      var ts = Date.now();
+      var ext = entry.file.name.split('.').pop();
+      var safeName = (entry.title || 'unknown').replace(/[^a-zA-Z0-9一-鿿_-]/g, '_');
+      var audioPath = ts + '_' + safeName + '.' + ext;
+
+      // Upload audio with progress (0-80%)
+      var audioUrl = await uploadFileWithProgress('music', audioPath, entry.file, function(pct) {
+        entry.progress = Math.floor(pct * 0.8);
+        renderQueue();
+      });
+
+      // Upload cover with progress (80-95%)
+      var coverUrl = '';
+      if (entry.coverBlob) {
+        var coverExt = entry.coverBlob.type.split('/')[1] || 'jpg';
+        var coverPath = ts + '_' + safeName + '_cover.' + coverExt;
+        coverUrl = await uploadFileWithProgress('covers', coverPath, entry.coverBlob, function(pct) {
+          entry.progress = 80 + Math.floor(pct * 0.15);
+          renderQueue();
+        });
+      }
+
+      entry.progress = 95;
+      renderQueue();
+
+      await dbInsert('music', {
+        title: entry.title,
+        artist: entry.artist,
+        duration: '',
+        audio_url: audioUrl,
+        cover_url: coverUrl,
+        lyrics: entry.lyrics,
+        uploaded_by: window._currentUser.id
+      });
+
+      entry.progress = 100;
+      entry.status = 'done';
+      renderQueue();
+    } catch(e) {
+      entry.status = 'error';
+      entry.errorMsg = e.message;
+      renderQueue();
+    }
+  }
+  setTimeout(function() {
+    uploadQueue = uploadQueue.filter(function(e) { return e.status !== 'done'; });
+    renderQueue();
+  }, 2500);
   await loadAdminMusic();
 }
 

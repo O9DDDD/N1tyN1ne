@@ -90,20 +90,20 @@
         <button class="btn btn-primary" onclick="showMusicUpload()" style="background:var(--grn-dark);color:#fff">+ 上传音乐</button>
       </div>
       <div id="musicUploader" style="display:none;margin-bottom:24px;padding:20px;background:var(--blk-mid);border-radius:var(--radius-sm);border:1px solid var(--border)">
-        <h3 style="font-size:1rem;font-weight:700;color:var(--text-bright);margin-bottom:16px">上传音乐</h3>
-        <div class="form-row">
-          <div class="form-group"><label>歌曲名</label><input id="muTitle" placeholder="歌曲名"></div>
-          <div class="form-group"><label>艺术家</label><input id="muArtist" placeholder="艺术家"></div>
+        <h3 style="font-size:1rem;font-weight:700;color:var(--text-bright);margin-bottom:16px">批量上传音乐</h3>
+
+        <div id="dropZone" style="border:2px dashed var(--border);border-radius:8px;padding:40px 20px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:16px">
+          <i class="fas fa-cloud-upload-alt" style="font-size:2.5rem;color:var(--grn);display:block;margin-bottom:12px"></i>
+          <p style="color:var(--text-bright);font-weight:600;margin:0 0 4px">拖拽音乐文件到此处</p>
+          <p style="color:var(--text-dim);font-size:.82rem;margin:0 0 12px">支持 MP3 / FLAC / WAV / OGG / M4A / AAC，可以同时拖入 .lrc 歌词文件自动匹配</p>
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();document.getElementById('muFileInput').click()" style="pointer-events:auto">或点击选择文件</button>
+          <input type="file" id="muFileInput" multiple accept="audio/*,.lrc" style="display:none" onchange="addFiles(this.files);this.value=''">
         </div>
-        <div class="form-row">
-          <div class="form-group"><label>时长</label><input id="muDuration" placeholder="例如 4:30"></div>
-          <div class="form-group"><label>音频文件 (MP3/FLAC)</label><input type="file" id="muAudio" accept="audio/*"></div>
-        </div>
-        <div class="form-group"><label>封面图片（可选）</label><input type="file" id="muCover" accept="image/*"></div>
-        <div class="form-group"><label>歌词文件 (LRC, 可选)</label><input type="file" id="muLyrics" accept=".lrc,.txt"><span style="font-size:.78rem;color:var(--text-dim);margin-left:8px">上传 .lrc 文件或粘贴到下面</span></div>
-        <div class="form-group"><label>或直接粘贴歌词（LRC 格式）</label><textarea id="muLyricsText" placeholder="[00:00.00]歌词..." style="min-height:100px"></textarea></div>
-        <div style="display:flex;gap:10px">
-          <button class="btn btn-primary" onclick="uploadMusic()" style="background:var(--grn-dark);color:#fff" id="muSubmit">上传</button>
+
+        <div id="uploadQueue" style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px"></div>
+
+        <div id="muActions" style="display:none;gap:10px">
+          <button class="btn btn-primary" onclick="uploadAll()" style="background:var(--grn-dark);color:#fff" id="muUploadAll">全部上传</button>
           <button class="btn btn-ghost btn-sm" onclick="cancelMusicUpload()">取消</button>
         </div>
       </div>
@@ -139,6 +139,7 @@ function closeNav() { document.getElementById('navLinks').classList.remove('open
 </script>
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.7/jsmediatags.min.js"></script>
 <script src="js/admin.js"></script>
 </body>
 </html>

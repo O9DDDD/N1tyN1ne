@@ -3,6 +3,7 @@ window._currentUser = null;
 window._currentProfile = null;
 
 async function initAuth() {
+  await initSession();
   const sess = getSession();
   if (sess && sess.user) {
     window._currentUser = sess.user;
