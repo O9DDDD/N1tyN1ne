@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
   <title>N1tyN1ne · 音乐</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -366,7 +367,7 @@ const M = {
     this.idx = i;
     const t = this.tracks[i];
     if (!t) return;
-    this.audio.src = t.audio_url;
+    this.audio.src = https(t.audio_url);
     this.audio.load();
     this.audio.play().catch(() => {});
     this.updateInfo(t);
@@ -441,8 +442,8 @@ const M = {
     document.getElementById('muArtist').textContent = t.artist || '—';
     // Cover & background
     const coverUrl = t.cover_url || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect fill="%231a1a1a" width="200" height="200"/><text x="100" y="115" text-anchor="middle" font-size="50" fill="%235a7c3e">♪</text></svg>';
-    document.getElementById('coverImg').src = coverUrl;
-    document.getElementById('bgImg').src = coverUrl;
+    document.getElementById('coverImg').src = https(coverUrl);
+    document.getElementById('bgImg').src = https(coverUrl);
   },
 
   tick() {

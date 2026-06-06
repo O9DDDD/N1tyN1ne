@@ -115,3 +115,9 @@ async function uploadFile(bucket, path, file) {
 function getFileUrl(bucket, path) {
   return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
 }
+
+// Force HTTPS for any URL (fix mixed content)
+function https(url) {
+  if (!url || typeof url !== 'string') return url;
+  return url.replace(/^http:\/\//i, 'https://');
+}

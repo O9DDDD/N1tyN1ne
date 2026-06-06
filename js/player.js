@@ -38,7 +38,7 @@ const AudioPlayer = {
     this.currentIndex = idx;
     const t = this.playlist[idx];
     if (!t) return;
-    this.audio.src = t.audio_url;
+    this.audio.src = https(t.audio_url);
     this.audio.load();
     this.audio.play().catch(() => {});
     this.updateInfo(t);
@@ -111,7 +111,7 @@ const AudioPlayer = {
     document.getElementById('songTitle').textContent = t.title || '未选择';
     document.getElementById('songArtist').textContent = t.artist || '—';
     const img = document.getElementById('coverImg');
-    if (t.cover_url) { img.src = t.cover_url; }
+    if (t.cover_url) { img.src = https(t.cover_url); }
     else { img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect fill="%231a1a1a" width="200" height="200"/><text x="100" y="115" text-anchor="middle" font-size="50" fill="%235a7c3e">♪</text></svg>'; }
   },
 
