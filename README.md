@@ -18,4 +18,4 @@
 
 ## 食用方式
 
-访问 https://o9dddd.github.io/N1tyN1ne 或下载 `index.html` 本地打开。
+访问 https://n1tyn1ne.xyz 或下载 `index.html` 本地打开。
