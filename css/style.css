@@ -32,7 +32,7 @@ body {
 ::selection { background: var(--grn); color: var(--blk); }
 
 /* ─── Block Layout ──────────────────────────────────── */
-.block-grn { background: var(--grn); }
+.block-grn, .block-green { background: var(--grn); }
 .block-grn-dark { background: var(--grn-dark); }
 .block-blk { background: var(--blk); }
 .block-grn .section-title,
