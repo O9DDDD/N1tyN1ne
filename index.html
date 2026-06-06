@@ -18,12 +18,12 @@
   <div class="container">
     <span class="logo">N1tyN1ne</span>
     <div class="nav-right">
-      <span id="authUI"><button class="nav-btn" onclick="openAuth()">登录</button></span>
-      <button class="nav-toggle" onclick="toggleNav()" aria-label="菜单"><i class="fas fa-bars"></i></button>
+      <span id="authUI"><button class="nav-btn" onclick="Auth.open()">登录</button></span>
+      <button class="nav-toggle" onclick="UI.toggleNav()" aria-label="菜单"><i class="fas fa-bars"></i></button>
     </div>
     <div class="links" id="navLinks">
-      <a href="#blog" onclick="closeNav()">博客</a>
-      <a href="#music" onclick="closeNav()">音乐</a>
+      <a href="#blog" onclick="UI.closeNav()">博客</a>
+      <a href="#music" onclick="UI.closeNav()">音乐</a>
     </div>
   </div>
 </nav>
@@ -47,18 +47,22 @@
     <p class="section-subtitle">记录思考，分享见闻</p>
 
     <div id="postList" class="post-list open">
-      <div class="blog-grid" id="blogGrid"></div>
+      <div class="blog-grid" id="blogGrid">
+        <div class="blog-card skeleton"><div class="sk-line w-60"></div><div class="sk-line w-80"></div><div class="sk-line w-40"></div></div>
+        <div class="blog-card skeleton"><div class="sk-line w-40"></div><div class="sk-line w-90"></div><div class="sk-line w-50"></div></div>
+        <div class="blog-card skeleton"><div class="sk-line w-70"></div><div class="sk-line w-60"></div><div class="sk-line w-30"></div></div>
+      </div>
     </div>
 
     <div id="postDetail" class="post-detail">
-      <div class="back" onclick="closePost()"><i class="fas fa-arrow-left"></i> 返回</div>
+      <div class="back" onclick="Blog.close()"><i class="fas fa-arrow-left"></i> 返回</div>
       <h1 id="pdTitle"></h1>
       <div class="pd-meta" id="pdMeta"></div>
       <div class="body" id="pdBody"></div>
 
       <div class="comments" id="commentSection">
         <h3>留言</h3>
-        <div id="commentInputArea"></div>
+        <div id="commentInputArea"><div class="login-hint">要留言？<span onclick="Auth.open()">登录</span></div></div>
         <div id="commentList"></div>
       </div>
     </div>
@@ -71,25 +75,25 @@
     <h2 class="section-title">音乐</h2>
     <p class="section-subtitle">听歌是灵魂的深呼吸</p>
 
-    <div class="player-section" style="background:var(--blk-light)">
+    <div class="player-section">
       <div class="player-cover" id="playerCover">
-        <img id="coverImg" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><rect fill='%231a1a1a' width='200' height='200'/><text x='100' y='115' text-anchor='middle' font-size='50' fill='%2300d95a'>♪</text></svg>" alt="cover">
+        <img id="coverImg" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><rect fill='%231a1a1a' width='200' height='200'/><text x='100' y='115' text-anchor='middle' font-size='50' fill='%235a7c3e'>♪</text></svg>" alt="cover">
       </div>
       <div class="player-info">
         <div class="pi-title" id="songTitle">未选择歌曲</div>
         <div class="pi-artist" id="songArtist">—</div>
 
         <div class="controls">
-          <button onclick="player.prev()"><i class="fas fa-step-backward"></i></button>
-          <button class="play-btn" onclick="player.toggle()" id="playBtn"><i class="fas fa-play"></i></button>
-          <button onclick="player.next()"><i class="fas fa-step-forward"></i></button>
-          <button onclick="player.toggleShuffle()" id="shuffleBtn"><i class="fas fa-random"></i></button>
-          <button onclick="player.toggleRepeat()" id="repeatBtn"><i class="fas fa-repeat"></i></button>
+          <button onclick="AudioPlayer.prev()"><i class="fas fa-step-backward"></i></button>
+          <button class="play-btn" onclick="AudioPlayer.toggle()" id="playBtn"><i class="fas fa-play"></i></button>
+          <button onclick="AudioPlayer.next()"><i class="fas fa-step-forward"></i></button>
+          <button onclick="AudioPlayer.toggleShuffle()" id="shuffleBtn"><i class="fas fa-random"></i></button>
+          <button onclick="AudioPlayer.toggleRepeat()" id="repeatBtn"><i class="fas fa-repeat"></i></button>
         </div>
 
         <div class="progress">
           <span id="currentTime">0:00</span>
-          <div class="progress-bar" id="progressBar" onclick="player.seek(event)">
+          <div class="progress-bar" id="progressBar" onclick="AudioPlayer.seek(event)">
             <div class="fill" id="progressFill"></div>
             <div class="thumb" id="progressThumb"></div>
           </div>
@@ -98,7 +102,7 @@
 
         <div class="vol">
           <i class="fas fa-volume-down" style="font-size:.8rem"></i>
-          <input type="range" min="0" max="1" step="0.01" id="volumeSlider" oninput="player.setVolume(this.value)">
+          <input type="range" min="0" max="1" step="0.01" id="volumeSlider" oninput="AudioPlayer.setVolume(this.value)">
         </div>
 
         <div class="lyrics-area" id="lyricsContainer">
@@ -109,7 +113,13 @@
 
     <div class="playlist">
       <h4>播放列表</h4>
-      <div class="pl-items" id="playlistItems"></div>
+      <div class="pl-items" id="playlistItems">
+        <div class="pl-item" style="opacity:.4;pointer-events:none">
+          <div class="pl-idx">1</div>
+          <div class="pl-i"><div class="pl-t">等待加载...</div><div class="pl-a">—</div></div>
+          <div class="pl-d">--:--</div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -122,23 +132,156 @@
 <!-- ═══ Auth Modal ═══ -->
 <div class="auth-overlay" id="authModal">
   <div class="auth-box">
-    <button class="close-btn" onclick="closeAuth()"><i class="fas fa-xmark"></i></button>
+    <button class="close-btn" onclick="Auth.close()"><i class="fas fa-xmark"></i></button>
     <h2 id="authTitle">登录</h2>
     <div class="error-msg" id="authError"></div>
     <input type="email" id="authEmail" placeholder="邮箱">
     <input type="password" id="authPassword" placeholder="密码">
     <input type="text" id="authUsername" placeholder="用户名" style="display:none">
-    <button class="btn btn-primary" id="authSubmit" onclick="handleAuth()">登录</button>
+    <button class="btn btn-primary" id="authSubmit" onclick="Auth.submit()">登录</button>
     <div class="switch-link">
-      <span id="authSwitchText">没有账号？<span onclick="switchAuth()">注册</span></span>
+      <span id="authSwitchText">没有账号？<span onclick="Auth.switchMode()">注册</span></span>
     </div>
   </div>
 </div>
 
+<!-- ═══ Toast ═══ -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ══════════════ Core Inline Scripts ══════════════ -->
 <script>
-function toggleNav() { document.getElementById('navLinks').classList.toggle('open'); }
-function closeNav() { document.getElementById('navLinks').classList.remove('open'); }
+// ─── UI Helpers ──────────────────────────────────────
+const UI = {
+  toggleNav() { document.getElementById('navLinks').classList.toggle('open'); },
+  closeNav() { document.getElementById('navLinks').classList.remove('open'); },
+  toast(msg, type) {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = 'toast ' + (type || '');
+    t.textContent = msg;
+    c.appendChild(t);
+    requestAnimationFrame(() => t.classList.add('show'));
+    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 3000);
+  }
+};
+
+// ─── Auth Modal (no dependencies) ────────────────────
+const Auth = {
+  _isLogin: true,
+
+  open(mode) {
+    this._isLogin = mode !== 'register';
+    document.getElementById('authTitle').textContent = this._isLogin ? '登录' : '注册';
+    document.getElementById('authSubmit').textContent = this._isLogin ? '登录' : '注册';
+    document.getElementById('authUsername').style.display = this._isLogin ? 'none' : 'block';
+    document.getElementById('authSwitchText').innerHTML = this._isLogin
+      ? '没有账号？<span onclick="Auth.switchMode()">注册</span>'
+      : '已有账号？<span onclick="Auth.switchMode()">登录</span>';
+    document.getElementById('authError').style.display = 'none';
+    document.getElementById('authError').style.color = '#ff4444';
+    document.getElementById('authModal').classList.add('open');
+  },
+
+  close() {
+    document.getElementById('authModal').classList.remove('open');
+  },
+
+  switchMode() {
+    this.open(this._isLogin ? 'register' : 'login');
+  },
+
+  async submit() {
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+    const username = document.getElementById('authUsername').value.trim();
+    const errEl = document.getElementById('authError');
+    errEl.style.display = 'none';
+
+    if (!email || !password) {
+      errEl.textContent = '请填写邮箱和密码';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    try {
+      if (this._isLogin) {
+        if (typeof loginUser === 'function') {
+          await loginUser(email, password);
+          this.close();
+        } else {
+          errEl.textContent = '系统加载中，请稍后再试';
+          errEl.style.display = 'block';
+        }
+      } else {
+        if (!username) {
+          errEl.textContent = '请输入用户名';
+          errEl.style.display = 'block';
+          return;
+        }
+        if (typeof register === 'function') {
+          await register(email, password, username);
+          errEl.textContent = '注册成功！请直接登录';
+          errEl.style.color = 'var(--grn-bright)';
+          errEl.style.display = 'block';
+          this._isLogin = true;
+          document.getElementById('authTitle').textContent = '登录';
+          document.getElementById('authSubmit').textContent = '登录';
+          document.getElementById('authUsername').style.display = 'none';
+          document.getElementById('authSwitchText').innerHTML = '没有账号？<span onclick="Auth.switchMode()">注册</span>';
+        }
+      }
+    } catch (e) {
+      errEl.textContent = e.message || '操作失败';
+      errEl.style.color = '#ff4444';
+      errEl.style.display = 'block';
+    }
+  }
+};
+
+document.getElementById('authModal').addEventListener('click', function(e) {
+  if (e.target === e.currentTarget) Auth.close();
+});
+
+// ─── Blog View ────────────────────────────────────────
+const Blog = {
+  _current: null,
+
+  close() {
+    this._current = null;
+    document.getElementById('postDetail').classList.remove('open');
+    document.getElementById('postList').classList.add('open');
+  },
+
+  open(post) {
+    this._current = post;
+    document.getElementById('postList').classList.remove('open');
+    document.getElementById('postDetail').classList.add('open');
+    document.getElementById('pdTitle').textContent = post.title;
+    document.getElementById('pdMeta').textContent = post.created_at
+      ? new Date(post.created_at).toLocaleDateString('zh-CN') : '';
+    const body = document.getElementById('pdBody');
+    if (typeof marked !== 'undefined') {
+      body.innerHTML = marked.parse(post.content || '');
+      body.querySelectorAll('a').forEach(a => a.setAttribute('target', '_blank'));
+    } else {
+      body.innerHTML = '<pre>' + (post.content || '').replace(/</g,'&lt;') + '</pre>';
+    }
+    document.getElementById('hero').scrollIntoView({ behavior: 'smooth' });
+    if (typeof loadComments === 'function') loadComments(post.id);
+  },
+
+  async submitComment() {
+    const text = document.getElementById('commentText')?.value.trim();
+    if (!text || !this._current || !window._currentUser) return;
+    try {
+      await dbInsert('comments', { post_id: this._current.id, user_id: window._currentUser.id, content: text });
+      document.getElementById('commentText').value = '';
+      if (typeof loadComments === 'function') loadComments(this._current.id);
+    } catch (e) { UI.toast('留言失败: ' + e.message, 'error'); }
+  }
+};
 </script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>

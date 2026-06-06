@@ -647,6 +647,62 @@ footer {
   text-align: center; padding: 60px 20px;
   color: var(--text-dim); font-size: .9rem;
 }
+.empty-state .empty-icon {
+  font-size: 2.4rem; color: var(--grn-dark);
+  margin-bottom: 16px; opacity: .6;
+}
+.empty-state .empty-sub {
+  font-size: .78rem; margin-top: 6px; opacity: .6;
+}
+
+/* ─── Skeleton Loading ───────────────────────────────── */
+.skeleton {
+  pointer-events: none;
+  animation: sk-pulse 1.6s ease-in-out infinite;
+}
+.skeleton .sk-line {
+  height: 14px; background: var(--blk-mid);
+  margin-bottom: 10px; border-radius: 2px;
+}
+.skeleton .sk-line.w-30 { width: 30%; }
+.skeleton .sk-line.w-40 { width: 40%; }
+.skeleton .sk-line.w-50 { width: 50%; }
+.skeleton .sk-line.w-60 { width: 60%; }
+.skeleton .sk-line.w-70 { width: 70%; }
+.skeleton .sk-line.w-80 { width: 80%; }
+.skeleton .sk-line.w-90 { width: 90%; }
+.skeleton .sk-line:last-child { margin-bottom: 0; }
+
+@keyframes sk-pulse {
+  0%, 100% { opacity: .4; }
+  50% { opacity: .7; }
+}
+
+/* ─── Toast Notifications ────────────────────────────── */
+.toast-container {
+  position: fixed; bottom: 24px; right: 24px;
+  z-index: 300; display: flex; flex-direction: column;
+  gap: 8px; pointer-events: none;
+}
+.toast {
+  background: var(--blk-light); color: var(--text);
+  border: 2px solid var(--grn-dark); padding: 12px 20px;
+  font-size: .82rem; font-weight: 500;
+  transform: translateX(120%); opacity: 0;
+  transition: all .3s ease; pointer-events: auto;
+  max-width: 340px;
+}
+.toast.show { transform: translateX(0); opacity: 1; }
+.toast.error { border-color: #dc2626; color: #ff8888; }
+
+/* ─── Player cover spin ──────────────────────────────── */
+.player-cover.playing img {
+  animation: cover-spin 8s linear infinite;
+}
+@keyframes cover-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
 
 /* ─── Misc ──────────────────────────────────────────── */
 .hidden { display: none !important; }

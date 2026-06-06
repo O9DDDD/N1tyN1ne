@@ -1,12 +1,12 @@
 /* ─── Music Player with LRC Lyrics ──────────────────── */
-const player = {
+const AudioPlayer = {
   audio: new Audio(),
   playlist: [],
   currentIndex: -1,
   isPlaying: false,
   shuffle: false,
   repeat: false,
-  lyrics: [],        // [{time: seconds, text: string}]
+  lyrics: [],
   lyricsTimer: null,
 
   init() {
@@ -112,7 +112,7 @@ const player = {
     document.getElementById('songArtist').textContent = t.artist || '—';
     const img = document.getElementById('coverImg');
     if (t.cover_url) { img.src = t.cover_url; }
-    else { img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect fill="%231a1a1a" width="200" height="200"/><text x="100" y="115" text-anchor="middle" font-size="50" fill="%2300d95a">♪</text></svg>'; }
+    else { img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect fill="%231a1a1a" width="200" height="200"/><text x="100" y="115" text-anchor="middle" font-size="50" fill="%235a7c3e">♪</text></svg>'; }
   },
 
   tick() {
@@ -135,7 +135,6 @@ const player = {
     return m + ':' + String(sec).padStart(2, '0');
   },
 
-  /* ─── LRC Parser ──────────────────────────────────── */
   parseLyrics(lrcText) {
     this.lyrics = [];
     if (!lrcText || !lrcText.trim()) {
@@ -166,7 +165,7 @@ const player = {
       return;
     }
     el.innerHTML = this.lyrics.map((l, i) =>
-      `<div class="lyric-line" data-idx="${i}">${l.text}</div>`
+      '<div class="lyric-line" data-idx="' + i + '">' + l.text + '</div>'
     ).join('');
   },
 
@@ -201,19 +200,21 @@ const player = {
     }
   },
 
-  /* ─── Playlist UI ─────────────────────────────────── */
   renderPlaylist() {
     const el = document.getElementById('playlistItems');
     if (!el) return;
     el.innerHTML = '';
+    if (!this.playlist.length) {
+      el.innerHTML = '<div class="pl-item" style="opacity:.4;pointer-events:none"><div class="pl-idx">—</div><div class="pl-i"><div class="pl-t">暂无音乐</div><div class="pl-a">上传你的第一首歌吧</div></div><div class="pl-d">--:--</div></div>';
+      return;
+    }
     this.playlist.forEach((t, i) => {
       const div = document.createElement('div');
       div.className = 'pl-item' + (i === this.currentIndex ? ' active' : '');
-      div.innerHTML = `
-        <div class="pl-idx">${i === this.currentIndex && this.isPlaying ? '<i class="fas fa-play" style="font-size:10px"></i>' : (i + 1)}</div>
-        <div class="pl-i"><div class="pl-t">${t.title || '未知'}</div><div class="pl-a">${t.artist || '未知'}</div></div>
-        <div class="pl-d">${t.duration || '--:--'}</div>
-      `;
+      div.innerHTML =
+        '<div class="pl-idx">' + (i === this.currentIndex && this.isPlaying ? '<i class="fas fa-play" style="font-size:10px"></i>' : (i + 1)) + '</div>' +
+        '<div class="pl-i"><div class="pl-t">' + (t.title || '未知') + '</div><div class="pl-a">' + (t.artist || '未知') + '</div></div>' +
+        '<div class="pl-d">' + (t.duration || '--:--') + '</div>';
       div.onclick = () => this.play(i);
       el.appendChild(div);
     });

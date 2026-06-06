@@ -3,15 +3,15 @@ let editingPostId = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   await initAuth();
-  if (!currentUser || currentProfile?.role !== 'admin') {
-    document.getElementById('adminLoading').innerHTML = '<p style="color:#ff4444">⚠ 无管理员权限</p>';
+  if (!window._currentUser || window._currentProfile?.role !== 'admin') {
+    document.getElementById('adminLoading').innerHTML = '<p style="color:#ff4444">无管理员权限，正在跳转...</p>';
     setTimeout(() => { window.location.href = 'index.html'; }, 2000);
     return;
   }
   document.getElementById('adminApp').style.display = 'grid';
   document.getElementById('adminLoading').style.display = 'none';
   document.getElementById('adminAuthUI').innerHTML =
-    `<span class="user-badge"><span>${currentProfile.username}</span><button class="logout-btn" onclick="logoutUser()">退出</button></span>`;
+    '<span class="user-badge"><span>' + window._currentProfile.username + '</span><button class="logout-btn" onclick="logoutUser()">退出</button></span>';
 
   document.querySelectorAll('.admin-sidebar a').forEach(a => {
     a.addEventListener('click', (e) => {
@@ -40,11 +40,11 @@ async function loadAdminPosts() {
       tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state">暂无文章</div></td></tr>'; return;
     }
     tbody.innerHTML = data.map(p =>
-      `<tr><td style="font-weight:500;color:var(--text-bright)">${p.title}</td>
-      <td><span style="padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:600;background:${p.published ? 'var(--grn-dark)' : 'var(--blk-mid)'};color:#fff">${p.published ? '已发布' : '草稿'}</span></td>
-      <td>${p.created_at ? new Date(p.created_at).toLocaleDateString('zh-CN') : ''}</td>
-      <td><button class="btn btn-ghost btn-sm" onclick="editPost('${p.id}')">编辑</button>
-      <button class="btn btn-danger btn-sm" onclick="deletePost('${p.id}')">删除</button></td></tr>`
+      '<tr><td style="font-weight:500;color:var(--text-bright)">' + p.title + '</td>' +
+      '<td><span style="padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:600;background:' + (p.published ? 'var(--grn-dark)' : 'var(--blk-mid)') + ';color:#fff">' + (p.published ? '已发布' : '草稿') + '</span></td>' +
+      '<td>' + (p.created_at ? new Date(p.created_at).toLocaleDateString('zh-CN') : '') + '</td>' +
+      '<td><button class="btn btn-ghost btn-sm" onclick="editPost(\'' + p.id + '\')">编辑</button> ' +
+      '<button class="btn btn-danger btn-sm" onclick="deletePost(\'' + p.id + '\')">删除</button></td></tr>'
     ).join('');
   } catch {}
 }
@@ -79,7 +79,7 @@ async function savePost() {
   const excerpt = document.getElementById('postExcerpt').value.trim();
   const tags = document.getElementById('postTags').value.split(',').map(t => t.trim()).filter(Boolean);
   if (!title || !content) { alert('标题和内容不能为空'); return; }
-  const payload = { title, content, excerpt, tags, author_id: currentUser.id, published: true };
+  const payload = { title, content, excerpt, tags, author_id: window._currentUser.id, published: true };
   try {
     if (editingPostId) { await dbUpdate('posts', payload, 'id', editingPostId); }
     else { await dbInsert('posts', payload); }
@@ -102,9 +102,9 @@ async function loadAdminMusic() {
     const tbody = document.getElementById('musicBody');
     if (!data || !data.length) { tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state">暂无音乐</div></td></tr>'; return; }
     tbody.innerHTML = data.map(m =>
-      `<tr><td style="color:var(--text-bright)">${m.title}</td><td>${m.artist || '—'}</td>
-      <td>${m.created_at ? new Date(m.created_at).toLocaleDateString('zh-CN') : ''}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deleteMusic('${m.id}')">删除</button></td></tr>`
+      '<tr><td style="color:var(--text-bright)">' + m.title + '</td><td>' + (m.artist || '—') + '</td>' +
+      '<td>' + (m.created_at ? new Date(m.created_at).toLocaleDateString('zh-CN') : '') + '</td>' +
+      '<td><button class="btn btn-danger btn-sm" onclick="deleteMusic(\'' + m.id + '\')">删除</button></td></tr>'
     ).join('');
   } catch {}
 }
@@ -125,12 +125,12 @@ async function uploadMusic() {
   btn.disabled = true; btn.textContent = '上传中...';
   try {
     const ts = Date.now();
-    const audioUrl = await uploadFile('music', `${ts}_${audioFile.name}`, audioFile);
+    const audioUrl = await uploadFile('music', ts + '_' + audioFile.name, audioFile);
     let coverUrl = '';
-    if (coverFile) coverUrl = await uploadFile('covers', `${ts}_${coverFile.name}`, coverFile);
+    if (coverFile) coverUrl = await uploadFile('covers', ts + '_' + coverFile.name, coverFile);
     let lyrics = lyricsText;
     if (!lyrics && lyricsFile) lyrics = await lyricsFile.text();
-    await dbInsert('music', { title, artist: artist || '未知', duration, audio_url: audioUrl, cover_url: coverUrl, lyrics: lyrics || '', uploaded_by: currentUser.id });
+    await dbInsert('music', { title, artist: artist || '未知', duration, audio_url: audioUrl, cover_url: coverUrl, lyrics: lyrics || '', uploaded_by: window._currentUser.id });
     ['muTitle','muArtist','muDuration','muAudio','muCover','muLyrics','muLyricsText'].forEach(id => document.getElementById(id).value = '');
     cancelMusicUpload();
     await loadAdminMusic();
@@ -150,19 +150,19 @@ async function loadAdminComments() {
     const data = await dbSelect('comments', { order: { col: 'created_at', dir: 'desc' } });
     document.getElementById('dashComments').textContent = (data || []).length;
     const tbody = document.getElementById('commentsBody');
-    if (!data || !data.length) { tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state">暂无留言</div></td></tr>'; return; }
+    if (!data || !data.length) { tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">暂无留言</div></td></tr>'; return; }
     let html = '';
     for (const c of data) {
-      let username = '匿名', postTitle = '—';
+      let username = '匿名';
       try {
         const p = await dbSelect('profiles', { eq: { col: 'id', val: c.user_id }, single: true });
         if (p) username = p.username;
       } catch {}
-      html += `<tr><td style="color:var(--grn)">${username}</td>
-        <td>${(c.content || '').slice(0, 60)}</td>
-        <td style="color:var(--text-dim)">${postTitle}</td>
-        <td>${c.created_at ? new Date(c.created_at).toLocaleDateString('zh-CN') : ''}</td>
-        <td><button class="btn btn-danger btn-sm" onclick="deleteComment('${c.id}')">删除</button></td></tr>`;
+      html += '<tr><td style="color:var(--grn)">' + username + '</td>' +
+        '<td>' + (c.content || '').slice(0, 60) + '</td>' +
+        '<td style="color:var(--text-dim)">—</td>' +
+        '<td>' + (c.created_at ? new Date(c.created_at).toLocaleDateString('zh-CN') : '') + '</td>' +
+        '<td><button class="btn btn-danger btn-sm" onclick="deleteComment(\'' + c.id + '\')">删除</button></td></tr>';
     }
     tbody.innerHTML = html;
   } catch {}
