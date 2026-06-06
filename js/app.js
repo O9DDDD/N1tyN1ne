@@ -13,23 +13,65 @@ async function loadPosts() {
     let data = await dbSelect('posts', { eq: { col: 'published', val: 'true' }, order: { col: 'created_at', dir: 'desc' } });
     if (!data || !data.length) {
       grid.innerHTML =
-        '<div class="empty-state"><div class="empty-icon"><i class="fas fa-pen-to-square"></i></div><p>还没有文章</p><p class="empty-sub">登录后开始写作吧</p></div>';
+        '<div class="empty-state"><div class="empty-icon"><i class="fas fa-pen-to-square"></i></div><p>还没有文章</p><p class="empty-sub">登录后台开始写作吧</p></div>';
+      hideTagFilter();
       return;
     }
+    Blog._allPosts = data;
+    buildTagFilter(data);
     renderPosts(data);
+    // Observe new elements for scroll reveal
+    document.querySelectorAll('.blog-card.reveal').forEach(el => {
+      if (window._revealObs) window._revealObs.observe(el);
+    });
   } catch (e) {
     grid.innerHTML =
-      '<div class="empty-state"><div class="empty-icon"><i class="fas fa-pen-to-square"></i></div><p>还没有文章</p><p class="empty-sub">登录后开始写作吧</p></div>';
+      '<div class="empty-state"><div class="empty-icon"><i class="fas fa-pen-to-square"></i></div><p>还没有文章</p><p class="empty-sub">登录后台开始写作吧</p></div>';
+    hideTagFilter();
   }
+}
+
+function buildTagFilter(posts) {
+  const allTags = new Set();
+  posts.forEach(p => (p.tags || []).forEach(t => allTags.add(t)));
+  if (allTags.size <= 1) { hideTagFilter(); return; }
+
+  const filter = document.getElementById('tagFilter');
+  filter.style.display = 'flex';
+  // Keep the "全部" button
+  filter.querySelectorAll('.tf-btn:not([data-tag="*"])').forEach(b => b.remove());
+
+  [...allTags].sort().forEach(tag => {
+    const btn = document.createElement('button');
+    btn.className = 'tf-btn';
+    btn.dataset.tag = tag;
+    btn.textContent = tag;
+    btn.onclick = () => Blog.filterByTag(tag);
+    filter.appendChild(btn);
+  });
+
+  // Reset active state
+  filter.querySelector('.tf-btn[data-tag="*"]').classList.add('active');
+}
+
+function hideTagFilter() {
+  const filter = document.getElementById('tagFilter');
+  filter.style.display = 'none';
 }
 
 function renderPosts(posts) {
   const grid = document.getElementById('blogGrid');
   if (!grid) return;
   grid.innerHTML = '';
-  posts.forEach(p => {
+  if (!posts.length) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><p>没有匹配的文章</p></div>';
+    return;
+  }
+  posts.forEach((p, i) => {
     const card = document.createElement('div');
-    card.className = 'blog-card';
+    card.className = 'blog-card reveal';
+    card.style.transitionDelay = (i * 0.05) + 's';
+    card.dataset.tags = (p.tags || []).join(',');
     const tags = (p.tags || []).map(t => '<span class="tag">' + t + '</span>').join('');
     card.innerHTML =
       '<div class="meta"><span>' + (p.created_at ? new Date(p.created_at).toLocaleDateString('zh-CN') : '') + '</span>' + tags + '</div>' +
@@ -53,7 +95,10 @@ async function loadComments(postId) {
   }
   try {
     let data = await dbSelect('comments', { eq: { col: 'post_id', val: postId }, order: { col: 'created_at', dir: 'asc' } });
-    if (!data || !data.length) { list.innerHTML = '<p style="font-size:.82rem;color:var(--text-dim);text-align:center;padding:20px">暂无留言</p>'; return; }
+    if (!data || !data.length) {
+      list.innerHTML = '<p style="font-size:.82rem;color:var(--text-dim);text-align:center;padding:20px">暂无留言，来说点什么吧</p>';
+      return;
+    }
     let html = '';
     for (const c of data) {
       let username = '匿名';
@@ -72,6 +117,6 @@ async function loadMusic() {
   try {
     let data = await dbSelect('music', { order: { col: 'created_at', dir: 'desc' } });
     const tracks = (data || []).reverse();
-    if (tracks.length) { AudioPlayer.load(tracks); }
+    AudioPlayer.load(tracks);
   } catch {}
 }

@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>N1tyN1ne</title>
+  <title>N1tyN1ne · 代码·音乐·生活</title>
+  <meta name="description" content="N1tyN1ne 的个人博客——记录代码、音乐、思考与生活。">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="css/style.css">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>♪</text></svg>">
@@ -16,13 +17,14 @@
 <!-- ═══ Navigation ═══ -->
 <nav>
   <div class="container">
-    <span class="logo">N1tyN1ne</span>
+    <a href="#" class="logo" onclick="scrollToTop()">N1tyN1ne</a>
     <div class="nav-right">
       <span id="authUI"><button class="nav-btn" onclick="Auth.open()">登录</button></span>
       <button class="nav-toggle" onclick="UI.toggleNav()" aria-label="菜单"><i class="fas fa-bars"></i></button>
     </div>
     <div class="links" id="navLinks">
       <a href="#blog" onclick="UI.closeNav()">博客</a>
+      <a href="#about" onclick="UI.closeNav()">关于</a>
       <a href="#music" onclick="UI.closeNav()">音乐</a>
     </div>
   </div>
@@ -31,10 +33,12 @@
 <!-- ═══ Hero ═══ -->
 <section id="hero" class="block-green">
   <div class="container">
-    <h1>N1tyN1ne</h1>
-    <p>代码 · 音乐 · 思考 · 生活</p>
-    <div class="hero-btns">
+    <div class="hero-glow"></div>
+    <h1 class="reveal">N1tyN1ne</h1>
+    <p class="reveal">代码 &middot; 音乐 &middot; 思考 &middot; 生活</p>
+    <div class="hero-btns reveal">
       <a href="#blog" class="btn btn-primary">浏览博客</a>
+      <a href="#about" class="btn btn-outline">关于我</a>
       <a href="#music" class="btn btn-outline">听听音乐</a>
     </div>
   </div>
@@ -43,8 +47,13 @@
 <!-- ═══ Blog ═══ -->
 <section id="blog" class="block-black">
   <div class="container">
-    <h2 class="section-title">博客</h2>
-    <p class="section-subtitle">记录思考，分享见闻</p>
+    <h2 class="section-title reveal">博客</h2>
+    <p class="section-subtitle reveal">记录思考，分享见闻</p>
+
+    <!-- Tag filter -->
+    <div class="tag-filter reveal" id="tagFilter" style="display:none">
+      <button class="tf-btn active" data-tag="*">全部</button>
+    </div>
 
     <div id="postList" class="post-list open">
       <div class="blog-grid" id="blogGrid">
@@ -55,7 +64,7 @@
     </div>
 
     <div id="postDetail" class="post-detail">
-      <div class="back" onclick="Blog.close()"><i class="fas fa-arrow-left"></i> 返回</div>
+      <div class="back" onclick="Blog.close()"><i class="fas fa-arrow-left"></i> 返回列表</div>
       <h1 id="pdTitle"></h1>
       <div class="pd-meta" id="pdMeta"></div>
       <div class="body" id="pdBody"></div>
@@ -69,13 +78,45 @@
   </div>
 </section>
 
-<!-- ═══ Music ═══ -->
-<section id="music" class="block-green">
+<!-- ═══ About ═══ -->
+<section id="about" class="block-green">
   <div class="container">
-    <h2 class="section-title">音乐</h2>
-    <p class="section-subtitle">听歌是灵魂的深呼吸</p>
+    <h2 class="section-title reveal">关于</h2>
+    <p class="section-subtitle reveal">Who am I</p>
 
-    <div class="player-section">
+    <div class="about-grid reveal">
+      <div class="about-card">
+        <div class="about-icon"><i class="fas fa-code"></i></div>
+        <h3>代码</h3>
+        <p>热爱编程，享受创造的乐趣。关注前端技术、工具开发和开源社区。</p>
+      </div>
+      <div class="about-card">
+        <div class="about-icon"><i class="fas fa-music"></i></div>
+        <h3>音乐</h3>
+        <p>音乐是灵魂的深呼吸。喜欢电子、后摇、独立音乐，偶尔自己也做点东西。</p>
+      </div>
+      <div class="about-card">
+        <div class="about-icon"><i class="fas fa-pen-to-square"></i></div>
+        <h3>写作</h3>
+        <p>用文字记录思考。写技术文章，也写生活随笔。分享让知识更有价值。</p>
+      </div>
+    </div>
+
+    <div class="social-links reveal">
+      <a href="https://github.com/O9DDDD" target="_blank" rel="noopener" title="GitHub"><i class="fab fa-github"></i></a>
+      <a href="mailto:n1tyn1ne@qq.com" title="Email"><i class="fas fa-envelope"></i></a>
+      <a href="#" id="rssLink" title="RSS 订阅"><i class="fas fa-rss"></i></a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Music ═══ -->
+<section id="music" class="block-black">
+  <div class="container">
+    <h2 class="section-title reveal">音乐</h2>
+    <p class="section-subtitle reveal">听歌是灵魂的深呼吸</p>
+
+    <div class="player-section reveal">
       <div class="player-cover" id="playerCover">
         <img id="coverImg" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><rect fill='%231a1a1a' width='200' height='200'/><text x='100' y='115' text-anchor='middle' font-size='50' fill='%235a7c3e'>♪</text></svg>" alt="cover">
       </div>
@@ -84,11 +125,11 @@
         <div class="pi-artist" id="songArtist">—</div>
 
         <div class="controls">
-          <button onclick="AudioPlayer.prev()"><i class="fas fa-step-backward"></i></button>
-          <button class="play-btn" onclick="AudioPlayer.toggle()" id="playBtn"><i class="fas fa-play"></i></button>
-          <button onclick="AudioPlayer.next()"><i class="fas fa-step-forward"></i></button>
-          <button onclick="AudioPlayer.toggleShuffle()" id="shuffleBtn"><i class="fas fa-random"></i></button>
-          <button onclick="AudioPlayer.toggleRepeat()" id="repeatBtn"><i class="fas fa-repeat"></i></button>
+          <button onclick="AudioPlayer.prev()" title="上一首"><i class="fas fa-step-backward"></i></button>
+          <button class="play-btn" onclick="AudioPlayer.toggle()" id="playBtn" title="播放/暂停"><i class="fas fa-play"></i></button>
+          <button onclick="AudioPlayer.next()" title="下一首"><i class="fas fa-step-forward"></i></button>
+          <button onclick="AudioPlayer.toggleShuffle()" id="shuffleBtn" title="随机"><i class="fas fa-random"></i></button>
+          <button onclick="AudioPlayer.toggleRepeat()" id="repeatBtn" title="循环"><i class="fas fa-repeat"></i></button>
         </div>
 
         <div class="progress">
@@ -126,7 +167,9 @@
 
 <!-- ═══ Footer ═══ -->
 <footer>
-  &copy; 2026 N1tyN1ne · Built with <span style="color:var(--grn)">♥</span>
+  <div class="container">
+    <p>&copy; 2026 N1tyN1ne &middot; Built with <span style="color:var(--grn)">♥</span></p>
+  </div>
 </footer>
 
 <!-- ═══ Auth Modal ═══ -->
@@ -164,6 +207,27 @@ const UI = {
     setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 3000);
   }
 };
+
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ─── Scroll Reveal ───────────────────────────────────
+(function() {
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        obs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+  });
+  // Also observe dynamically added elements
+  window._revealObs = obs;
+})();
 
 // ─── Auth Modal (no dependencies) ────────────────────
 const Auth = {
@@ -241,6 +305,7 @@ document.getElementById('authModal').addEventListener('click', function(e) {
 // ─── Blog View ────────────────────────────────────────
 const Blog = {
   _current: null,
+  _allPosts: [],
 
   close() {
     this._current = null;
@@ -253,8 +318,7 @@ const Blog = {
     document.getElementById('postList').classList.remove('open');
     document.getElementById('postDetail').classList.add('open');
     document.getElementById('pdTitle').textContent = post.title;
-    document.getElementById('pdMeta').textContent = post.created_at
-      ? new Date(post.created_at).toLocaleDateString('zh-CN') : '';
+    document.getElementById('pdMeta').textContent = Blog.buildMeta(post);
     const body = document.getElementById('pdBody');
     if (typeof marked !== 'undefined') {
       body.innerHTML = marked.parse(post.content || '');
@@ -264,6 +328,35 @@ const Blog = {
     }
     document.getElementById('hero').scrollIntoView({ behavior: 'smooth' });
     if (typeof loadComments === 'function') loadComments(post.id);
+  },
+
+  buildMeta(post) {
+    let parts = [];
+    if (post.created_at) parts.push(new Date(post.created_at).toLocaleDateString('zh-CN'));
+    parts.push('阅读约 ' + Blog.readingTime(post.content) + ' 分钟');
+    return parts.join(' · ');
+  },
+
+  readingTime(text) {
+    if (!text) return 1;
+    const words = text.replace(/[#*`\[\]()>\-_\n]/g, ' ').split(/\s+/).filter(Boolean).length;
+    return Math.max(1, Math.ceil(words / 300));
+  },
+
+  filterByTag(tag) {
+    const cards = document.querySelectorAll('.blog-card:not(.skeleton)');
+    document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.querySelector('.tf-btn[data-tag="' + tag + '"]');
+    if (btn) btn.classList.add('active');
+
+    if (tag === '*') {
+      cards.forEach(c => c.style.display = '');
+      return;
+    }
+    cards.forEach(c => {
+      const tags = c.dataset.tags || '';
+      c.style.display = tags.split(',').includes(tag) ? '' : 'none';
+    });
   },
 
   async submitComment() {
