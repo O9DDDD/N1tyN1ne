@@ -3,9 +3,9 @@ let currentUser = null;
 let currentProfile = null;
 
 async function initAuth() {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session) {
-    currentUser = session.user;
+  const sess = getSession();
+  if (sess && sess.user) {
+    currentUser = sess.user;
     await loadProfile();
   }
   renderAuthUI();
@@ -13,36 +13,34 @@ async function initAuth() {
 
 async function loadProfile() {
   if (!currentUser) return;
-  const { data } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
-  currentProfile = data;
-  // If no profile yet, create one
-  if (!data) {
-    const username = currentUser.email?.split('@')[0] || 'user_' + currentUser.id.slice(0, 6);
-    await supabase.from('profiles').insert({ id: currentUser.id, username, role: 'user' });
-    const { data: newProfile } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
-    currentProfile = newProfile;
-  }
+  try {
+    currentProfile = await dbSelect('profiles', { eq: { col: 'id', val: currentUser.id }, single: true });
+    if (!currentProfile) {
+      const username = currentUser.email?.split('@')[0] || 'user_' + currentUser.id.slice(0, 6);
+      await dbInsert('profiles', { id: currentUser.id, username, role: 'user' });
+      currentProfile = await dbSelect('profiles', { eq: { col: 'id', val: currentUser.id }, single: true });
+    }
+  } catch { /* retry on next action */ }
 }
 
 async function register(email, password, username) {
-  const { data, error } = await supabase.auth.signUp({ email, password });
-  if (error) throw error;
-  if (data.user) {
-    await supabase.from('profiles').insert({ id: data.user.id, username, role: 'user' });
+  const data = await signUp(email, password);
+  if (data.id) {
+    try { await dbInsert('profiles', { id: data.id, username, role: 'user' }); } catch {}
   }
   return data;
 }
 
-async function login(email, password) {
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) throw error;
+async function loginUser(email, password) {
+  const data = await signIn(email, password);
   currentUser = data.user;
   await loadProfile();
+  renderAuthUI();
   return data;
 }
 
-async function logout() {
-  await supabase.auth.signOut();
+async function logoutUser() {
+  await signOut();
   currentUser = null;
   currentProfile = null;
   renderAuthUI();
@@ -58,7 +56,7 @@ function renderAuthUI() {
       <span class="user-badge">
         <span>${currentProfile.username}</span>
         ${isAdmin ? '<a href="admin.html" style="font-size:.72rem;color:var(--grn)">[管理]</a>' : ''}
-        <button class="logout-btn" onclick="logout()">退出</button>
+        <button class="logout-btn" onclick="logoutUser()">退出</button>
       </span>
     `;
   } else {
@@ -66,5 +64,4 @@ function renderAuthUI() {
   }
 }
 
-// Callback for admin pages
 let onLogout = null;
