@@ -95,18 +95,49 @@ async function deletePost(id) {
 }
 
 /* ─── Music List ──────────────────────────────────── */
+let editingMusicId = null;
+
 async function loadAdminMusic() {
   try {
     const data = await dbSelect('music', { order: { col: 'created_at', dir: 'desc' } });
     document.getElementById('dashMusic').textContent = (data || []).length;
     const tbody = document.getElementById('musicBody');
     if (!data || !data.length) { tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state">暂无音乐</div></td></tr>'; return; }
-    tbody.innerHTML = data.map(m =>
-      '<tr><td style="color:var(--text-bright)">' + m.title + '</td><td>' + (m.artist || '—') + '</td>' +
-      '<td>' + (m.created_at ? new Date(m.created_at).toLocaleDateString('zh-CN') : '') + '</td>' +
-      '<td><button class="btn btn-danger btn-sm" onclick="deleteMusic(\'' + m.id + '\')">删除</button></td></tr>'
-    ).join('');
+    tbody.innerHTML = data.map(function(m) {
+      if (editingMusicId === m.id) {
+        return '<tr><td><input id="emTitle" value="' + escHtml(m.title) + '" style="width:100%;padding:4px 6px;background:var(--blk-mid);border:1px solid var(--border);color:var(--text-bright);font-size:.82rem;border-radius:4px"></td>' +
+          '<td><input id="emArtist" value="' + escHtml(m.artist || '') + '" style="width:100%;padding:4px 6px;background:var(--blk-mid);border:1px solid var(--border);color:var(--text-bright);font-size:.82rem;border-radius:4px"></td>' +
+          '<td>' + (m.created_at ? new Date(m.created_at).toLocaleDateString('zh-CN') : '') + '</td>' +
+          '<td><button class="btn btn-primary btn-sm" onclick="saveMusicEdit(\'' + m.id + '\')" style="background:var(--grn-dark);color:#fff">保存</button> ' +
+          '<button class="btn btn-ghost btn-sm" onclick="cancelMusicEdit()">取消</button></td></tr>';
+      }
+      return '<tr><td style="color:var(--text-bright)">' + m.title + '</td><td>' + (m.artist || '—') + '</td>' +
+        '<td>' + (m.created_at ? new Date(m.created_at).toLocaleDateString('zh-CN') : '') + '</td>' +
+        '<td><button class="btn btn-ghost btn-sm" onclick="editMusic(\'' + m.id + '\')">编辑</button> ' +
+        '<button class="btn btn-danger btn-sm" onclick="deleteMusic(\'' + m.id + '\')">删除</button></td></tr>';
+    }).join('');
   } catch {}
+}
+
+function editMusic(id) {
+  editingMusicId = id;
+  loadAdminMusic();
+}
+
+function cancelMusicEdit() {
+  editingMusicId = null;
+  loadAdminMusic();
+}
+
+async function saveMusicEdit(id) {
+  var title = document.getElementById('emTitle').value.trim();
+  var artist = document.getElementById('emArtist').value.trim();
+  if (!title) { alert('歌名不能为空'); return; }
+  try {
+    await dbUpdate('music', { title: title, artist: artist }, 'id', id);
+    editingMusicId = null;
+    await loadAdminMusic();
+  } catch(e) { alert('保存失败: ' + e.message); }
 }
 
 async function deleteMusic(id) {
