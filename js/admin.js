@@ -299,8 +299,11 @@ async function uploadAll() {
     renderQueue();
     try {
       var ts = Date.now();
-      var ext = entry.file.name.split('.').pop();
-      var safeName = (entry.title || 'unknown').replace(/[^a-zA-Z0-9一-鿿_-]/g, '_');
+      var ext = entry.file.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (!ext) ext = 'mp3';
+      // 只保留 ASCII 安全字符，中文等全删掉
+      var safeName = (entry.title || 'audio').replace(/[^a-zA-Z0-9_-]/g, '');
+      if (!safeName) safeName = 'audio';
       var audioPath = ts + '_' + safeName + '.' + ext;
 
       // Upload audio with progress (0-80%)
