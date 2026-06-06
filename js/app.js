@@ -22,7 +22,7 @@ class Particle {
     this.speedX = (Math.random() - 0.5) * 0.3;
     this.speedY = (Math.random() - 0.5) * 0.3;
     this.opacity = Math.random() * 0.5 + 0.1;
-    this.hue = Math.random() * 60 + 240; // blue-purple range
+    this.hue = Math.random() * 60 + 100; // green range
   }
   update() {
     this.x += this.speedX;
@@ -67,7 +67,7 @@ function animateParticles() {
         ctx.beginPath();
         ctx.moveTo(particles[i].x, particles[i].y);
         ctx.lineTo(particles[j].x, particles[j].y);
-        ctx.strokeStyle = `hsla(260, 40%, 60%, ${(1 - dist / 150) * 0.12})`;
+        ctx.strokeStyle = `hsla(130, 40%, 50%, ${(1 - dist / 150) * 0.12})`;
         ctx.lineWidth = 0.5;
         ctx.stroke();
       }
@@ -105,7 +105,7 @@ uploadArea.addEventListener('click', () => fileInput.click());
 uploadArea.addEventListener('dragover', (e) => {
   e.preventDefault();
   uploadArea.style.borderColor = 'var(--accent)';
-  uploadArea.style.background = 'rgba(160,120,255,.08)';
+  uploadArea.style.background = 'rgba(34,197,94,.06)';
 });
 uploadArea.addEventListener('dragleave', () => {
   uploadArea.style.borderColor = '';
