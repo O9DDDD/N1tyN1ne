@@ -83,12 +83,18 @@ canvas.addEventListener('mousemove', (e) => {
 });
 canvas.addEventListener('mouseleave', () => { mouse.x = -999; mouse.y = -999; });
 
+/* ─── Theme Toggle ──────────────────────────────────── */
+function toggleTheme() {
+  const html = document.documentElement;
+  const isLight = html.getAttribute('data-theme') === 'light';
+  html.setAttribute('data-theme', isLight ? '' : 'light');
+  localStorage.setItem('theme', isLight ? 'dark' : 'light');
+}
+
 /* ─── Nav scroll effect ─────────────────────────────── */
 const nav = document.getElementById('navbar');
 window.addEventListener('scroll', () => {
-  nav.style.background = window.scrollY > 60
-    ? 'rgba(10,10,15,.85)'
-    : 'rgba(10,10,15,.6)';
+  nav.classList.toggle('scrolled', window.scrollY > 60);
 });
 
 /* ─── File Upload ───────────────────────────────────── */
@@ -133,6 +139,12 @@ function handleFiles(files) {
   if (tracks.length === 0) return;
   player.addTracks(tracks);
   if (player.currentIndex === -1) player.play(0);
+}
+
+/* ─── Restore theme ─────────────────────────────────── */
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme === 'light') {
+  document.documentElement.setAttribute('data-theme', 'light');
 }
 
 /* ─── Initialize ────────────────────────────────────── */
