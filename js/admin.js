@@ -208,36 +208,137 @@ async function addFiles(files) {
   }
 }
 
+// 从文件名猜测 "Artist - Title" 或 "Title"
+function guessFromFilename(name) {
+  var noExt = name.replace(/\.[^.]+$/, '');
+  // "Artist - Title" 或 "Artist — Title"
+  var m = noExt.match(/^(.+?)\s+[-—]\s+(.+)$/);
+  if (m) return { artist: m[1].trim(), title: m[2].trim() };
+  // "Title (feat. Artist)" or "Title feat Artist"
+  m = noExt.match(/^(.+?)\s+\(feat\.?\s+(.+?)\)$/i);
+  if (m) return { artist: m[2].trim(), title: m[1].trim() };
+  // Just use the filename as title
+  return { artist: '', title: noExt.trim() || name };
+}
+
+// 读取 WAV RIFF INFO 元数据
+function readWavRiff(file) {
+  return new Promise(function(resolve) {
+    var reader = new FileReader();
+    reader.onload = function() {
+      var view = new DataView(reader.result);
+      var result = { title: '', artist: '' };
+      try {
+        if (view.byteLength < 44) { resolve(result); return; }
+        if (view.getUint32(0, false) !== 0x52494646) { resolve(result); return; } // 'RIFF'
+        var pos = 12;
+        while (pos < view.byteLength - 8) {
+          var id = String.fromCharCode(
+            view.getUint8(pos), view.getUint8(pos+1),
+            view.getUint8(pos+2), view.getUint8(pos+3)
+          );
+          var size = view.getUint32(pos+4, true);
+          if (id === 'LIST' && pos + 12 <= view.byteLength) {
+            var listHdr = String.fromCharCode(
+              view.getUint8(pos+8), view.getUint8(pos+9),
+              view.getUint8(pos+10), view.getUint8(pos+11)
+            );
+            if (listHdr === 'INFO') {
+              var sub = pos + 12;
+              var end = pos + 8 + size;
+              while (sub + 8 <= end && sub + 8 <= view.byteLength) {
+                var sId = String.fromCharCode(
+                  view.getUint8(sub), view.getUint8(sub+1),
+                  view.getUint8(sub+2), view.getUint8(sub+3)
+                );
+                var sSize = view.getUint32(sub+4, true);
+                var sData = '';
+                var dataStart = sub + 8;
+                var dataEnd = Math.min(dataStart + sSize - 1, view.byteLength);
+                if (dataEnd > dataStart) {
+                  for (var j = dataStart; j < dataEnd; j++) {
+                    var c = view.getUint8(j);
+                    if (c === 0) break;
+                    if (c < 128) sData += String.fromCharCode(c);
+                  }
+                }
+                if (sId === 'INAM') result.title = sData.trim();
+                if (sId === 'IART') result.artist = sData.trim();
+                sub += 8 + (sSize % 2 === 1 ? sSize + 1 : sSize);
+              }
+            }
+          }
+          pos += 8 + (size % 2 === 1 ? size + 1 : size);
+        }
+      } catch(e) {}
+      resolve(result);
+    };
+    reader.onerror = function() { resolve({ title: '', artist: '' }); };
+    reader.readAsArrayBuffer(file.slice(0, 131072));
+  });
+}
+
 function extractMetadata(entry) {
   return new Promise(function(resolve) {
-    if (typeof jsmediatags === 'undefined') { resolve(); return; }
-    try {
-      jsmediatags.read(entry.file, {
-        onSuccess: function(tag) {
-          var t = tag.tags;
-          if (t.title && t.title.trim()) entry.title = t.title.trim();
-          if (t.artist && t.artist.trim()) entry.artist = t.artist.trim();
-          if (t.picture) {
-            try {
-              var bytes;
-              if (t.picture.data instanceof Uint8Array) bytes = t.picture.data;
-              else if (t.picture.data instanceof ArrayBuffer) bytes = new Uint8Array(t.picture.data);
-              else bytes = new Uint8Array(t.picture.data);
-              var blob = new Blob([bytes], { type: t.picture.format || 'image/jpeg' });
-              entry.coverBlob = blob;
-              entry.coverUrl = URL.createObjectURL(blob);
-            } catch(e) {}
-          }
-          if (t.lyrics && t.lyrics.lyrics && t.lyrics.lyrics.trim()) {
-            entry.lyrics = t.lyrics.lyrics.trim();
-            entry.lyricsSource = 'id3';
-          }
-          renderQueue();
-          resolve();
-        },
-        onError: function() { resolve(); }
-      });
-    } catch(e) { resolve(); }
+    var tried = false;
+
+    function done() {
+      renderQueue();
+      if (tried) return;
+      tried = true;
+      // 兜底：从文件名猜
+      if (entry.artist === '未知' || !entry.artist) {
+        var g = guessFromFilename(entry.file.name);
+        if (g.artist) entry.artist = g.artist;
+        if (g.title && entry.title === entry.file.name.replace(/\.[^.]+$/, '')) {
+          entry.title = g.title;
+        }
+      }
+      renderQueue();
+      resolve();
+    }
+
+    // 1. 先试 jsmediatags（MP3/FLAC/M4A 等 ID3 标签）
+    if (typeof jsmediatags !== 'undefined') {
+      try {
+        jsmediatags.read(entry.file, {
+          onSuccess: function(tag) {
+            var t = tag.tags;
+            if (t.title && t.title.trim()) entry.title = t.title.trim();
+            if (t.artist && t.artist.trim()) entry.artist = t.artist.trim();
+            if (t.picture) {
+              try {
+                var bytes;
+                if (t.picture.data instanceof Uint8Array) bytes = t.picture.data;
+                else if (t.picture.data instanceof ArrayBuffer) bytes = new Uint8Array(t.picture.data);
+                else bytes = new Uint8Array(t.picture.data);
+                var blob = new Blob([bytes], { type: t.picture.format || 'image/jpeg' });
+                entry.coverBlob = blob;
+                entry.coverUrl = URL.createObjectURL(blob);
+              } catch(e) {}
+            }
+            if (t.lyrics && t.lyrics.lyrics && t.lyrics.lyrics.trim()) {
+              entry.lyrics = t.lyrics.lyrics.trim();
+              entry.lyricsSource = 'id3';
+            }
+            done();
+          },
+          onError: function() { done(); }
+        });
+      } catch(e) { done(); }
+    } else {
+      // 2. jsmediatags 没加载 → WAV 文件试 RIFF INFO
+      var ext = entry.file.name.split('.').pop().toLowerCase();
+      if (ext === 'wav' || ext === 'wave') {
+        readWavRiff(entry.file).then(function(info) {
+          if (info.title) entry.title = info.title;
+          if (info.artist) entry.artist = info.artist;
+          done();
+        });
+      } else {
+        done();
+      }
+    }
   });
 }
 

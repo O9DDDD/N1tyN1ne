@@ -139,7 +139,26 @@ function closeNav() { document.getElementById('navLinks').classList.remove('open
 </script>
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.7/jsmediatags.min.js"></script>
+<script>
+// jsmediatags 多重 CDN 加载（中国网络兼容）
+(function() {
+  var urls = [
+    'https://cdn.jsdelivr.net/npm/jsmediatags@3.9.7/dist/jsmediatags.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.7/jsmediatags.min.js',
+    'https://unpkg.com/jsmediatags@3.9.7/dist/jsmediatags.min.js'
+  ];
+  var loaded = false;
+  function tryLoad(i) {
+    if (i >= urls.length) return;
+    var s = document.createElement('script');
+    s.src = urls[i];
+    s.onload = function() { loaded = true; };
+    s.onerror = function() { if (!loaded) tryLoad(i + 1); };
+    document.head.appendChild(s);
+  }
+  tryLoad(0);
+})();
+</script>
 <script src="js/admin.js"></script>
 </body>
 </html>
