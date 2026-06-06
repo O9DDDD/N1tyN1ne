@@ -58,7 +58,3 @@ CREATE POLICY "Auth users delete music"
 SELECT id, name, public, file_size_limit
 FROM storage.buckets
 WHERE id IN ('music', 'covers');
-
-SELECT policyname, operation, bucket_id
-FROM storage.policies
-WHERE bucket_id IN ('music', 'covers');
