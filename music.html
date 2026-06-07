@@ -602,6 +602,14 @@ const MusicApp = {
       if (!this.genreIndex[genre]) this.genreIndex[genre] = [];
       this.genreIndex[genre].push(t);
     }
+    // Sort album tracks by track_number
+    for (var albumName in this.albumIndex) {
+      this.albumIndex[albumName].tracks.sort(function(a, b) {
+        var an = a.track_number || 9999;
+        var bn = b.track_number || 9999;
+        return an - bn;
+      });
+    }
   },
 
   /* ─── Routing ──────────────────────────────────── */

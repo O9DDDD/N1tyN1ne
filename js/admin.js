@@ -114,7 +114,7 @@ async function loadAdminMusic() {
     var data = await dbSelect('music', { order: { col: 'created_at', dir: 'desc' } });
     document.getElementById('dashMusic').textContent = (data || []).length;
     var tbody = document.getElementById('musicBody');
-    if (!data || !data.length) { tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">暂无音乐</div></td></tr>'; return; }
+    if (!data || !data.length) { tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state">暂无音乐</div></td></tr>'; return; }
     tbody.innerHTML = data.map(function(m) {
       if (editingMusicId === m.id) {
         return '<tr>' +
@@ -123,6 +123,7 @@ async function loadAdminMusic() {
           '<td><input id="emArtist" value="' + escHtml(m.artist || '') + '" style="width:100%;padding:4px 6px;background:var(--blk-mid);border:1px solid var(--border);color:var(--text-bright);font-size:.82rem;border-radius:4px"></td>' +
           '<td><input id="emAlbum" value="' + escHtml(m.album || '') + '" placeholder="专辑" style="width:100%;padding:4px 6px;background:var(--blk-mid);border:1px solid var(--border);color:var(--text-bright);font-size:.82rem;border-radius:4px"></td>' +
           '<td><input id="emGenre" value="' + escHtml(m.genre || '') + '" placeholder="风格" style="width:100%;padding:4px 6px;background:var(--blk-mid);border:1px solid var(--border);color:var(--text-bright);font-size:.82rem;border-radius:4px"></td>' +
+          '<td><input id="emTrack" value="' + (m.track_number || '') + '" placeholder="音轨号" type="number" min="1" style="width:60px;padding:4px 6px;background:var(--blk-mid);border:1px solid var(--border);color:var(--text-bright);font-size:.82rem;border-radius:4px"></td>' +
           '<td>' + (m.created_at ? new Date(m.created_at).toLocaleDateString('zh-CN') : '') + '</td>' +
           '<td><button class="btn btn-primary btn-sm" onclick="saveMusicEdit(\'' + m.id + '\')" style="background:var(--grn-dark);color:#fff">保存</button> ' +
           '<button class="btn btn-ghost btn-sm" onclick="cancelMusicEdit()">取消</button><br>' +
@@ -132,8 +133,10 @@ async function loadAdminMusic() {
         '<td>' + coverThumb(m.cover_url) + '</td>' +
         '<td style="color:var(--text-bright)">' + m.title + '</td><td>' + (m.artist || '—') + '</td>' +
         '<td>' + (m.album || '—') + '</td><td>' + (m.genre || '—') + '</td>' +
+        '<td style="font-size:.78rem;color:var(--text-dim)">' + (m.track_number ? '#' + m.track_number : '—') + '</td>' +
         '<td>' + (m.created_at ? new Date(m.created_at).toLocaleDateString('zh-CN') : '') + '</td>' +
         '<td><button class="btn btn-ghost btn-sm" onclick="editMusic(\'' + m.id + '\')">编辑</button> ' +
+        '<button class="btn btn-ghost btn-sm" onclick="reExtractMeta(\'' + m.id + '\')" title="从音频文件重新读取元数据"><i class="fas fa-rotate"></i></button> ' +
         '<button class="btn btn-danger btn-sm" onclick="deleteMusic(\'' + m.id + '\')">删除</button></td></tr>';
     }).join('');
   } catch {}
@@ -163,12 +166,53 @@ async function saveMusicEdit(id) {
     }
     var album = document.getElementById('emAlbum').value.trim();
     var genre = document.getElementById('emGenre').value.trim();
-    var payload = { title: title, artist: artist, album: album, genre: genre };
+    var trackNumber = parseInt(document.getElementById('emTrack').value) || null;
+    var payload = { title: title, artist: artist, album: album, genre: genre, track_number: trackNumber };
     if (coverUrl) payload.cover_url = coverUrl;
     await dbUpdate('music', payload, 'id', id);
     editingMusicId = null;
     await loadAdminMusic();
   } catch(e) { alert('保存失败: ' + e.message); }
+}
+
+async function reExtractMeta(id) {
+  if (typeof jsmediatags === 'undefined') { alert('元数据读取库未加载，请刷新页面后重试'); return; }
+  try {
+    var data = await dbSelect('music', { eq: { col: 'id', val: id }, single: true });
+    if (!data || !data.audio_url) { alert('未找到该音乐记录'); return; }
+    var btn = event.target.closest('button');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    // Fetch audio file as blob
+    var resp = await fetch(https(data.audio_url));
+    if (!resp.ok) throw new Error('下载文件失败');
+    var blob = await resp.blob();
+    // Read metadata
+    var meta = await new Promise(function(resolve) {
+      jsmediatags.read(blob, {
+        onSuccess: function(tag) { resolve(tag.tags); },
+        onError: function() { resolve(null); }
+      });
+    });
+    if (!meta) { alert('无法读取该文件的元数据'); if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-rotate"></i>'; } return; }
+    // Build update payload
+    var payload = {};
+    if (meta.title && meta.title.trim()) payload.title = meta.title.trim();
+    if (meta.artist && meta.artist.trim()) payload.artist = meta.artist.trim();
+    if (meta.album && meta.album.trim()) payload.album = meta.album.trim();
+    if (meta.genre && meta.genre.trim()) payload.genre = meta.genre.trim();
+    if (meta.track) {
+      var tn = typeof meta.track === 'object' ? parseInt(meta.track.no) : parseInt(meta.track);
+      if (!isNaN(tn)) payload.track_number = tn;
+    }
+    if (Object.keys(payload).length === 0) { alert('文件中未找到可提取的元数据'); if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-rotate"></i>'; } return; }
+    await dbUpdate('music', payload, 'id', id);
+    await loadAdminMusic();
+    showToast('已更新: ' + Object.keys(payload).map(function(k) { return {title:'标题',artist:'艺术家',album:'专辑',genre:'风格',track_number:'音轨号'}[k] || k; }).join('、'));
+  } catch(e) {
+    alert('重新提取失败: ' + (e.message || '未知错误'));
+    var btn = event.target.closest('button');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-rotate"></i>'; }
+  }
 }
 
 async function deleteMusic(id) {
@@ -291,6 +335,7 @@ async function addFiles(files) {
       album: '',
       genre: '',
       album_description: '',
+      trackNumber: null,
       coverBlob: null,
       coverUrl: '',
       lyrics: '',
@@ -416,6 +461,10 @@ function extractMetadata(entry) {
             if (t.artist && t.artist.trim()) entry.artist = t.artist.trim();
             if (t.album && t.album.trim()) entry.album = t.album.trim();
             if (t.genre && t.genre.trim()) entry.genre = t.genre.trim();
+            if (t.track) {
+              var tn = typeof t.track === 'object' ? parseInt(t.track.no) : parseInt(t.track);
+              if (!isNaN(tn)) entry.trackNumber = tn;
+            }
             if (t.picture) {
               try {
                 var bytes;
@@ -490,6 +539,14 @@ function renderQueue() {
   }).join('');
 }
 
+function showToast(msg) {
+  var t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:999;background:#1a1a1a;color:#f0ede4;padding:10px 18px;border-radius:10px;font-size:.78rem;font-family:var(--font);border:1px solid rgba(255,255,255,.1);animation:toastIn .35s cubic-bezier(.34,1.56,.64,1)';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function() { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; setTimeout(function() { t.remove(); }, 300); }, 2500);
+}
+
 var _escDiv;
 function escHtml(str) {
   if (!_escDiv) _escDiv = document.createElement('div');
@@ -560,6 +617,7 @@ async function uploadAll() {
         album: entry.album || '',
         genre: entry.genre || '',
         album_description: entry.album_description || '',
+        track_number: entry.trackNumber,
         duration: '',
         audio_url: audioUrl,
         cover_url: coverUrl,
