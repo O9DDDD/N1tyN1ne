@@ -909,7 +909,7 @@ footer {
   .comment-input { flex-direction: column; }
   .comment-input .btn { width: 100%; justify-content: center; }
 
-  .float-player { bottom: 72px; }
+  .float-player { bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
 
   .admin-content { padding: 20px 16px; }
 }

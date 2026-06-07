@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
   <title>N1tyN1ne · 管理</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="css/style.css">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>⚙</text></svg>">
 </head>
@@ -210,23 +210,11 @@
 <script src="js/player.js"></script>
 <script src="js/github-storage.js"></script>
 <script>
-// jsmediatags 多重 CDN 加载（中国网络兼容）
+// jsmediatags (jsDelivr CDN, 国内访问友好)
 (function() {
-  var urls = [
-    'https://cdn.jsdelivr.net/npm/jsmediatags@3.9.7/dist/jsmediatags.min.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.7/jsmediatags.min.js',
-    'https://unpkg.com/jsmediatags@3.9.7/dist/jsmediatags.min.js'
-  ];
-  var loaded = false;
-  function tryLoad(i) {
-    if (i >= urls.length) return;
-    var s = document.createElement('script');
-    s.src = urls[i];
-    s.onload = function() { loaded = true; };
-    s.onerror = function() { if (!loaded) tryLoad(i + 1); };
-    document.head.appendChild(s);
-  }
-  tryLoad(0);
+  var s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/jsmediatags@3.9.7/dist/jsmediatags.min.js';
+  document.head.appendChild(s);
 })();
 </script>
 <script src="js/admin.js?v=4"></script>
