@@ -215,9 +215,7 @@
     }
     .player-view.open{
       display:grid;
-      animation:playerFadeIn .35s var(--ease-out);
     }
-    @keyframes playerFadeIn { from { opacity:0; } to { opacity:1; } }
     .player-nav{
       grid-area:nav;display:flex;align-items:center;justify-content:space-between;
       padding:0 24px;background:rgba(15,15,15,.9);border-bottom:1px solid rgba(255,255,255,.08);
@@ -409,6 +407,112 @@
     }
     .float-player.show{transform:translateY(0);opacity:1}
     .float-player:not(.show){transform:translateY(16px);opacity:0;pointer-events:none}
+
+    /* ─── Dark Mode ──────────────────────────────── */
+    [data-theme="dark"] .browse-tabs {
+      border-color: #35302b;
+      background: #1c1a17;
+    }
+    [data-theme="dark"] .browse-tabs button {
+      color: #6e6962;
+    }
+    [data-theme="dark"] .browse-tabs button:hover {
+      color: #a09b92;
+    }
+    [data-theme="dark"] .browse-tabs button.active {
+      background: #282520;
+      color: #c4a070;
+      box-shadow: 0 1px 3px rgba(0,0,0,.25), 0 0 0 1px rgba(180,140,90,.12);
+    }
+
+    [data-theme="dark"] .genre-card .gc-icon {
+      background: #2c241c;
+      color: #b08858;
+    }
+    [data-theme="dark"] .genre-card:hover .gc-icon {
+      box-shadow: 0 6px 20px rgba(180,140,90,.1);
+    }
+
+    [data-theme="dark"] .genre-card:hover,
+    [data-theme="dark"] .album-card:hover {
+      box-shadow: 0 8px 32px rgba(0,0,0,.4), 0 0 0 1px rgba(180,140,90,.12);
+    }
+
+    [data-theme="dark"] .btn-play-all {
+      background: linear-gradient(135deg, #a07848, #7a5430);
+      box-shadow: 0 2px 12px rgba(150,110,60,.15);
+    }
+    [data-theme="dark"] .btn-play-all:hover {
+      box-shadow: 0 6px 24px rgba(150,110,60,.22);
+    }
+
+    [data-theme="dark"] .pagination button.active {
+      background: #a07848;
+      border-color: #a07848;
+      box-shadow: 0 2px 12px rgba(150,110,60,.15);
+    }
+    [data-theme="dark"] .pagination button:hover:not(:disabled) {
+      box-shadow: 0 4px 12px rgba(0,0,0,.2);
+    }
+
+    [data-theme="dark"] .song-row:hover {
+      background: rgba(255,255,255,.02);
+      border-color: #35302b;
+    }
+    [data-theme="dark"] .song-row:hover .sr-cover {
+      box-shadow: 0 4px 16px rgba(0,0,0,.4);
+    }
+
+    [data-theme="dark"] .song-row.playing {
+      background: rgba(180,140,90,.06);
+      border-color: rgba(180,140,90,.12);
+    }
+    [data-theme="dark"] .song-row.playing:hover {
+      background: rgba(180,140,90,.1);
+    }
+
+    [data-theme="dark"] .album-hero .ah-cover {
+      box-shadow: 0 8px 32px rgba(0,0,0,.5);
+    }
+
+    [data-theme="dark"] .browse-nav .home-link:hover {
+      background: rgba(255,255,255,.04);
+    }
+
+    [data-theme="dark"] .song-row .sr-cover {
+      background: #252220;
+    }
+    [data-theme="dark"] .album-card .ac-cover {
+      background: #252220;
+    }
+    [data-theme="dark"] .album-hero .ah-cover {
+      background: #252220;
+    }
+
+    [data-theme="dark"] .empty-state i {
+      opacity: .2;
+    }
+
+    [data-theme="dark"] .genre-card {
+      background: #1c1a17;
+    }
+    [data-theme="dark"] .album-card {
+      background: #1c1a17;
+    }
+
+    /* ─── Player entrance polish ─────────────────── */
+    @keyframes playerFadeIn {
+      from { opacity: 0; transform: scale(.97); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .player-view.open {
+      animation: playerFadeIn .4s var(--ease-out);
+    }
+
+    /* ─── View transition polish ─────────────────── */
+    .browse-main.settled {
+      transition: opacity .3s var(--ease-out), transform .35s var(--ease-spring);
+    }
   </style>
 </head>
 <body>
