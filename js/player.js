@@ -178,7 +178,9 @@ const Player = {
       this._emit('lyrics', []);
       return;
     }
-    const lines = lrcText.split('\n');
+    // NFKC normalize — fixes Kangxi radicals → standard CJK (e.g., ⼼→心, ⾥→里, ⿊→黑)
+    const normalized = lrcText.normalize('NFKC');
+    const lines = normalized.split('\n');
     const timeRe = /\[(\d{1,3}):(\d{2})(?:\.(\d{2,3}))?\]/;
     for (const line of lines) {
       const match = line.match(timeRe);
