@@ -253,3 +253,6 @@ async function uploadFileWithProgress(bucket, path, file, onProgress) {
 
 // ─── Helpers ─────────────────────────────────────────
 function https(url) {
+  if (!url || typeof url !== 'string') return url;
+  return url.replace(/^http:\/\//i, 'https://');
+}

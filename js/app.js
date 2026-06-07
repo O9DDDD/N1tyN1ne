@@ -154,12 +154,18 @@ async function loadFriends() {
     }
     localStorage.setItem('friends_cache', JSON.stringify(data));
     grid.innerHTML = data.map(f =>
-      '<a href="' + (f.url || '#') + '" class="friend-card" target="_blank" rel="noopener">' +
-      '<div class="fc-avatar">' + (f.avatar_url ? '<img src="' + https(f.avatar_url) + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover">' : (f.name || '?').charAt(0).toUpperCase()) + '</div>' +
-      '<div class="fc-info"><div class="fc-name">' + (f.name || '未命名') + '</div><div class="fc-desc">' + (f.description || '') + '</div></div>' +
+      '<a href="' + escHtml(f.url || '#') + '" class="friend-card" target="_blank" rel="noopener">' +
+      '<div class="fc-avatar">' + (f.avatar_url ? '<img src="' + escHtml(https(f.avatar_url)) + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover">' : escHtml((f.name || '?').charAt(0).toUpperCase())) + '</div>' +
+      '<div class="fc-info"><div class="fc-name">' + escHtml(f.name || '未命名') + '</div><div class="fc-desc">' + escHtml(f.description || '') + '</div></div>' +
       '</a>'
     ).join('');
   } catch(e) {
     grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon"><i class="fas fa-link"></i></div><p>还没有友链</p></div>';
   }
+}
+
+function escHtml(str) {
+  var d = document.createElement('div');
+  d.textContent = str || '';
+  return d.innerHTML;
 }
