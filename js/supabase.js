@@ -172,7 +172,7 @@ async function signOut() {
 async function dbSelect(table, opts) {
   opts = opts || {};
   var select = opts.select || '*';
-  var url = SUPABASE_URL + '/rest/v1/' + table + '?select=' + select;
+  var url = SUPABASE_URL + '/rest/v1/' + table + '?select=' + encodeURIComponent(select);
   if (opts.eq) url += '&' + opts.eq.col + '=eq.' + encodeURIComponent(opts.eq.val);
   if (opts.order) {
     if (typeof opts.order === 'string') {

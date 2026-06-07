@@ -415,7 +415,9 @@ const MusicApp = {
       const data = await dbSelect('music', { order: { col: 'created_at', dir: 'desc' } });
       this.allTracks = (data || []).reverse();
     } catch(e) {
+      console.error('Music load failed:', e);
       this.allTracks = [];
+      this._loadError = e.message || '加载失败';
     }
     // Set player tracks
     Player.tracks = this.allTracks;
@@ -545,7 +547,9 @@ const MusicApp = {
 
     let html = '';
     if (!page.length) {
-      html = '<div class="empty-state"><i class="fas fa-music"></i><p>暂无音乐</p></div>';
+      html = '<div class="empty-state"><i class="fas fa-music"></i>' +
+        (this._loadError ? '<p style="color:#dc2626">加载失败：' + escHtml(this._loadError) + '</p><p style="font-size:.75rem;margin-top:4px">请确保已运行 SQL 迁移脚本，或查看浏览器控制台</p>' : '<p>暂无音乐</p>') +
+        '</div>';
     } else {
       html = '<div class="song-list">';
       page.forEach((t, i) => {
