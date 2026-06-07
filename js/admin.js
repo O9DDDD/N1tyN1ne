@@ -687,21 +687,12 @@ async function uploadMVWithBitrates(mvFile, nameBase) {
   var useGitHub = typeof githubUploadFile === 'function' && hasGitHubStorage();
   var fileSizeMB = mvFile.size / 1024 / 1024;
 
-  // Helper: pick upload method based on size
+  // Helper: all MV files go through GitHub Release assets (no blob size limit)
   async function uploadVideo(file, path) {
-    var sizeMB = file.size / 1024 / 1024;
-    if (useGitHub && sizeMB > 100) {
-      // >100MB up to 2GB: GitHub Release assets (free!)
+    if (useGitHub) {
       return await githubUploadReleaseAsset(file, path, function(){});
-    } else if (useGitHub && sizeMB > 10) {
-      return await githubUploadFile(file, 'public/mv', path, function(){});
     } else {
-      try {
-        return await uploadFileWithProgress('mv', path, file, function(){});
-      } catch(e) {
-        if (useGitHub) return await githubUploadFile(file, 'public/mv', path, function(){});
-        throw e;
-      }
+      return await uploadFileWithProgress('mv', path, file, function(){});
     }
   }
 
@@ -1086,15 +1077,9 @@ async function uploadAllMVs() {
       var mvUrl;
       var fileSizeMB = entry.file.size / 1024 / 1024;
 
-      if (useGitHub && fileSizeMB > 100) {
-        // >100MB up to 2GB: GitHub Release assets (free!)
+      if (useGitHub) {
+        // All MV files go through GitHub Release assets (no blob size limit, up to 2GB)
         mvUrl = await githubUploadReleaseAsset(entry.file, mvPath, function(pct) {
-          entry.progress = pct;
-          renderMVQueue();
-        });
-      } else if (useGitHub && fileSizeMB <= 100) {
-        // <=100MB: GitHub repo file API (jsDelivr CDN)
-        mvUrl = await githubUploadFile(entry.file, 'public/mv', mvPath, function(pct) {
           entry.progress = pct;
           renderMVQueue();
         });

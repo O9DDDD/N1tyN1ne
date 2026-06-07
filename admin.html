@@ -144,7 +144,7 @@
         <div id="mvDropZone" style="border:2px dashed var(--border);border-radius:8px;padding:40px 20px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:16px">
           <i class="fas fa-cloud-upload-alt" style="font-size:2.5rem;color:var(--grn);display:block;margin-bottom:12px"></i>
           <p style="color:var(--text-bright);font-weight:600;margin:0 0 4px">拖拽 MV 文件到此处</p>
-          <p style="color:var(--text-dim);font-size:.82rem;margin:0 0 12px">支持 MP4 / WebM / MKV / MOV / AVI<br><span style="font-size:.72rem;color:#c4946b">通过 GitHub Release 免费存储，单文件上限 2GB</span></p>
+          <p style="color:var(--text-dim);font-size:.82rem;margin:0 0 12px">支持 MP4 / WebM / MKV / MOV / AVI<br><span style="font-size:.72rem;color:#c4946b">全部走 GitHub Release 上传（免费 · 单文件 2GB · 无 Blob 限制）</span></p>
           <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();document.getElementById('mvFileInput').click()" style="pointer-events:auto">或点击选择文件</button>
           <input type="file" id="mvFileInput" multiple accept="video/*,.webm,.mp4,.mkv,.mov,.avi" style="display:none" onchange="addMVFiles(this.files);this.value=''">
         </div>
