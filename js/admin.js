@@ -114,7 +114,7 @@ async function loadAdminMusic() {
     var data = await dbSelect('music', { order: { col: 'created_at', dir: 'desc' } });
     document.getElementById('dashMusic').textContent = (data || []).length;
     var tbody = document.getElementById('musicBody');
-    if (!data || !data.length) { tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state">暂无音乐</div></td></tr>'; return; }
+    if (!data || !data.length) { tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state">暂无音乐</div></td></tr>'; return; }
     tbody.innerHTML = data.map(function(m) {
       if (editingMusicId === m.id) {
         return '<tr>' +
@@ -123,19 +123,20 @@ async function loadAdminMusic() {
           '<td><input id="emArtist" value="' + escHtml(m.artist || '') + '" style="width:100%;padding:4px 6px;background:var(--blk-mid);border:1px solid var(--border);color:var(--text-bright);font-size:.82rem;border-radius:4px"></td>' +
           '<td><input id="emAlbum" value="' + escHtml(m.album || '') + '" placeholder="专辑" style="width:100%;padding:4px 6px;background:var(--blk-mid);border:1px solid var(--border);color:var(--text-bright);font-size:.82rem;border-radius:4px"></td>' +
           '<td><input id="emGenre" value="' + escHtml(m.genre || '') + '" placeholder="风格" style="width:100%;padding:4px 6px;background:var(--blk-mid);border:1px solid var(--border);color:var(--text-bright);font-size:.82rem;border-radius:4px"></td>' +
-          '<td><input id="emAlbumArtist" value="' + escHtml(m.album_artist || '') + '" placeholder="专辑艺术家" style="width:100%;padding:4px 6px;background:var(--blk-mid);border:1px solid var(--border);color:var(--text-bright);font-size:.78rem;border-radius:4px"></td>' +
-          '<td><input id="emAlbumYear" value="' + escHtml(m.album_year || '') + '" placeholder="年份" style="width:60px;padding:4px 6px;background:var(--blk-mid);border:1px solid var(--border);color:var(--text-bright);font-size:.82rem;border-radius:4px"></td>' +
           '<td><input id="emTrack" value="' + (m.track_number || '') + '" placeholder="音轨号" type="number" min="1" style="width:60px;padding:4px 6px;background:var(--blk-mid);border:1px solid var(--border);color:var(--text-bright);font-size:.82rem;border-radius:4px"></td>' +
+          '<td><input id="emMV" value="' + escHtml(m.mv_url || '') + '" placeholder="MV URL 或 JSON" style="width:100%;padding:4px 6px;background:var(--blk-mid);border:1px solid var(--border);color:var(--text-bright);font-size:.78rem;border-radius:4px"></td>' +
           '<td>' + (m.created_at ? new Date(m.created_at).toLocaleDateString('zh-CN') : '') + '</td>' +
           '<td><button class="btn btn-primary btn-sm" onclick="saveMusicEdit(\'' + m.id + '\')" style="background:var(--grn-dark);color:#fff">保存</button> ' +
           '<button class="btn btn-ghost btn-sm" onclick="cancelMusicEdit()">取消</button><br>' +
-          '<input type="file" id="emCover" accept="image/*" style="margin-top:4px;font-size:.72rem;color:var(--text-dim)"></td></tr>';
+          '<input type="file" id="emCover" accept="image/*" style="margin-top:4px;font-size:.72rem;color:var(--text-dim)"><br>' +
+          '<input type="file" id="emMVFile" accept="video/*,.webm,.mp4,.mkv,.mov,.avi" style="margin-top:4px;font-size:.72rem;color:var(--text-dim)" title="上传MV文件（自动生成多码率，支持WebM）"></td></tr>';
       }
       return '<tr>' +
         '<td>' + coverThumb(m.cover_url) + '</td>' +
         '<td style="color:var(--text-bright)">' + m.title + '</td><td>' + (m.artist || '—') + '</td>' +
         '<td>' + (m.album || '—') + '</td><td>' + (m.genre || '—') + '</td>' +
         '<td style="font-size:.78rem;color:var(--text-dim)">' + (m.track_number ? '#' + m.track_number : '—') + '</td>' +
+        '<td style="font-size:.75rem">' + (m.mv_url ? '<span style="color:var(--grn);font-weight:600">有</span>' : '<span style="color:var(--text-dim)">—</span>') + '</td>' +
         '<td>' + (m.created_at ? new Date(m.created_at).toLocaleDateString('zh-CN') : '') + '</td>' +
         '<td><button class="btn btn-ghost btn-sm" onclick="editMusic(\'' + m.id + '\')">编辑</button> ' +
         '<button class="btn btn-ghost btn-sm" onclick="reExtractMeta(\'' + m.id + '\')" title="从音频文件重新读取元数据"><i class="fas fa-rotate"></i></button> ' +
@@ -166,12 +167,16 @@ async function saveMusicEdit(id) {
       var safeId = id.replace(/-/g, '').slice(0, 8);
       coverUrl = await uploadFile('covers', ts + '_edit_' + safeId + '.jpg', coverFile);
     }
+    // Handle MV upload
+    var mvFile = document.getElementById('emMVFile').files[0];
+    var mvUrl = document.getElementById('emMV').value.trim();
+    if (mvFile) {
+      mvUrl = await uploadMVWithBitrates(mvFile, id);
+    }
     var album = document.getElementById('emAlbum').value.trim();
     var genre = document.getElementById('emGenre').value.trim();
-    var albumArtist = document.getElementById('emAlbumArtist').value.trim();
-    var albumYear = document.getElementById('emAlbumYear').value.trim();
     var trackNumber = parseInt(document.getElementById('emTrack').value) || null;
-    var payload = { title: title, artist: artist, album: album, genre: genre, album_artist: albumArtist, album_year: albumYear, track_number: trackNumber };
+    var payload = { title: title, artist: artist, album: album, genre: genre, track_number: trackNumber, mv_url: mvUrl };
     if (coverUrl) payload.cover_url = coverUrl;
     await dbUpdate('music', payload, 'id', id);
     editingMusicId = null;
@@ -344,6 +349,7 @@ async function addFiles(files) {
       trackNumber: null,
       coverBlob: null,
       coverUrl: '',
+      mvFile: null,
       lyrics: '',
       lyricsSource: 'none',
       status: 'pending'
@@ -542,6 +548,8 @@ function renderQueue() {
           '<span style="font-size:.7rem;color:var(--text-dim)">' + statusIcon + ' ' + statusText + '</span>' +
         '</div>' +
         '<textarea onchange="uploadQueue[' + i + '].lyrics=this.value;if(this.value.trim())uploadQueue[' + i + '].lyricsSource=\'manual\'" placeholder="粘贴 LRC 歌词（可选）..." style="width:100%;padding:6px 8px;background:var(--blk-mid);border:1px solid var(--border);border-radius:4px;color:var(--text-dim);font-size:.78rem;min-height:40px;resize:vertical;font-family:monospace">' + escHtml(entry.lyricsSource !== 'none' ? entry.lyrics : '') + '</textarea>' +
+        '<div style="margin-top:6px"><label style="font-size:.7rem;color:var(--text-dim)">MV 视频（可选，上传后自动分码率）</label>' +
+        '<input type="file" accept="video/*,.webm,.mp4,.mkv,.mov,.avi" onchange="uploadQueue[' + i + '].mvFile=this.files[0]" style="display:block;margin-top:3px;font-size:.72rem;color:var(--text-dim);max-width:100%"></div>' +
         (entry.status === 'uploading' ? '<div class="qc-progress-bar" style="height:6px;background:var(--blk-mid);border-radius:3px;margin-top:8px;overflow:hidden"><div style="height:100%;width:' + (entry.progress || 0) + '%;background:var(--grn);border-radius:3px;transition:width .3s"></div></div><div style="font-size:.68rem;color:var(--text-dim);text-align:right;margin-top:2px">' + (entry.progress || 0) + '%</div>' : '') +
       '</div>' +
       '<button onclick="removeFromQueue(' + i + ')" style="background:none;border:none;color:var(--text-dim);cursor:pointer;padding:4px;font-size:1rem;flex-shrink:0" title="移除"><i class="fas fa-times"></i></button>' +
@@ -621,6 +629,16 @@ async function uploadAll() {
       entry.progress = 95;
       renderQueue();
 
+      // Upload MV if present
+      var mvUrl = '';
+      if (entry.mvFile) {
+        try {
+          mvUrl = await uploadMVWithBitrates(entry.mvFile, safeName + '_' + ts);
+        } catch(e) { console.error('MV upload failed:', e); }
+      }
+      entry.progress = 97;
+      renderQueue();
+
       await dbInsert('music', {
         title: entry.title,
         artist: entry.artist,
@@ -633,6 +651,7 @@ async function uploadAll() {
         duration: '',
         audio_url: audioUrl,
         cover_url: coverUrl,
+        mv_url: mvUrl,
         lyrics: entry.lyrics,
         uploaded_by: window._currentUser.id
       });
@@ -658,6 +677,106 @@ async function uploadAll() {
     renderQueue();
   }, 2500);
   await loadAdminMusic();
+}
+
+/* ─── MV Upload with Multi-Bitrate ────────────────── */
+async function uploadMVWithBitrates(mvFile, nameBase) {
+  var safeBase = (nameBase || 'mv').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40);
+  var ts = Date.now();
+  var originalExt = mvFile.name.split('.').pop().toLowerCase() || 'mp4';
+
+  // Check if MediaRecorder / Canvas transcoding is available
+  var canTranscode = typeof MediaRecorder !== 'undefined' && typeof HTMLVideoElement !== 'undefined';
+  if (!canTranscode) {
+    // Fallback: upload single original
+    var url = await uploadFileWithProgress('mv', ts + '_' + safeBase + '_1080p.' + originalExt, mvFile, function(){});
+    return JSON.stringify({ '1080p': url });
+  }
+
+  // Build quality versions: 1080p (original), 720p, 480p
+  var qualities = {};
+  // Upload original as 1080p
+  var url1080 = await uploadFileWithProgress('mv', ts + '_' + safeBase + '_1080p.' + originalExt, mvFile, function(){});
+  qualities['1080p'] = url1080;
+
+  try {
+    // Generate 720p
+    var blob720 = await transcodeVideo(mvFile, 1280, 720, 2500000);
+    if (blob720) {
+      var url720 = await uploadFileWithProgress('mv', ts + '_' + safeBase + '_720p.mp4', blob720, function(){});
+      qualities['720p'] = url720;
+    }
+  } catch(e) { console.warn('720p transcode failed:', e); }
+
+  try {
+    // Generate 480p
+    var blob480 = await transcodeVideo(mvFile, 854, 480, 1000000);
+    if (blob480) {
+      var url480 = await uploadFileWithProgress('mv', ts + '_' + safeBase + '_480p.mp4', blob480, function(){});
+      qualities['480p'] = url480;
+    }
+  } catch(e) { console.warn('480p transcode failed:', e); }
+
+  return JSON.stringify(qualities);
+}
+
+function transcodeVideo(file, targetW, targetH, bitrate) {
+  return new Promise(function(resolve, reject) {
+    var video = document.createElement('video');
+    video.preload = 'metadata';
+    video.muted = true;
+    var url = URL.createObjectURL(file);
+    video.src = url;
+    video.onloadedmetadata = function() {
+      // Limit duration to avoid extremely long transcodes (max 10 min)
+      var duration = Math.min(video.duration, 600);
+      video.currentTime = 0;
+    };
+    video.onseeked = function() {
+      var canvas = document.createElement('canvas');
+      canvas.width = targetW;
+      canvas.height = targetH;
+      var ctx = canvas.getContext('2d');
+      var stream = canvas.captureStream(30);
+      var chunks = [];
+      var recorder;
+      try {
+        recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: bitrate });
+      } catch(e) {
+        try {
+          recorder = new MediaRecorder(stream, { mimeType: 'video/webm', videoBitsPerSecond: bitrate });
+        } catch(e2) {
+          URL.revokeObjectURL(url);
+          reject(new Error('MediaRecorder not supported'));
+          return;
+        }
+      }
+      recorder.ondataavailable = function(e) { if (e.data.size > 0) chunks.push(e.data); };
+      recorder.onstop = function() {
+        URL.revokeObjectURL(url);
+        resolve(new Blob(chunks, { type: 'video/webm' }));
+      };
+      recorder.onerror = function() {
+        URL.revokeObjectURL(url);
+        reject(new Error('Recorder error'));
+      };
+      recorder.start(1000);
+      video.play();
+      var frameInterval = setInterval(function() {
+        if (video.ended || video.currentTime >= Math.min(video.duration, 600)) {
+          clearInterval(frameInterval);
+          recorder.stop();
+          video.pause();
+          return;
+        }
+        ctx.drawImage(video, 0, 0, targetW, targetH);
+      }, 33);
+    };
+    video.onerror = function() {
+      URL.revokeObjectURL(url);
+      reject(new Error('Video load error'));
+    };
+  });
 }
 
 /* ─── Comments ──────────────────────────────────────── */
