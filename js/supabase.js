@@ -174,7 +174,13 @@ async function dbSelect(table, opts) {
   var select = opts.select || '*';
   var url = SUPABASE_URL + '/rest/v1/' + table + '?select=' + select;
   if (opts.eq) url += '&' + opts.eq.col + '=eq.' + encodeURIComponent(opts.eq.val);
-  if (opts.order) url += '&order=' + opts.order.col + '.' + (opts.order.dir || 'desc');
+  if (opts.order) {
+    if (typeof opts.order === 'string') {
+      url += '&order=' + opts.order;
+    } else {
+      url += '&order=' + opts.order.col + '.' + (opts.order.dir || 'desc');
+    }
+  }
   if (opts.limit != null) url += '&limit=' + opts.limit;
   if (opts.offset != null) url += '&offset=' + opts.offset;
   if (opts.single) url += '&limit=1';

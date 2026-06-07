@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadPosts() {
   const grid = document.getElementById('blogGrid');
   try {
-    let data = await dbSelect('posts', { eq: { col: 'published', val: 'true' }, order: { col: 'created_at', dir: 'desc' } });
+    let data = await dbSelect('posts', { eq: { col: 'published', val: 'true' }, order: 'pinned.desc,created_at.desc' });
     if (!data || !data.length) {
       grid.innerHTML =
         '<div class="empty-state"><div class="empty-icon"><i class="fas fa-pen-to-square"></i></div><p>还没有文章</p><p class="empty-sub">登录后台开始写作吧</p></div>';
@@ -67,12 +67,13 @@ function renderPosts(posts) {
   }
   posts.forEach((p, i) => {
     const card = document.createElement('div');
-    card.className = 'blog-card reveal';
+    card.className = 'blog-card reveal' + (p.pinned ? ' pinned-card' : '');
     card.style.transitionDelay = (i * 0.04) + 's';
     card.dataset.tags = (p.tags || []).join(',');
     const tags = (p.tags || []).map(t => '<span class="tag">' + t + '</span>').join('');
+    var pinnedBadge = p.pinned ? '<span class="pinned-badge"><i class="fas fa-thumbtack"></i> 置顶</span>' : '';
     card.innerHTML =
-      '<div class="meta"><span>' + (p.created_at ? new Date(p.created_at).toLocaleDateString('zh-CN') : '') + '</span>' + tags + '</div>' +
+      '<div class="meta"><span>' + (p.created_at ? new Date(p.created_at).toLocaleDateString('zh-CN') : '') + '</span>' + tags + pinnedBadge + '</div>' +
       '<h3>' + p.title + '</h3>' +
       '<p>' + (p.excerpt || '') + '</p>' +
       '<span class="read-link">阅读全文 →</span>';

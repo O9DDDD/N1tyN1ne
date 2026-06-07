@@ -45,8 +45,8 @@ async function loadAdminPosts() {
       tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state">暂无文章</div></td></tr>'; return;
     }
     tbody.innerHTML = data.map(p =>
-      '<tr><td style="font-weight:500;color:var(--text-bright)">' + p.title + '</td>' +
-      '<td><span style="padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:600;background:' + (p.published ? 'var(--grn-dark)' : 'var(--blk-mid)') + ';color:#fff">' + (p.published ? '已发布' : '草稿') + '</span></td>' +
+      '<tr><td style="font-weight:500;color:var(--text-bright)">' + (p.pinned ? '<span style="color:#b45309;margin-right:6px" title="置顶"><i class="fas fa-thumbtack"></i></span>' : '') + p.title + '</td>' +
+      '<td><span style="padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:600;background:' + (p.published ? 'var(--grn-dark)' : 'var(--blk-mid)') + ';color:#fff">' + (p.published ? '已发布' : '草稿') + '</span>' + (p.pinned ? ' <span style="padding:2px 6px;border-radius:4px;font-size:.68rem;background:#fef3c7;color:#b45309;border:1px solid #fcd34d">置顶</span>' : '') + '</td>' +
       '<td>' + (p.created_at ? new Date(p.created_at).toLocaleDateString('zh-CN') : '') + '</td>' +
       '<td><button class="btn btn-ghost btn-sm" onclick="editPost(\'' + p.id + '\')">编辑</button> ' +
       '<button class="btn btn-danger btn-sm" onclick="deletePost(\'' + p.id + '\')">删除</button></td></tr>'
@@ -57,6 +57,7 @@ async function loadAdminPosts() {
 function showPostEditor() {
   editingPostId = null;
   ['postTitle','postExcerpt','postTags','postContent','editPostId'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('postPinned').checked = false;
   document.getElementById('editorTitle').textContent = '新文章';
   document.getElementById('postEditor').style.display = 'block';
 }
@@ -73,6 +74,7 @@ async function editPost(id) {
     document.getElementById('postExcerpt').value = data.excerpt || '';
     document.getElementById('postTags').value = (data.tags || []).join(', ');
     document.getElementById('postContent').value = data.content;
+    document.getElementById('postPinned').checked = !!data.pinned;
     document.getElementById('editPostId').value = id;
     document.getElementById('postEditor').style.display = 'block';
   } catch {}
@@ -84,7 +86,7 @@ async function savePost() {
   const excerpt = document.getElementById('postExcerpt').value.trim();
   const tags = document.getElementById('postTags').value.split(',').map(t => t.trim()).filter(Boolean);
   if (!title || !content) { alert('标题和内容不能为空'); return; }
-  const payload = { title, content, excerpt, tags, author_id: window._currentUser.id, published: true };
+  const payload = { title, content, excerpt, tags, author_id: window._currentUser.id, published: true, pinned: document.getElementById('postPinned').checked };
   try {
     if (editingPostId) { await dbUpdate('posts', payload, 'id', editingPostId); }
     else { await dbInsert('posts', payload); }
@@ -285,7 +287,10 @@ async function addFiles(files) {
     var entry = {
       file: file,
       title: file.name.replace(/\.[^.]+$/, ''),
-      artist: '未知',
+      artist: '',
+      album: '',
+      genre: '',
+      album_description: '',
       coverBlob: null,
       coverUrl: '',
       lyrics: '',
@@ -389,8 +394,8 @@ function extractMetadata(entry) {
       renderQueue();
       if (tried) return;
       tried = true;
-      // 兜底：从文件名猜
-      if (entry.artist === '未知' || !entry.artist) {
+      // 兜底：元数据没读到则从文件名猜
+      if (!entry.artist) {
         var g = guessFromFilename(entry.file.name);
         if (g.artist) entry.artist = g.artist;
         if (g.title && entry.title === entry.file.name.replace(/\.[^.]+$/, '')) {
@@ -409,6 +414,8 @@ function extractMetadata(entry) {
             var t = tag.tags;
             if (t.title && t.title.trim()) entry.title = t.title.trim();
             if (t.artist && t.artist.trim()) entry.artist = t.artist.trim();
+            if (t.album && t.album.trim()) entry.album = t.album.trim();
+            if (t.genre && t.genre.trim()) entry.genre = t.genre.trim();
             if (t.picture) {
               try {
                 var bytes;
