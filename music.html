@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="css/style.css">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>�?/text></svg>">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>♪</text></svg>">
   <style>
     /* ─── Browse Layout ──────────────────────────── */
     .browse-view{display:flex;flex-direction:column;min-height:100vh;padding-bottom:calc(80px + env(safe-area-inset-bottom, 0px))}
@@ -306,26 +306,27 @@
       max-width:300px;font-family:var(--font);border-radius:8px;
     }
     .toast.show{transform:translateX(0);opacity:1}
-    .loading-skeleton{text-align:center;padding:60px 0;animation:skPulse 1.6s ease-in-out infinite} @keyframes skPulse{0%,100%{opacity:.4}50%{opacity:.8}} .loaded .loading-skeleton{display:none}\n  </style>
+    .loading-skeleton{text-align:center;padding:60px 0;animation:skPulse 1.6s ease-in-out infinite} @keyframes skPulse{0%,100%{opacity:.4}50%{opacity:.8}} .loaded .loading-skeleton{display:none}
+  </style>
 </head>
 <body>
 
-<!-- ══�?Browse View ══════════════════════════════════�?-->
+<!-- ═══ Browse View ═══════════════════════════════════ -->
 <div class="browse-view" id="browseView">
   <nav class="browse-nav">
     <span class="logo">N1tyN1ne · 音乐</span>
     <div class="browse-tabs" id="browseTabs">
-      <button data-view="all" class="active">所有歌�?/button>
+      <button data-view="all" class="active">所有歌曲</button>
       <button data-view="genres">分类</button>
       <button data-view="albums">专辑</button>
     </div>
     <a href="index.html" class="home-link"><i class="fas fa-arrow-left"></i> 返回主页</a>
   </nav>
-  <main class="browse-main" id="browseMain"><div class="loading-skeleton" id="browseLoading"><p style="text-align:center;color:var(--text-dim);padding:60px 0;font-size:.9rem">������...</p></div></main>
+  <main class="browse-main" id="browseMain"><div class="loading-skeleton" id="browseLoading"><p style="text-align:center;color:var(--text-dim);padding:60px 0;font-size:.9rem">加载中...</p></div></main>
   <div class="pagination" id="pagination"></div>
 </div>
 
-<!-- ══�?Now Playing View ══════════════════════════════�?-->
+<!-- ═══ Now Playing View ═══════════════════════════════ -->
 <div class="player-view" id="playerView">
   <nav class="player-nav">
     <button class="pn-back" onclick="MusicApp.showBrowse()"><i class="fas fa-arrow-left"></i> 返回</button>
@@ -336,18 +337,18 @@
     <div class="bg-blur"><img id="bgImg" src="" alt=""><div class="bg-overlay"></div></div>
     <div class="cover-panel">
       <div class="cover-card" id="coverCard">
-        <img id="coverImg" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><rect fill='%231a1a1a' width='200' height='200'/><text x='100' y='115' text-anchor='middle' font-size='50' fill='%236b8e5a'>�?/text></svg>" alt="">
+        <img id="coverImg" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><rect fill='%231a1a1a' width='200' height='200'/><text x='100' y='115' text-anchor='middle' font-size='50' fill='%236b8e5a'>♪</text></svg>" alt="">
         <div class="tilt-gloss"></div>
         <div class="card-shine"></div>
       </div>
       <div class="track-info">
         <div class="t-title" id="muTitle">未选择歌曲</div>
-        <div class="t-artist" id="muArtist">�?/div>
+        <div class="t-artist" id="muArtist">—</div>
       </div>
       <div class="player-ctrls">
-        <button onclick="Player.prev()" title="上一�?><i class="fas fa-step-backward"></i></button>
+        <button onclick="Player.prev()" title="上一首"><i class="fas fa-step-backward"></i></button>
         <button class="btn-play" onclick="Player.toggle()" id="btnPlay" title="播放/暂停"><i class="fas fa-play"></i></button>
-        <button onclick="Player.next()" title="下一�?><i class="fas fa-step-forward"></i></button>
+        <button onclick="Player.next()" title="下一首"><i class="fas fa-step-forward"></i></button>
         <button id="btnShuffle" onclick="Player.toggleShuffle()" title="随机"><i class="fas fa-random"></i></button>
         <button id="btnRepeat" onclick="Player.toggleRepeat()" title="循环"><i class="fas fa-repeat"></i></button>
       </div>
@@ -365,7 +366,7 @@
       </div>
     </div>
     <div class="lyrics-panel" id="lyricsPanel">
-      <div class="no-lyrics" id="noLyrics">选择一首歌曲开始播�?/div>
+      <div class="no-lyrics" id="noLyrics">选择一首歌曲开始播放</div>
     </div>
     <div class="playlist-drawer" id="playlistDrawer">
       <div class="pl-header">
@@ -377,12 +378,12 @@
   </div>
 </div>
 
-<!-- ══�?Floating Player Bar ════════════════════════════ -->
+<!-- ═══ Floating Player Bar ════════════════════════════ -->
 <div class="float-player" id="floatPlayer">
   <img class="fp-cover" id="fpCover" src="" alt="">
   <div class="fp-info">
-    <div class="fp-title" id="fpTitle">�?/div>
-    <div class="fp-lyric" id="fpLyric">�?/div>
+    <div class="fp-title" id="fpTitle">—</div>
+    <div class="fp-lyric" id="fpLyric">—</div>
   </div>
   <div class="fp-ctrls">
     <button onclick="event.stopPropagation();Player.toggle()"><i class="fas fa-play" id="fpPlayIcon"></i></button>
@@ -433,7 +434,8 @@ const MusicApp = {
       Player.parseLyrics(this.allTracks[st.idx]?.lyrics || '');
     }
     // Route
-    document.getElementById("browseView").classList.add("loaded");\n    this.route();
+    document.getElementById("browseView").classList.add("loaded");
+    this.route();
     window.addEventListener('hashchange', () => this.route());
     // Tab clicks
     document.querySelectorAll('#browseTabs button').forEach(btn => {
@@ -553,8 +555,8 @@ const MusicApp = {
           '<span class="sr-num">' + (isPlaying ? '<i class="fas fa-play" style="font-size:8px"></i>' : (start + i + 1)) + '</span>' +
           '<img class="sr-cover" src="' + https(t.cover_url || '') + '" onerror="this.style.display=\'none\'" alt="">' +
           '<div class="sr-song-info"><span class="sr-title">' + escHtml(t.title) + '</span><span class="sr-artist">' + escHtml(t.artist || '') + '</span></div>' +
-          '<span class="sr-album">' + escHtml(t.album || '�?) + '</span>' +
-          '<span class="sr-album">' + escHtml(t.genre || '�?) + '</span>' +
+          '<span class="sr-album">' + escHtml(t.album || '—') + '</span>' +
+          '<span class="sr-album">' + escHtml(t.genre || '—') + '</span>' +
           '<span class="sr-dur">' + (t.duration || '') + '</span>' +
         '</div>';
       });
@@ -579,7 +581,7 @@ const MusicApp = {
       html += '<div class="genre-card" onclick="MusicApp.navigate(\'genre\',\'' + escAttr(g) + '\')">' +
         '<div class="gc-icon"><i class="fas ' + (icons[i % icons.length]) + '"></i></div>' +
         '<div class="gc-name">' + escHtml(g) + '</div>' +
-        '<div class="gc-count">' + this.genreIndex[g].length + ' �?/div>' +
+        '<div class="gc-count">' + this.genreIndex[g].length + ' 首</div>' +
       '</div>';
     });
     html += '</div>';
@@ -605,7 +607,7 @@ const MusicApp = {
           : '<div class="ac-cover"><i class="fas fa-compact-disc"></i></div>') +
         '<div class="ac-info">' +
           '<div class="ac-name">' + escHtml(a) + '</div>' +
-          '<div class="ac-meta">' + info.tracks.length + ' �? + (info.genre ? ' · ' + escHtml(info.genre) : '') + '</div>' +
+          '<div class="ac-meta">' + info.tracks.length + ' 首' + (info.genre ? ' · ' + escHtml(info.genre) : '') + '</div>' +
           (info.description ? '<div class="ac-desc">' + escHtml(info.description) + '</div>' : '') +
         '</div>' +
       '</div>';
@@ -619,7 +621,7 @@ const MusicApp = {
   renderAlbumDetail(name) {
     const info = this.albumIndex[name];
     if (!info) {
-      document.getElementById('browseMain').innerHTML = '<div class="empty-state"><i class="fas fa-question-circle"></i><p>专辑不存�?/p></div>';
+      document.getElementById('browseMain').innerHTML = '<div class="empty-state"><i class="fas fa-question-circle"></i><p>专辑不存在</p></div>';
       document.getElementById('pagination').innerHTML = '';
       return;
     }
@@ -630,7 +632,7 @@ const MusicApp = {
       '<div class="ah-info">' +
         '<span class="ah-label">专辑</span>' +
         '<h1 class="ah-name">' + escHtml(name) + '</h1>' +
-        '<div class="ah-meta">' + info.tracks.length + ' �? + (info.genre ? ' · ' + escHtml(info.genre) : '') + '</div>' +
+        '<div class="ah-meta">' + info.tracks.length + ' 首' + (info.genre ? ' · ' + escHtml(info.genre) : '') + '</div>' +
         (info.description ? '<p class="ah-desc">' + escHtml(info.description) + '</p>' : '') +
         '<button class="btn-play-all" onclick="MusicApp.playAlbum(\'' + escAttr(name) + '\')"><i class="fas fa-play"></i> 播放全部</button>' +
       '</div>' +
@@ -664,7 +666,7 @@ const MusicApp = {
     }
     let html = '<div style="margin-bottom:24px">' +
       '<h1 style="font-size:1.5rem;font-weight:900;color:var(--text-bright);margin:0 0 6px">' + escHtml(name) + '</h1>' +
-      '<p style="color:var(--text-dim);font-size:.85rem;margin:0">' + tracks.length + ' 首歌�?/p>' +
+      '<p style="color:var(--text-dim);font-size:.85rem;margin:0">' + tracks.length + ' 首歌曲</p>' +
       '<button class="btn-play-all" style="margin-top:12px" onclick="MusicApp.playGenre(\'' + escAttr(name) + '\')"><i class="fas fa-play"></i> 播放全部</button>' +
     '</div>';
 
@@ -676,7 +678,7 @@ const MusicApp = {
         '<span class="sr-num">' + (isPlaying ? '<i class="fas fa-play" style="font-size:8px"></i>' : (i + 1)) + '</span>' +
         '<img class="sr-cover" src="' + https(t.cover_url || '') + '" onerror="this.style.display=\'none\'" alt="">' +
         '<div class="sr-song-info"><span class="sr-title">' + escHtml(t.title) + '</span><span class="sr-artist">' + escHtml(t.artist || '') + '</span></div>' +
-        '<span class="sr-album">' + escHtml(t.album || '�?) + '</span>' +
+        '<span class="sr-album">' + escHtml(t.album || '—') + '</span>' +
         '<span class="sr-album"></span>' +
         '<span class="sr-dur">' + (t.duration || '') + '</span>' +
       '</div>';
@@ -778,7 +780,8 @@ const MusicApp = {
     document.getElementById('playerView').classList.remove('open');
     // Restore previous browse hash without triggering hashchange
     history.replaceState(null, '', '#' + this._lastBrowseHash);
-    document.getElementById("browseView").classList.add("loaded");\n    this.route();
+    document.getElementById("browseView").classList.add("loaded");
+    this.route();
     Player._renderFloat();
   },
 
@@ -840,9 +843,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   Player.on('track', (t) => {
     document.getElementById('muTitle').textContent = t.title || '未选择';
-    document.getElementById('muArtist').textContent = t.artist || '�?;
+    document.getElementById('muArtist').textContent = t.artist || '—';
     document.getElementById('pnTitle').textContent = (t.title || '') + ' · ' + (t.artist || '');
-    const coverUrl = t.cover_url || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect fill="%231a1a1a" width="200" height="200"/><text x="100" y="115" text-anchor="middle" font-size="50" fill="%236b8e5a">�?/text></svg>';
+    const coverUrl = t.cover_url || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect fill="%231a1a1a" width="200" height="200"/><text x="100" y="115" text-anchor="middle" font-size="50" fill="%236b8e5a">♪</text></svg>';
     const safeUrl = https(coverUrl);
     document.getElementById('coverImg').src = safeUrl;
     document.getElementById('bgImg').src = safeUrl;
@@ -907,7 +910,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       div.className = 'pl-track' + (i === Player.idx ? ' active' : '');
       div.innerHTML =
         '<div class="pl-num">' + (i === Player.idx && Player.playing ? '<i class="fas fa-play" style="font-size:7px"></i>' : (i + 1)) + '</div>' +
-        '<div class="pl-info"><div class="pl-t">' + escHtml(t.title || '未知') + '</div><div class="pl-a">' + escHtml(t.artist || '�?) + '</div></div>' +
+        '<div class="pl-info"><div class="pl-t">' + escHtml(t.title || '未知') + '</div><div class="pl-a">' + escHtml(t.artist || '—') + '</div></div>' +
         '<div class="pl-dur">' + (t.duration || '--:--') + '</div>';
       div.onclick = () => { Player.play(i); };
       el.appendChild(div);
@@ -946,7 +949,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 3000);
   };
 
-  // ─── Float player click �?show player ───────────
+  // ─── Float player click → show player ───────────
   document.getElementById('floatPlayer').addEventListener('click', function(e) {
     if (e.target.closest('button')) return;
     if (Player.tracks.length && Player.idx >= 0) MusicApp.showPlayer();
