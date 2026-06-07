@@ -320,7 +320,10 @@
       <button data-view="genres">分类</button>
       <button data-view="albums">专辑</button>
     </div>
-    <a href="index.html" class="home-link"><i class="fas fa-arrow-left"></i> 返回主页</a>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="theme-toggle" onclick="Theme.toggle()" title="切换深色/浅色模式" id="themeToggle" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:.9rem;padding:4px"><i class="fas fa-moon"></i></button>
+      <a href="index.html" class="home-link"><i class="fas fa-arrow-left"></i> 返回主页</a>
+    </div>
   </nav>
   <main class="browse-main" id="browseMain"><div class="loading-skeleton" id="browseLoading"><p style="text-align:center;color:var(--text-dim);padding:60px 0;font-size:.9rem">加载中...</p></div></main>
   <div class="pagination" id="pagination"></div>
@@ -394,6 +397,30 @@
 
 <div class="toast-container" id="toastContainer"></div>
 
+<script>
+// Theme
+var Theme = {
+  init: function() {
+    var saved = localStorage.getItem('theme');
+    if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme:dark)').matches)) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+    this._updateIcon();
+  },
+  toggle: function() {
+    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
+    localStorage.setItem('theme', isDark ? 'light' : 'dark');
+    this._updateIcon();
+  },
+  _updateIcon: function() {
+    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    var icon = document.querySelector('#themeToggle i');
+    if (icon) icon.className = 'fas fa-' + (isDark ? 'sun' : 'moon');
+  }
+};
+Theme.init();
+</script>
 <script src="js/supabase.js"></script>
 <script src="js/player.js"></script>
 <script>
@@ -479,7 +506,11 @@ const MusicApp = {
   route() {
     const hash = window.location.hash.replace('#', '') || 'all';
     if (hash === 'playing') { this.showPlayer(); return; }
-    this.showBrowse();
+    // Track current browse hash for player back-navigation
+    this._lastBrowseHash = hash;
+    // Ensure browse view visible, player hidden
+    document.getElementById('browseView').style.display = '';
+    document.getElementById('playerView').classList.remove('open');
     // Parse hash
     const pageMatch = hash.match(/^all&page=(\d+)$/);
     if (pageMatch) { this.currentView = 'all'; this.currentPage = parseInt(pageMatch[1]) || 1; this.render(); return; }
@@ -778,13 +809,8 @@ const MusicApp = {
   },
 
   showBrowse() {
-    document.getElementById('browseView').style.display = '';
-    document.getElementById('playerView').classList.remove('open');
-    // Restore previous browse hash without triggering hashchange
-    history.replaceState(null, '', '#' + this._lastBrowseHash);
-    document.getElementById("browseView").classList.add("loaded");
-    this.route();
-    Player._renderFloat();
+    // Back from player: restore last browse hash
+    window.location.hash = '#' + this._lastBrowseHash;
   },
 
   /* ─── Highlight playing track ──────────────────── */
