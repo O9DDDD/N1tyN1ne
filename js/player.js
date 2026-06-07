@@ -253,6 +253,9 @@ const Player = {
       this._preloadedLyrics = this._parseLyricsText(t.lyrics);
     } else {
       this._preloadedLyrics = [];
+    }
+  },
+
   seek(e) {
     var bar = e.currentTarget;
     var rect = bar.getBoundingClientRect();
