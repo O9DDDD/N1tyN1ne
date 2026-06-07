@@ -1109,11 +1109,8 @@ async function uploadAllMVs() {
     }
   }
 
-  // Clean up done entries after a delay and refresh MV list
-  setTimeout(function() {
-    mvUploadQueue = mvUploadQueue.filter(function(e) { return e.status !== 'done'; });
-    renderMVQueue();
-  }, 5000);
+  // Refresh MV list (shows bound MVs in the table below)
+  // Don't auto-remove done entries — user needs time to click "bind"
   await loadAdminMVs();
 }
 
