@@ -213,65 +213,9 @@ async function githubUploadReleaseAsset(file, filename, onProgress) {
     throw new Error('GitHub Token 无效或已过期，请重新设置。');
   }
 
-  var releaseId = await getOrCreateMVRelease();
-  var fileSizeMB = file.size / 1024 / 1024;
-
-  // Strategy 1: Try api.github.com for release asset upload (supports CORS)
-  if (onProgress) onProgress(1);
-  var apiResult = await _tryApiUpload(releaseId, file, filename, pat, onProgress);
-  if (apiResult) return apiResult;
-
-  // Strategy 2: Chunked upload via Git Blob API (works for any size)
-  if (onProgress) onProgress(0);
+  var fileSizeMB = (file.size / 1024 / 1024).toFixed(1);
+  console.log('[MV上传] 文件大小: ' + fileSizeMB + ' MB，走分片上传（Contents API，每片 15MB）');
   return await githubUploadChunked(file, filename, onProgress);
-}
-
-/** Try uploading release asset via api.github.com (supports CORS, unlike uploads subdomain) */
-async function _tryApiUpload(releaseId, file, filename, pat, onProgress) {
-  try {
-    var url = 'https://api.github.com/repos/' + GH_REPO_OWNER + '/' + GH_REPO_NAME + '/releases/' + releaseId + '/assets?name=' + encodeURIComponent(filename);
-
-    return await new Promise(function(resolve, reject) {
-      var xhr = new XMLHttpRequest();
-      xhr.open('POST', url);
-      xhr.setRequestHeader('Authorization', 'Bearer ' + pat);
-      xhr.setRequestHeader('Accept', 'application/vnd.github+json');
-      // Let browser set Content-Type automatically for the file
-
-      if (onProgress) {
-        xhr.upload.onprogress = function(e) {
-          if (e.lengthComputable) {
-            onProgress(Math.min(Math.round(e.loaded / e.total * 100), 99));
-          }
-        };
-      }
-
-      xhr.onload = function() {
-        if (xhr.status === 201) {
-          if (onProgress) onProgress(100);
-          var asset = JSON.parse(xhr.responseText);
-          resolve(asset.browser_download_url);
-        } else if (xhr.status === 404 || xhr.status === 405) {
-          // api.github.com doesn't support this endpoint — expected
-          resolve(null);
-        } else {
-          var msg = null;
-          try { var d = JSON.parse(xhr.responseText); msg = d.message; } catch(e) {}
-          // 4xx/5xx that isn't 404/405 means the endpoint exists but rejected us
-          if (xhr.status >= 400) {
-            console.warn('api.github.com release upload returned ' + xhr.status + ': ' + (msg || ''));
-          }
-          resolve(null);
-        }
-      };
-      xhr.onerror = function() { resolve(null); };
-      xhr.ontimeout = function() { resolve(null); };
-      xhr.timeout = 30000; // 30s quick timeout — if this endpoint works, it'll respond fast
-      xhr.send(file);
-    });
-  } catch(e) {
-    return null;
-  }
 }
 
 /* ─── Chunked Upload ─────────────────────────────────── */
@@ -291,6 +235,7 @@ async function githubUploadChunked(file, filename, onProgress) {
   var dir = 'public/mv/' + ts + '_' + safeName;
   var totalChunks = Math.ceil(file.size / CHUNK_SIZE);
 
+  console.log('[MV上传] 共 ' + totalChunks + ' 个分片，目录: ' + dir);
   if (onProgress) onProgress(1);
 
   // Upload each chunk via Contents API (auto-handles blob+tree+commit+branch update)
@@ -301,8 +246,10 @@ async function githubUploadChunked(file, filename, onProgress) {
     var chunkName = 'chunk_' + String(i).padStart(4, '0');
     var path = dir + '/' + chunkName;
 
+    console.log('[MV上传] 分片 ' + (i + 1) + '/' + totalChunks + ' 编码 Base64...');
     var b64 = await fileToBase64(chunk);
 
+    console.log('[MV上传] 分片 ' + (i + 1) + '/' + totalChunks + ' 上传中 (' + (end / 1024 / 1024).toFixed(1) + 'MB)...');
     await ghApi('/repos/' + GH_REPO_OWNER + '/' + GH_REPO_NAME + '/contents/' + path, {
       method: 'PUT',
       body: {
@@ -312,6 +259,7 @@ async function githubUploadChunked(file, filename, onProgress) {
       }
     });
 
+    console.log('[MV上传] 分片 ' + (i + 1) + '/' + totalChunks + ' OK');
     if (onProgress) onProgress(Math.round((i + 1) / (totalChunks + 1) * 95));
   }
 
@@ -326,6 +274,7 @@ async function githubUploadChunked(file, filename, onProgress) {
   var manifestB64 = btoa(unescape(encodeURIComponent(manifest)));
   var manifestPath = dir + '.manifest.json';
 
+  console.log('[MV上传] 上传 manifest...');
   await ghApi('/repos/' + GH_REPO_OWNER + '/' + GH_REPO_NAME + '/contents/' + manifestPath, {
     method: 'PUT',
     body: {
@@ -337,5 +286,7 @@ async function githubUploadChunked(file, filename, onProgress) {
 
   if (onProgress) onProgress(100);
 
-  return 'https://cdn.jsdelivr.net/gh/' + GH_REPO_OWNER + '/' + GH_REPO_NAME + '@main/' + manifestPath;
+  var cdnUrl = 'https://cdn.jsdelivr.net/gh/' + GH_REPO_OWNER + '/' + GH_REPO_NAME + '@main/' + manifestPath;
+  console.log('[MV上传] 完成! CDN: ' + cdnUrl);
+  return cdnUrl;
 }
