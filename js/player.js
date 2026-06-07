@@ -143,7 +143,7 @@ const Player = {
     }
     this.idx = i;
     var t = this.tracks[i];
-    if (!t) return;
+    if (!t || !t.audio_url) return;
     this.audio.src = https(t.audio_url);
     this.audio.load();
     this.audio.play().catch(function(){});

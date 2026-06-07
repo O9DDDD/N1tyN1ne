@@ -334,7 +334,6 @@
       overflow-y:auto;overflow-x:hidden;
       display:flex;flex-direction:column;align-items:center;
       padding:calc(50vh - 120px) 20px;
-      scroll-behavior:smooth;
       -webkit-mask-image:linear-gradient(to bottom,transparent 0%,black 10%,black 90%,transparent 100%);
       mask-image:linear-gradient(to bottom,transparent 0%,black 10%,black 90%,transparent 100%);
       perspective:800px;perspective-origin:center center;
@@ -588,7 +587,7 @@
     <div class="cover-panel">
       <div class="cover-stage">
         <div class="cover-card" id="coverCardA">
-          <img id="coverImg" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><rect fill='%231a1a1a' width='200' height='200'/><text x='100' y='115' text-anchor='middle' font-size='50' fill='%236b8e5a'>♪</text></svg>" alt="">
+          <img id="coverImgA" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><rect fill='%231a1a1a' width='200' height='200'/><text x='100' y='115' text-anchor='middle' font-size='50' fill='%236b8e5a'>♪</text></svg>" alt="">
           <div class="tilt-gloss"></div>
           <div class="card-shine"></div>
         </div>
@@ -1509,7 +1508,7 @@ function escHtml(str) {
   return _escDiv.innerHTML;
 }
 function escAttr(str) {
-  return (str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+  return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
 }
 
 /* ─── Boot ───────────────────────────────────────────── */
@@ -1536,7 +1535,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('pnTitle').textContent = (t.title || '') + ' · ' + (t.artist || '');
     const coverUrl = t.cover_url || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect fill="%231a1a1a" width="200" height="200"/><text x="100" y="115" text-anchor="middle" font-size="50" fill="%236b8e5a">♪</text></svg>';
     const safeUrl = https(coverUrl);
-    document.getElementById('coverImg').src = safeUrl;
+    document.getElementById('coverImgA').src = safeUrl;
     document.getElementById('bgImg').src = safeUrl;
   });
 
@@ -1547,7 +1546,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     _switchLocked = true;
     var oldCard = document.getElementById('coverCard' + _activeCard);
     var newCard = document.getElementById('coverCard' + (_activeCard === 'A' ? 'B' : 'A'));
-    var newImg = document.getElementById('coverImg' + (_activeCard === 'A' ? 'B' : ''));
+    var newImg = document.getElementById('coverImg' + (_activeCard === 'A' ? 'B' : 'A'));
     var t = Player.tracks[data.to];
     var coverUrl = t?.cover_url || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect fill="%231a1a1a" width="200" height="200"/><text x="100" y="115" text-anchor="middle" font-size="50" fill="%236b8e5a">♪</text></svg>';
     newImg.src = https(coverUrl);
@@ -1586,11 +1585,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('progFill').style.width = pct + '%';
     document.getElementById('progDot').style.left = pct + '%';
     document.getElementById('curTime').textContent = Player.fmt(ct);
-    // MV progress
-    if (Player.mvMode) {
-      document.getElementById('mvFill').style.width = pct + '%';
-      document.getElementById('mvTime').textContent = Player.fmt(ct) + ' / ' + Player.fmt(dur);
-    }
   });
 
   Player.on('durupdate', () => {
@@ -1693,7 +1687,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       el.onclick = () => { Player.audio.currentTime = l.time; };
       panel.appendChild(el);
     });
-    // Initial fan render
+    // Reset fan state and render initial state for all lines
+    _lastFanIdx = null; // force re-render even if activeIdx is -1
     updateFanLyrics(-1);
   });
 
@@ -1716,6 +1711,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   function _renderFanLyrics(activeIdx) {
     var lines = document.querySelectorAll('#lyricsPanel .lyric-line');
     if (!lines.length) return;
+
+    // Initial/neutral state: render all lines uniformly
+    if (activeIdx < 0) {
+      for (var i = 0; i < lines.length; i++) {
+        var l = lines[i];
+        l.classList.remove('active', 'past');
+        l.style.transform = 'perspective(800px) rotateX(-8deg) translateY(20px) scale(0.85)';
+        l.style.opacity = '0.3';
+      }
+      return;
+    }
 
     var range = 10; // only update lines near the active one
     var start = Math.max(0, (activeIdx < 0 ? 0 : activeIdx) - range);
@@ -1765,12 +1771,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
-    // Scroll active line to center using scrollTop (avoids smooth-scroll layout thrash)
+    // Scroll active line to center (instant, no smooth animation overhead)
     if (activeIdx >= 0 && lines[activeIdx]) {
-      var panel = document.getElementById('lyricsPanel');
-      var activeLine = lines[activeIdx];
-      var target = activeLine.offsetTop - panel.clientHeight / 2 + activeLine.clientHeight / 2;
-      panel.scrollTop = Math.max(0, target);
+      lines[activeIdx].scrollIntoView({ block: 'center', behavior: 'instant' });
     }
   }
 
