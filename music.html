@@ -1326,15 +1326,16 @@ const MusicApp = {
       var resp = await fetch(https(manifestUrl));
       if (!resp.ok) throw new Error('Manifest fetch failed: ' + resp.status);
       var manifest = await resp.json();
-      if (!manifest.chunks || !manifest.chunks.length) throw new Error('Invalid manifest');
+      var totalChunks = manifest.totalChunks || (manifest.chunks && manifest.chunks.length) || 0;
+      if (!totalChunks) throw new Error('Invalid manifest');
 
       // Download all chunks
       var blobs = [];
       var basePath = manifestUrl.replace(/\.manifest\.json$/, '');
-      for (var i = 0; i < manifest.chunks.length; i++) {
+      for (var i = 0; i < totalChunks; i++) {
         var chunkName = 'chunk_' + String(i).padStart(4, '0');
         var chunkUrl = basePath + '/' + chunkName;
-        if (loadText) loadText.textContent = '加载中... ' + (i + 1) + '/' + manifest.chunks.length;
+        if (loadText) loadText.textContent = '加载中... ' + (i + 1) + '/' + totalChunks;
         var chunkResp = await fetch(https(chunkUrl));
         if (!chunkResp.ok) throw new Error('Chunk ' + i + ' fetch failed: ' + chunkResp.status);
         blobs.push(await chunkResp.blob());
