@@ -107,6 +107,8 @@ function getSession() {
   return _cachedSession;
 }
 
+async function getJWT() {
+  if (!_cachedSession) return null;
   // Refresh if expiring within 60 seconds
   var exp = getJWTExpiry(_cachedSession.access_token);
   if (exp && exp < Date.now() + 60000) {
