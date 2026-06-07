@@ -689,13 +689,14 @@ async function uploadMVWithBitrates(mvFile, nameBase) {
 
   // Helper: pick upload method based on size
   async function uploadVideo(file, path) {
-    if (useGitHub && file.size > 10 * 1024 * 1024) {
+    var sizeMB = file.size / 1024 / 1024;
+    if (useGitHub && sizeMB > 10 && sizeMB <= 100) {
       return await githubUploadFile(file, 'public/mv', path, function(){});
     } else {
       try {
         return await uploadFileWithProgress('mv', path, file, function(){});
       } catch(e) {
-        if (useGitHub) return await githubUploadFile(file, 'public/mv', path, function(){});
+        if (useGitHub && sizeMB <= 100) return await githubUploadFile(file, 'public/mv', path, function(){});
         throw e;
       }
     }
@@ -988,7 +989,7 @@ function cancelMVUpload() {
 }
 
 function addMVFiles(files) {
-  var MAX_SIZE = 100 * 1024 * 1024;
+  var MAX_SIZE = 500 * 1024 * 1024;
   var oversized = [];
   for (var i = 0; i < files.length; i++) {
     var f = files[i];
@@ -1007,7 +1008,7 @@ function addMVFiles(files) {
     });
   }
   if (oversized.length) {
-    alert('以下文件超过 100MB 限制，已跳过：\n\n' + oversized.join('\n'));
+    alert('以下文件超过 500MB 限制，已跳过：\n\n' + oversized.join('\n') + '\n\n提示：Pro 套餐支持最大 5GB 单文件。');
   }
   renderMVQueue();
 }
@@ -1080,21 +1081,29 @@ async function uploadAllMVs() {
       var safeName = entry.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40);
       var mvPath = ts + '_' + safeName + '.' + ext;
       var mvUrl;
+      var fileSizeMB = entry.file.size / 1024 / 1024;
 
-      if (useGitHub) {
+      if (useGitHub && fileSizeMB <= 100) {
+        // GitHub: up to 100MB, good for mid-size MVs
         mvUrl = await githubUploadFile(entry.file, 'public/mv', mvPath, function(pct) {
           entry.progress = pct;
           renderMVQueue();
         });
+      } else if (fileSizeMB > 100) {
+        // >100MB: must use Supabase (Pro plan supports up to 5GB)
+        mvUrl = await uploadFileWithProgress('mv', mvPath, entry.file, function(pct) {
+          entry.progress = pct;
+          renderMVQueue();
+        });
       } else {
-        // Try Supabase first; fall back to warning
+        // <=100MB, no GitHub token: try Supabase
         try {
           mvUrl = await uploadFileWithProgress('mv', mvPath, entry.file, function(pct) {
             entry.progress = pct;
             renderMVQueue();
           });
         } catch(e) {
-          if (e.message && e.message.includes('Bucket') || e.message && e.message.includes('not found')) {
+          if (e.message && (e.message.includes('Bucket') || e.message.includes('not found'))) {
             throw new Error('MV 存储桶不存在！请在 Supabase 控制台 Storage 中创建名为 "mv" 的公开存储桶，或者设置 GitHub Token 以使用 GitHub 存储。');
           }
           throw e;
