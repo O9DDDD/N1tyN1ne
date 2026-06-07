@@ -612,6 +612,7 @@ var Theme = {
       document.documentElement.setAttribute('data-theme', 'dark');
     }
     this._updateIcon();
+    this._listenSystem();
   },
   toggle: function() {
     var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -623,11 +624,21 @@ var Theme = {
     var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     var icon = document.querySelector('#themeToggle i');
     if (icon) icon.className = 'fas fa-' + (isDark ? 'sun' : 'moon');
+  },
+  _listenSystem: function() {
+    var self = this;
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+      if (!localStorage.getItem('theme')) {
+        document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : '');
+        self._updateIcon();
+      }
+    });
   }
 };
 Theme.init();
 </script>
 <script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
 <script src="js/player.js"></script>
 <script>
 /* ─── Music Browse App ──────────────────────────────── */
@@ -1078,6 +1089,7 @@ function escAttr(str) {
 
 /* ─── Boot ───────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', async () => {
+  await initAuth();
   await MusicApp.init();
 
   // ─── Player event bindings ──────────────────────
