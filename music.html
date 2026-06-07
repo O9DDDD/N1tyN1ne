@@ -341,8 +341,8 @@
     }
     .lyrics-panel .lyric-line{
       font-size:1.1rem;color:rgba(255,255,255,.18);padding:14px 28px;
-      transition:all .55s cubic-bezier(.25,.1,.25,1);text-align:center;
-      cursor:pointer;border-radius:12px;font-weight:400;line-height:1.7;
+      transition:transform .55s cubic-bezier(.25,.1,.25,1),opacity .55s ease;
+      text-align:center;cursor:pointer;border-radius:12px;font-weight:400;line-height:1.7;
       letter-spacing:.5px;will-change:transform,opacity;
       transform-origin:center center;
     }
@@ -1493,15 +1493,10 @@ const MusicApp = {
     document.querySelectorAll('.song-row').forEach(function(row) {
       row.classList.remove('playing');
       var idx = parseInt(row.dataset.track);
-      if (idx === Player.idx && Player.playing) row.classList.add('playing');
-    });
-    document.querySelectorAll('.song-row .sr-num').forEach(function(el) {
-      var row = el.closest('.song-row');
-      if (!row) return;
-      var idx = parseInt(row.dataset.track);
-      if (idx === Player.idx && Player.playing) {
-        el.innerHTML = '<i class="fas fa-play" style="font-size:8px"></i>';
-      }
+      var isPlaying = idx === Player.idx && Player.playing;
+      if (isPlaying) row.classList.add('playing');
+      var num = row.querySelector('.sr-num');
+      if (num) num.innerHTML = isPlaying ? '<i class="fas fa-play" style="font-size:8px"></i>' : (idx + 1);
     });
   }
 };
@@ -1706,10 +1701,44 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateFanLyrics(activeIdx);
   });
 
+  var _fanRaf = null, _lastFanIdx = -1;
+
   function updateFanLyrics(activeIdx) {
+    if (activeIdx === _lastFanIdx) return;
+    _lastFanIdx = activeIdx;
+    if (_fanRaf) cancelAnimationFrame(_fanRaf);
+    _fanRaf = requestAnimationFrame(function() {
+      _fanRaf = null;
+      _renderFanLyrics(activeIdx);
+    });
+  }
+
+  function _renderFanLyrics(activeIdx) {
     var lines = document.querySelectorAll('#lyricsPanel .lyric-line');
     if (!lines.length) return;
-    lines.forEach(function(l, i) {
+
+    var range = 10; // only update lines near the active one
+    var start = Math.max(0, (activeIdx < 0 ? 0 : activeIdx) - range);
+    var end = Math.min(lines.length, (activeIdx < 0 ? 0 : activeIdx) + range + 1);
+
+    // Set far-away lines to terminal state (one-time, avoids per-frame work)
+    for (var i = 0; i < lines.length; i++) {
+      if (i >= start && i < end) continue;
+      var l = lines[i];
+      l.classList.remove('active', 'past');
+      if (i < activeIdx) {
+        l.classList.add('past');
+        l.style.transform = 'perspective(800px) rotateX(40deg) translateY(-90px) scale(0.55)';
+        l.style.opacity = '0.18';
+      } else if (i > activeIdx) {
+        l.style.transform = 'perspective(800px) rotateX(-50deg) translateY(100px) scale(0.45)';
+        l.style.opacity = '0.12';
+      }
+    }
+
+    // Update nearby lines with precise fan transforms
+    for (var i = start; i < end; i++) {
+      var l = lines[i];
       l.classList.remove('active', 'past');
       var dist = i - activeIdx;
       if (activeIdx >= 0 && i === activeIdx) {
@@ -1718,7 +1747,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         l.style.opacity = '1';
       } else if (activeIdx >= 0 && i < activeIdx) {
         l.classList.add('past');
-        // Fan upward: negative rotateX, slight translate up, shrink
         var factor = Math.min(Math.abs(dist), 5);
         var rx = factor * 8;
         var ty = -factor * 18;
@@ -1726,8 +1754,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         var op = Math.max(0.18, 1 - factor * 0.16);
         l.style.transform = 'perspective(800px) rotateX(' + rx + 'deg) translateY(' + ty + 'px) scale(' + sc + ')';
         l.style.opacity = op;
-      } else {
-        // Future lines: fan downward
+      } else if (activeIdx >= 0) {
         var factor2 = Math.min(Math.abs(dist), 5);
         var rx2 = -factor2 * 10;
         var ty2 = factor2 * 20;
@@ -1736,10 +1763,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         l.style.transform = 'perspective(800px) rotateX(' + rx2 + 'deg) translateY(' + ty2 + 'px) scale(' + sc2 + ')';
         l.style.opacity = op2;
       }
-    });
-    // Auto-scroll active line to center
+    }
+
+    // Scroll active line to center using scrollTop (avoids smooth-scroll layout thrash)
     if (activeIdx >= 0 && lines[activeIdx]) {
-      lines[activeIdx].scrollIntoView({ block: 'center', behavior: 'smooth' });
+      var panel = document.getElementById('lyricsPanel');
+      var activeLine = lines[activeIdx];
+      var target = activeLine.offsetTop - panel.clientHeight / 2 + activeLine.clientHeight / 2;
+      panel.scrollTop = Math.max(0, target);
     }
   }
 

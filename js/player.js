@@ -36,12 +36,33 @@ const Player = {
   },
 
   _bindAudio(el) {
-    el.addEventListener('timeupdate', () => this._tick());
-    el.addEventListener('loadedmetadata', () => this._emit('durupdate'));
-    el.addEventListener('ended', () => this._onEnded());
-    el.addEventListener('play', () => this._onPlay());
-    el.addEventListener('pause', () => this._onPause());
-    el.addEventListener('error', () => { if (this.tracks.length) this.next(); });
+    this._unbindAudio(el);
+    el._ph = {
+      tick: () => this._tick(),
+      meta: () => this._emit('durupdate'),
+      ended: () => this._onEnded(),
+      play: () => this._onPlay(),
+      pause: () => this._onPause(),
+      error: () => { if (this.tracks.length) this.next(); }
+    };
+    el.addEventListener('timeupdate', el._ph.tick);
+    el.addEventListener('loadedmetadata', el._ph.meta);
+    el.addEventListener('ended', el._ph.ended);
+    el.addEventListener('play', el._ph.play);
+    el.addEventListener('pause', el._ph.pause);
+    el.addEventListener('error', el._ph.error);
+  },
+
+  _unbindAudio(el) {
+    if (el._ph) {
+      el.removeEventListener('timeupdate', el._ph.tick);
+      el.removeEventListener('loadedmetadata', el._ph.meta);
+      el.removeEventListener('ended', el._ph.ended);
+      el.removeEventListener('play', el._ph.play);
+      el.removeEventListener('pause', el._ph.pause);
+      el.removeEventListener('error', el._ph.error);
+      el._ph = null;
+    }
   },
 
   _tryQuickResume() {
@@ -179,6 +200,7 @@ const Player = {
       var nextIdx = this._preloadedIdx;
       var nextLyrics = this._preloadedLyrics;
       var oldAudio = this.audio;
+      this._unbindAudio(oldAudio);
       this.audio = this._nextAudio;
       this._bindAudio(this.audio);
       this._nextAudio = oldAudio;
@@ -187,6 +209,7 @@ const Player = {
       this._preloadedLyrics = null;
       this.idx = nextIdx;
       this.playing = true;
+      this._lastLyricTime = 0; // reset lyric throttle on track change
       this._updateInfo();
       var t = this.tracks[this.idx];
       if (t) {
@@ -394,14 +417,13 @@ const Player = {
     this.playing = true;
     this._saveState();
     this._emit('play');
-    this._syncLyrics();
+    this._lastLyricTime = 0;
     this._renderFloat();
   },
   _onPause() {
     this.playing = false;
     this._saveState();
     this._emit('pause');
-    if (this.lyricTimer) { clearInterval(this.lyricTimer); this.lyricTimer = null; }
     this._renderFloat();
   },
 
@@ -409,8 +431,27 @@ const Player = {
     var ct = this.audio.currentTime, dur = this.audio.duration || 0;
     var pct = dur ? (ct / dur) * 100 : 0;
     this._emit('tick', { ct: ct, dur: dur, pct: pct });
-    this._renderFloat();
-    this._saveState();
+
+    // Throttle UI updates to every 350ms (was every timeupdate event ~4-20/s)
+    var now = Date.now();
+    if (!this._lastFloatTime || now - this._lastFloatTime >= 350) {
+      this._renderFloat();
+      this._lastFloatTime = now;
+    }
+    // Throttle state saves to every 5s (was every tick)
+    if (!this._lastSaveTime || now - this._lastSaveTime >= 5000) {
+      this._saveState();
+      this._lastSaveTime = now;
+    }
+    // Lyrics sync integrated into tick, throttled to 350ms
+    if (this.lyrics.length && (!this._lastLyricTime || now - this._lastLyricTime >= 350)) {
+      this._lastLyricTime = now;
+      var activeIdx = -1;
+      for (var i = this.lyrics.length - 1; i >= 0; i--) {
+        if (ct >= this.lyrics[i].time) { activeIdx = i; break; }
+      }
+      this._emit('lyricsync', activeIdx);
+    }
     // Preload next track when 45s or 70% through current track
     if (dur > 0 && ((dur - ct) < 45 || (dur - ct) / dur < 0.3)) {
       this._preloadNext();
@@ -496,17 +537,9 @@ const Player = {
   },
 
   _syncLyrics() {
-    if (this.lyricTimer) clearInterval(this.lyricTimer);
-    if (!this.lyrics.length) return;
-    var self = this;
-    this.lyricTimer = setInterval(function() {
-      var ct = self.audio.currentTime;
-      var activeIdx = -1;
-      for (var i = self.lyrics.length - 1; i >= 0; i--) {
-        if (ct >= self.lyrics[i].time) { activeIdx = i; break; }
-      }
-      self._emit('lyricsync', activeIdx);
-    }, 200);
+    // Lyrics sync is now integrated into _tick() (throttled at 350ms).
+    // Reset the timer so the first tick on a new track picks up lyrics immediately.
+    this._lastLyricTime = 0;
   },
 
   /* ─── Formatting ──────────────────────────────────── */
@@ -527,46 +560,58 @@ const Player = {
     el.classList.add('show');
 
     var t = hasActive ? this.tracks[this.idx] : null;
-    var cover = el.querySelector('.fp-cover');
-    var title = el.querySelector('.fp-title');
-    var lyric = el.querySelector('.fp-lyric');
-    var bar = el.querySelector('.fp-bar');
-    var playIcon = el.querySelector('#fpPlayIcon');
 
-    if (cover) {
-      cover.src = t?.cover_url ? https(t.cover_url) : 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><rect fill="%23f3f0eb" width="52" height="52"/><text x="26" y="34" text-anchor="middle" font-size="24" fill="%236b8e5a">♪</text></svg>';
-      cover.classList.toggle('playing', this.playing);
+    // Cache DOM refs on first call to avoid querySelector on every tick
+    if (!this._floatEls) {
+      this._floatEls = {
+        cover: el.querySelector('.fp-cover'),
+        title: el.querySelector('.fp-title'),
+        lyric: el.querySelector('.fp-lyric'),
+        bar: el.querySelector('.fp-bar'),
+        playIcon: el.querySelector('#fpPlayIcon')
+      };
     }
-    if (title) title.textContent = t?.title || '未选择';
-    if (lyric) {
+    var fe = this._floatEls;
+
+    if (fe.cover) {
+      fe.cover.src = t?.cover_url ? https(t.cover_url) : 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><rect fill="%23f3f0eb" width="52" height="52"/><text x="26" y="34" text-anchor="middle" font-size="24" fill="%236b8e5a">♪</text></svg>';
+      fe.cover.classList.toggle('playing', this.playing);
+    }
+    if (fe.title) fe.title.textContent = t?.title || '未选择';
+    if (fe.lyric) {
       var cl = this.getCurrentLyric();
-      lyric.textContent = cl ? cl.text : (t?.artist || '');
+      fe.lyric.textContent = cl ? cl.text : (t?.artist || '');
     }
-    if (bar) {
+    if (fe.bar) {
       var dur = this.audio.duration || 0;
-      bar.style.width = (dur ? (this.audio.currentTime / dur) * 100 : 0) + '%';
+      fe.bar.style.width = (dur ? (this.audio.currentTime / dur) * 100 : 0) + '%';
     }
-    if (playIcon) {
-      playIcon.className = 'fas fa-' + (this.playing ? 'pause' : 'play');
+    if (fe.playIcon) {
+      fe.playIcon.className = 'fas fa-' + (this.playing ? 'pause' : 'play');
     }
   },
 
   /* ─── 3D Tilt for cover card ──────────────────────── */
   initTilt(el) {
     if (!el) return;
+    var _tiltRaf = null;
     el.addEventListener('mousemove', function(e) {
       if (Player.mvMode) return;
-      var rect = el.getBoundingClientRect();
-      var x = e.clientX - rect.left;
-      var y = e.clientY - rect.top;
-      var cx = rect.width / 2, cy = rect.height / 2;
-      var rx = ((y - cy) / cy) * -12;
-      var ry = ((x - cx) / cx) * 12;
-      el.style.transform = 'perspective(600px) rotateX(' + rx + 'deg) rotateY(' + ry + 'deg) scale3d(1.02,1.02,1.02)';
-      var gloss = el.querySelector('.tilt-gloss');
-      if (gloss) {
-        gloss.style.background = 'radial-gradient(circle at ' + (x/rect.width)*100 + '% ' + (y/rect.height)*100 + '%, rgba(255,255,255,.4) 0%, transparent 60%)';
-      }
+      if (_tiltRaf) return; // throttle to rAF
+      _tiltRaf = requestAnimationFrame(function() {
+        _tiltRaf = null;
+        var rect = el.getBoundingClientRect();
+        var x = e.clientX - rect.left;
+        var y = e.clientY - rect.top;
+        var cx = rect.width / 2, cy = rect.height / 2;
+        var rx = ((y - cy) / cy) * -12;
+        var ry = ((x - cx) / cx) * 12;
+        el.style.transform = 'perspective(600px) rotateX(' + rx + 'deg) rotateY(' + ry + 'deg) scale3d(1.02,1.02,1.02)';
+        var gloss = el.querySelector('.tilt-gloss');
+        if (gloss) {
+          gloss.style.background = 'radial-gradient(circle at ' + (x/rect.width)*100 + '% ' + (y/rect.height)*100 + '%, rgba(255,255,255,.4) 0%, transparent 60%)';
+        }
+      });
     });
     el.addEventListener('mouseleave', function() {
       el.style.transform = 'perspective(600px) rotateX(0) rotateY(0) scale3d(1,1,1)';
