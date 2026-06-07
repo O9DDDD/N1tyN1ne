@@ -121,14 +121,8 @@
       box-shadow:0 12px 32px rgba(0,0,0,.08),0 0 0 1px var(--warm);
     }
     .genre-card:active{transform:scale(.96);transition:transform .1s var(--ease-out)}
-    .genre-card .gc-icon{
-      width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-      font-size:1.5rem;background:var(--warm-light);color:var(--warm-dark);
-      transition:transform .35s var(--ease-spring),box-shadow .35s var(--ease-out);
-    }
-    .genre-card:hover .gc-icon{transform:scale(1.1) rotate(-5deg);box-shadow:0 6px 20px var(--warm-glow)}
-    .genre-card .gc-name{font-weight:700;font-size:.9rem;color:var(--text-bright)}
-    .genre-card .gc-count{font-size:.72rem;color:var(--text-dim);padding:3px 10px;background:var(--bg-muted);border-radius:99px}
+    .genre-card .gc-name{font-weight:700;font-size:1rem;color:var(--text-bright)}
+    .genre-card .gc-count{font-size:.75rem;color:var(--text-dim);margin-top:4px}
 
     .album-card{
       padding:0;text-align:left;gap:0;overflow:hidden;border-radius:16px;
@@ -212,10 +206,21 @@
     .player-view{
       display:none;position:fixed;inset:0;z-index:50;background:#0f0f0f;
       grid-template-rows:56px 1fr;grid-template-areas:'nav''main';
+      transition:top .5s var(--ease-out),left .5s var(--ease-out),width .5s var(--ease-out),height .5s var(--ease-out),border-radius .5s var(--ease-out);
+      will-change:top,left,width,height;
     }
     .player-view.open{
       display:grid;
     }
+    .player-view.clip{
+      overflow:hidden;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.6);
+    }
+    .player-view.clip .player-nav,
+    .player-view.clip .player-main{opacity:0}
+    .player-view.clip .player-nav,
+    .player-view.clip .player-main{transition:opacity .15s var(--ease-out)}
+    .player-view.unclip .player-nav,
+    .player-view.unclip .player-main{opacity:1;transition:opacity .25s var(--ease-out) .25s}
     .player-nav{
       grid-area:nav;display:flex;align-items:center;justify-content:space-between;
       padding:0 24px;background:rgba(15,15,15,.9);border-bottom:1px solid rgba(255,255,255,.08);
@@ -237,8 +242,8 @@
       grid-template-areas:'cover lyrics''playlist playlist';
     }
     .bg-blur{position:absolute;inset:0;z-index:0;overflow:hidden}
-    .bg-blur img{width:120%;height:120%;object-fit:cover;filter:blur(100px) brightness(.2) saturate(.5);transform:scale(1.1);transition:opacity .6s var(--ease-out)}
-    .bg-overlay{position:absolute;inset:0;background:rgba(15,15,15,.6);z-index:1}
+    .bg-blur img{width:120%;height:120%;object-fit:cover;filter:blur(80px) brightness(.35) saturate(.8);transform:scale(1.1);transition:opacity .8s var(--ease-out)}
+    .bg-overlay{position:absolute;inset:0;background:rgba(15,15,15,.35);z-index:1}
 
     .cover-panel{
       grid-area:cover;position:relative;z-index:2;
@@ -293,16 +298,28 @@
     .player-ctrls .active-ctrl{color:var(--accent-light)!important;text-shadow:0 0 12px var(--accent-glow)}
 
     .progress-wrap{width:100%;max-width:340px;display:flex;align-items:center;gap:10px;font-size:.68rem;color:#888}
-    .progress-wrap .bar{flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:99px;cursor:pointer;position:relative;overflow:visible;transition:height .2s var(--ease-out)}
-    .progress-wrap .bar:hover{height:6px}
-    .progress-wrap .bar .fill{height:100%;background:var(--accent);border-radius:99px;transition:width .1s linear}
+    .progress-wrap .bar{
+      flex:1;height:20px;background:transparent;border-radius:99px;cursor:pointer;
+      position:relative;overflow:visible;display:flex;align-items:center;
+    }
+    .progress-wrap .bar::before{
+      content:'';position:absolute;left:0;right:0;height:5px;background:rgba(255,255,255,.08);
+      border-radius:99px;transition:height .2s var(--ease-out);
+    }
+    .progress-wrap .bar:hover::before{height:7px}
+    .progress-wrap .bar .fill{
+      position:absolute;left:0;height:5px;background:var(--accent);border-radius:99px;
+      transition:height .2s var(--ease-out);pointer-events:none;z-index:1;
+    }
+    .progress-wrap .bar:hover .fill{height:7px}
     .progress-wrap .bar .dot{
       position:absolute;top:50%;left:0;transform:translate(-50%,-50%);
-      width:14px;height:14px;background:#fff;border-radius:50%;
-      opacity:0;transition:opacity .2s var(--ease-out),box-shadow .2s var(--ease-out);
-      pointer-events:none;box-shadow:0 0 16px rgba(138,171,122,.6);
+      width:16px;height:16px;background:#fff;border-radius:50%;z-index:2;
+      opacity:0;transition:opacity .2s var(--ease-out),box-shadow .2s var(--ease-out),transform .15s var(--ease-out);
+      pointer-events:none;box-shadow:0 0 16px rgba(138,171,122,.6),0 2px 8px rgba(0,0,0,.3);
     }
-    .progress-wrap .bar:hover .dot{opacity:1}
+    .progress-wrap .bar:hover .dot,
+    .progress-wrap .bar.dragging .dot{opacity:1;transform:translate(-50%,-50%) scale(1.2)}
     .vol-wrap{display:flex;align-items:center;gap:6px;font-size:.7rem;color:#888}
     .vol-wrap input[type=range]{width:70px;height:4px;-webkit-appearance:none;appearance:none;background:rgba(255,255,255,.08);outline:none;border-radius:99px;transition:opacity .2s}
     .vol-wrap input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--accent);border-radius:50%;cursor:pointer;transition:transform .2s var(--ease-spring);box-shadow:0 2px 8px rgba(0,0,0,.3)}
@@ -423,14 +440,6 @@
       background: #282520;
       color: #c4a070;
       box-shadow: 0 1px 3px rgba(0,0,0,.25), 0 0 0 1px rgba(180,140,90,.12);
-    }
-
-    [data-theme="dark"] .genre-card .gc-icon {
-      background: #2c241c;
-      color: #b08858;
-    }
-    [data-theme="dark"] .genre-card:hover .gc-icon {
-      box-shadow: 0 6px 20px rgba(180,140,90,.1);
     }
 
     [data-theme="dark"] .genre-card:hover,
@@ -706,11 +715,13 @@ const MusicApp = {
       // Album index
       const album = (t.album || '').trim() || '未分类专辑';
       if (album) {
-        if (!this.albumIndex[album]) this.albumIndex[album] = { tracks: [], cover: '', description: '', genre: '' };
+        if (!this.albumIndex[album]) this.albumIndex[album] = { tracks: [], cover: '', description: '', genre: '', artist: '', year: '' };
         this.albumIndex[album].tracks.push(t);
         if (!this.albumIndex[album].cover && t.cover_url) this.albumIndex[album].cover = t.cover_url;
         if (!this.albumIndex[album].description && t.album_description) this.albumIndex[album].description = t.album_description;
         if (!this.albumIndex[album].genre && t.genre) this.albumIndex[album].genre = t.genre;
+        if (!this.albumIndex[album].artist && t.album_artist) this.albumIndex[album].artist = t.album_artist;
+        if (!this.albumIndex[album].year && t.album_year) this.albumIndex[album].year = t.album_year;
       }
       // Genre index
       const genre = (t.genre || '').trim() || '未分类';
@@ -843,11 +854,9 @@ const MusicApp = {
       document.getElementById('pagination').innerHTML = '';
       return;
     }
-    const icons = ['fa-guitar', 'fa-drum', 'fa-microphone', 'fa-record-vinyl', 'fa-headphones', 'fa-fire', 'fa-bolt', 'fa-star'];
     let html = '<div class="cards-grid">';
     genres.forEach((g, i) => {
       html += '<div class="genre-card" onclick="MusicApp.navigate(\'genre\',\'' + escAttr(g) + '\')" style="animation-delay:' + (i * 0.08).toFixed(2) + 's">' +
-        '<div class="gc-icon"><i class="fas ' + (icons[i % icons.length]) + '"></i></div>' +
         '<div class="gc-name">' + escHtml(g) + '</div>' +
         '<div class="gc-count">' + this.genreIndex[g].length + ' 首</div>' +
       '</div>';
@@ -875,7 +884,7 @@ const MusicApp = {
           : '<div class="ac-cover"><i class="fas fa-compact-disc"></i></div>') +
         '<div class="ac-info">' +
           '<div class="ac-name">' + escHtml(a) + '</div>' +
-          '<div class="ac-meta">' + info.tracks.length + ' 首' + (info.genre ? ' · ' + escHtml(info.genre) : '') + '</div>' +
+          '<div class="ac-meta">' + (info.artist ? escHtml(info.artist) + ' · ' : '') + info.tracks.length + ' 首' + (info.year ? ' · ' + escHtml(info.year) : '') + '</div>' +
           (info.description ? '<div class="ac-desc">' + escHtml(info.description) + '</div>' : '') +
         '</div>' +
       '</div>';
@@ -900,7 +909,12 @@ const MusicApp = {
       '<div class="ah-info">' +
         '<span class="ah-label">专辑</span>' +
         '<h1 class="ah-name">' + escHtml(name) + '</h1>' +
-        '<div class="ah-meta">' + info.tracks.length + ' 首' + (info.genre ? ' · ' + escHtml(info.genre) : '') + '</div>' +
+        '<div class="ah-meta">' +
+          (info.artist ? escHtml(info.artist) + ' · ' : '') +
+          info.tracks.length + ' 首' +
+          (info.year ? ' · ' + escHtml(info.year) : '') +
+          (info.genre ? ' · ' + escHtml(info.genre) : '') +
+        '</div>' +
         (info.description ? '<p class="ah-desc">' + escHtml(info.description) + '</p>' : '') +
         '<button class="btn-play-all" onclick="MusicApp.playAlbum(\'' + escAttr(name) + '\')"><i class="fas fa-play"></i> 播放全部</button>' +
       '</div>' +
@@ -990,11 +1004,57 @@ const MusicApp = {
     }
   },
 
+  /* ─── Expand to player ──────────────────────────── */
+  expandPlayerFrom(el) {
+    var rect = el.getBoundingClientRect();
+    var pv = document.getElementById('playerView');
+    document.getElementById('browseView').style.display = 'none';
+    document.getElementById('floatPlayer').classList.remove('show');
+    document.getElementById('pagination').style.display = 'none';
+
+    pv.style.display = 'grid';
+    pv.style.top = rect.top + 'px';
+    pv.style.left = rect.left + 'px';
+    pv.style.width = rect.width + 'px';
+    pv.style.height = rect.height + 'px';
+    pv.classList.add('clip');
+    pv.classList.remove('open', 'unclip');
+
+    var self = this;
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        pv.classList.add('unclip');
+        pv.style.top = '0';
+        pv.style.left = '0';
+        pv.style.width = '100%';
+        pv.style.height = '100%';
+        pv.style.borderRadius = '0';
+      });
+    });
+
+    pv.addEventListener('transitionend', function handler() {
+      pv.removeEventListener('transitionend', handler);
+      pv.classList.remove('clip', 'unclip');
+      pv.classList.add('open');
+      pv.style.top = ''; pv.style.left = '';
+      pv.style.width = ''; pv.style.height = '';
+      pv.style.borderRadius = '';
+    }, { once: true });
+
+    if (window.location.hash !== '#playing') {
+      history.replaceState(null, '', '#playing');
+    }
+    var t = Player.tracks[Player.idx];
+    document.getElementById('pnTitle').textContent = t ? (t.title + ' · ' + t.artist) : '正在播放';
+  },
+
   /* ─── Playback ─────────────────────────────────── */
   playTrack(idx) {
     Player.tracks = this.allTracks;
     Player._emit('playlist');
     Player.play(idx);
+    var row = document.querySelector('.song-row[data-track="' + idx + '"]');
+    if (row) this.expandPlayerFrom(row);
   },
 
   playAlbum(albumName) {
@@ -1003,6 +1063,8 @@ const MusicApp = {
     Player.tracks = info.tracks;
     Player._emit('playlist');
     Player.play(0);
+    var btn = document.querySelector('.btn-play-all');
+    if (btn) this.expandPlayerFrom(btn);
   },
 
   playAlbumTrack(albumName, idx) {
@@ -1011,6 +1073,9 @@ const MusicApp = {
     Player.tracks = info.tracks;
     Player._emit('playlist');
     Player.play(idx);
+    var allRows = document.querySelectorAll('.song-row');
+    var row = allRows[idx];
+    if (row) this.expandPlayerFrom(row);
   },
 
   playGenre(genreName) {
@@ -1019,6 +1084,8 @@ const MusicApp = {
     Player.tracks = tracks;
     Player._emit('playlist');
     Player.play(0);
+    var btn = document.querySelector('.btn-play-all');
+    if (btn) this.expandPlayerFrom(btn);
   },
 
   playGenreTrack(genreName, idx) {
@@ -1027,6 +1094,9 @@ const MusicApp = {
     Player.tracks = tracks;
     Player._emit('playlist');
     Player.play(idx);
+    var allRows = document.querySelectorAll('.song-row');
+    var row = allRows[idx];
+    if (row) this.expandPlayerFrom(row);
   },
 
   /* ─── View Switching ───────────────────────────── */
@@ -1034,9 +1104,47 @@ const MusicApp = {
     // Save current browse hash before entering player mode
     var h = window.location.hash.replace('#', '') || 'all';
     if (h !== 'playing') this._lastBrowseHash = h;
-    document.getElementById('browseView').style.display = 'none';
-    document.getElementById('playerView').classList.add('open');
-    document.getElementById('floatPlayer').classList.remove('show');
+    // Expand from float player position
+    var fp = document.getElementById('floatPlayer');
+    if (fp && fp.classList.contains('show')) {
+      var rect = fp.getBoundingClientRect();
+      var pv = document.getElementById('playerView');
+      document.getElementById('browseView').style.display = 'none';
+      fp.classList.remove('show');
+      document.getElementById('pagination').style.display = 'none';
+
+      pv.style.display = 'grid';
+      pv.style.top = rect.top + 'px';
+      pv.style.left = rect.left + 'px';
+      pv.style.width = rect.width + 'px';
+      pv.style.height = rect.height + 'px';
+      pv.classList.add('clip');
+      pv.classList.remove('open', 'unclip');
+
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          pv.classList.add('unclip');
+          pv.style.top = '0';
+          pv.style.left = '0';
+          pv.style.width = '100%';
+          pv.style.height = '100%';
+          pv.style.borderRadius = '0';
+        });
+      });
+
+      pv.addEventListener('transitionend', function handler() {
+        pv.removeEventListener('transitionend', handler);
+        pv.classList.remove('clip', 'unclip');
+        pv.classList.add('open');
+        pv.style.top = ''; pv.style.left = '';
+        pv.style.width = ''; pv.style.height = '';
+        pv.style.borderRadius = '';
+      }, { once: true });
+    } else {
+      document.getElementById('browseView').style.display = 'none';
+      document.getElementById('playerView').classList.add('open');
+      document.getElementById('floatPlayer').classList.remove('show');
+    }
     // Use replaceState to avoid triggering hashchange
     if (window.location.hash !== '#playing') {
       history.replaceState(null, '', '#playing');
@@ -1046,7 +1154,7 @@ const MusicApp = {
   },
 
   showBrowse() {
-    // Back from player: restore last browse hash
+    document.getElementById('pagination').style.display = '';
     window.location.hash = '#' + this._lastBrowseHash;
   },
 
@@ -1182,6 +1290,48 @@ document.addEventListener('DOMContentLoaded', async () => {
       el.appendChild(div);
     });
   }
+
+  // ─── Progress bar drag ──────────────────────────
+  (function() {
+    var bar = document.getElementById('progBar');
+    var dragging = false;
+    function seekFromEvent(e) {
+      var rect = bar.getBoundingClientRect();
+      var x = (e.touches ? e.touches[0].clientX : e.clientX);
+      var frac = Math.max(0, Math.min(1, (x - rect.left) / rect.width));
+      Player.audio.currentTime = frac * (Player.audio.duration || 0);
+    }
+    bar.addEventListener('mousedown', function(e) {
+      dragging = true;
+      bar.classList.add('dragging');
+      seekFromEvent(e);
+      e.preventDefault();
+    });
+    bar.addEventListener('touchstart', function(e) {
+      dragging = true;
+      bar.classList.add('dragging');
+      seekFromEvent(e);
+      e.preventDefault();
+    }, { passive: false });
+    document.addEventListener('mousemove', function(e) {
+      if (!dragging) return;
+      seekFromEvent(e);
+    });
+    document.addEventListener('touchmove', function(e) {
+      if (!dragging) return;
+      seekFromEvent(e);
+    }, { passive: false });
+    document.addEventListener('mouseup', function() {
+      if (!dragging) return;
+      dragging = false;
+      bar.classList.remove('dragging');
+    });
+    document.addEventListener('touchend', function() {
+      if (!dragging) return;
+      dragging = false;
+      bar.classList.remove('dragging');
+    });
+  })();
 
   // ─── 3D Tilt ────────────────────────────────────
   Player.initTilt(document.getElementById('coverCard'));

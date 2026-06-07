@@ -123,6 +123,8 @@ async function loadAdminMusic() {
           '<td><input id="emArtist" value="' + escHtml(m.artist || '') + '" style="width:100%;padding:4px 6px;background:var(--blk-mid);border:1px solid var(--border);color:var(--text-bright);font-size:.82rem;border-radius:4px"></td>' +
           '<td><input id="emAlbum" value="' + escHtml(m.album || '') + '" placeholder="专辑" style="width:100%;padding:4px 6px;background:var(--blk-mid);border:1px solid var(--border);color:var(--text-bright);font-size:.82rem;border-radius:4px"></td>' +
           '<td><input id="emGenre" value="' + escHtml(m.genre || '') + '" placeholder="风格" style="width:100%;padding:4px 6px;background:var(--blk-mid);border:1px solid var(--border);color:var(--text-bright);font-size:.82rem;border-radius:4px"></td>' +
+          '<td><input id="emAlbumArtist" value="' + escHtml(m.album_artist || '') + '" placeholder="专辑艺术家" style="width:100%;padding:4px 6px;background:var(--blk-mid);border:1px solid var(--border);color:var(--text-bright);font-size:.78rem;border-radius:4px"></td>' +
+          '<td><input id="emAlbumYear" value="' + escHtml(m.album_year || '') + '" placeholder="年份" style="width:60px;padding:4px 6px;background:var(--blk-mid);border:1px solid var(--border);color:var(--text-bright);font-size:.82rem;border-radius:4px"></td>' +
           '<td><input id="emTrack" value="' + (m.track_number || '') + '" placeholder="音轨号" type="number" min="1" style="width:60px;padding:4px 6px;background:var(--blk-mid);border:1px solid var(--border);color:var(--text-bright);font-size:.82rem;border-radius:4px"></td>' +
           '<td>' + (m.created_at ? new Date(m.created_at).toLocaleDateString('zh-CN') : '') + '</td>' +
           '<td><button class="btn btn-primary btn-sm" onclick="saveMusicEdit(\'' + m.id + '\')" style="background:var(--grn-dark);color:#fff">保存</button> ' +
@@ -166,8 +168,10 @@ async function saveMusicEdit(id) {
     }
     var album = document.getElementById('emAlbum').value.trim();
     var genre = document.getElementById('emGenre').value.trim();
+    var albumArtist = document.getElementById('emAlbumArtist').value.trim();
+    var albumYear = document.getElementById('emAlbumYear').value.trim();
     var trackNumber = parseInt(document.getElementById('emTrack').value) || null;
-    var payload = { title: title, artist: artist, album: album, genre: genre, track_number: trackNumber };
+    var payload = { title: title, artist: artist, album: album, genre: genre, album_artist: albumArtist, album_year: albumYear, track_number: trackNumber };
     if (coverUrl) payload.cover_url = coverUrl;
     await dbUpdate('music', payload, 'id', id);
     editingMusicId = null;
@@ -335,6 +339,8 @@ async function addFiles(files) {
       album: '',
       genre: '',
       album_description: '',
+      album_artist: '',
+      album_year: '',
       trackNumber: null,
       coverBlob: null,
       coverUrl: '',
@@ -527,6 +533,10 @@ function renderQueue() {
           '<input value="' + escHtml(entry.album || '') + '" onchange="uploadQueue[' + i + '].album=this.value" placeholder="专辑" style="flex:1;padding:6px 8px;background:var(--blk-mid);border:1px solid var(--border);border-radius:4px;color:var(--text-bright);font-size:.82rem">' +
           '<input value="' + escHtml(entry.genre || '') + '" onchange="uploadQueue[' + i + '].genre=this.value" placeholder="风格/分类" style="flex:1;padding:6px 8px;background:var(--blk-mid);border:1px solid var(--border);border-radius:4px;color:var(--text-bright);font-size:.82rem">' +
         '</div>' +
+        '<div style="display:flex;gap:6px;margin-top:6px">' +
+          '<input value="' + escHtml(entry.album_artist || '') + '" onchange="uploadQueue[' + i + '].album_artist=this.value" placeholder="专辑艺术家" style="flex:1;padding:6px 8px;background:var(--blk-mid);border:1px solid var(--border);border-radius:4px;color:var(--text-bright);font-size:.82rem">' +
+          '<input value="' + escHtml(entry.album_year || '') + '" onchange="uploadQueue[' + i + '].album_year=this.value" placeholder="年份" style="width:80px;padding:6px 8px;background:var(--blk-mid);border:1px solid var(--border);border-radius:4px;color:var(--text-bright);font-size:.82rem">' +
+        '</div>' +
         '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">' +
           lyricsBadge +
           '<span style="font-size:.7rem;color:var(--text-dim)">' + statusIcon + ' ' + statusText + '</span>' +
@@ -617,6 +627,8 @@ async function uploadAll() {
         album: entry.album || '',
         genre: entry.genre || '',
         album_description: entry.album_description || '',
+        album_artist: entry.album_artist || '',
+        album_year: entry.album_year || '',
         track_number: entry.trackNumber,
         duration: '',
         audio_url: audioUrl,
