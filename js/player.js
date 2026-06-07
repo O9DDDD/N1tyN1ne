@@ -33,7 +33,11 @@ const Player = {
       ended: () => this._onEnded(),
       play: () => this._onPlay(),
       pause: () => this._onPause(),
-      error: () => { if (this.tracks.length) this.next(); }
+      error: () => {
+        this._errorCount = (this._errorCount || 0) + 1;
+        if (this._errorCount > 3) return; // prevent infinite error loop
+        if (this.tracks.length) this.next();
+      }
     };
     el.addEventListener('timeupdate', el._ph.tick);
     el.addEventListener('loadedmetadata', el._ph.meta);
@@ -144,6 +148,11 @@ const Player = {
     this._renderFloat();
     this._preloadedIdx = -1;
     this._preloadedLyrics = null;
+    this._errorCount = 0;
+    // Abort stale preload to prevent _onEnded swaping wrong track
+    if (this._nextAudio) {
+      try { this._nextAudio.src = ''; this._nextAudio.load(); } catch(e) {}
+    }
     // End transition after a short delay
     var self = this;
     if (this._transitioning) {
@@ -195,22 +204,24 @@ const Player = {
       this._preloadedLyrics = null;
       this.idx = nextIdx;
       this.playing = true;
-      this._lastLyricTime = 0; // reset lyric throttle on track change
+      this._lastLyricTime = 0;
       this._updateInfo();
       var t = this.tracks[this.idx];
       if (t) {
-        if (nextLyrics) {
+        if (nextLyrics && nextLyrics.length) {
           this.lyrics = nextLyrics;
           this._emit('lyrics', this.lyrics);
         } else {
           this.parseLyrics(t.lyrics || '');
         }
       }
+      this.audio.play().catch(function(){});
       this._saveState();
       this._emit('play');
       this._emit('playlist');
       this._syncLyrics();
       this._renderFloat();
+      this._errorCount = 0;
       this._preloadNext();
     } else {
       this.next();
