@@ -1,11 +1,28 @@
 /* ─── Public Site App ───────────────────────────────── */
 document.addEventListener('DOMContentLoaded', async () => {
   Player.init();
+  applySiteSettings();
   await initAuth();
   await loadPosts();
   await loadFriends();
   await Player.load();
 });
+
+/* ─── Site Settings ──────────────────────────────────── */
+function applySiteSettings() {
+  try {
+    var raw = localStorage.getItem('site_settings');
+    if (!raw) return;
+    var s = JSON.parse(raw);
+    if (s.heroTitle) document.getElementById('heroTitle').textContent = s.heroTitle;
+    if (s.heroDesc) document.getElementById('heroDesc').textContent = s.heroDesc;
+    if (s.aboutIntro) document.getElementById('aboutIntro').textContent = s.aboutIntro;
+    if (s.aboutTitle2) document.getElementById('aboutTitle2').textContent = s.aboutTitle2;
+    if (s.aboutDesc2) document.getElementById('aboutDesc2').textContent = s.aboutDesc2;
+    if (s.aboutTitle3) document.getElementById('aboutTitle3').textContent = s.aboutTitle3;
+    if (s.aboutDesc3) document.getElementById('aboutDesc3').textContent = s.aboutDesc3;
+  } catch(e) {}
+}
 
 /* ─── Blog ──────────────────────────────────────────── */
 async function loadPosts() {

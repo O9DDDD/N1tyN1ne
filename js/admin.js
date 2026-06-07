@@ -762,6 +762,7 @@ async function deleteFriend(id) {
 function loadSiteSettings() {
   var defaults = {
     heroTitle: 'N1tyN1ne', heroDesc: '记录、思考、分享。',
+    aboutIntro: '热爱编程，享受创造的乐趣。关注前端技术、工具开发和开源社区。用代码构建想法，用文字记录思考，用音乐填充生活。',
     aboutTitle2: '音乐', aboutDesc2: '音乐是灵魂的深呼吸。喜欢电子、后摇、独立音乐，偶尔自己也做点东西。',
     aboutTitle3: '写作', aboutDesc3: '用文字记录思考。写技术文章，也写生活随笔。分享让知识更有价值。'
   };
@@ -770,6 +771,7 @@ function loadSiteSettings() {
   s = Object.assign({}, defaults, s);
   document.getElementById('setHeroTitle').value = s.heroTitle;
   document.getElementById('setHeroDesc').value = s.heroDesc;
+  document.getElementById('setAboutIntro').value = s.aboutIntro || '';
   document.getElementById('setAboutTitle2').value = s.aboutTitle2;
   document.getElementById('setAboutDesc2').value = s.aboutDesc2;
   document.getElementById('setAboutTitle3').value = s.aboutTitle3;
@@ -780,6 +782,7 @@ function saveSiteSettings() {
   var data = {
     heroTitle: document.getElementById('setHeroTitle').value.trim() || 'N1tyN1ne',
     heroDesc: document.getElementById('setHeroDesc').value.trim() || '记录、思考、分享。',
+    aboutIntro: document.getElementById('setAboutIntro').value.trim() || '',
     aboutTitle2: document.getElementById('setAboutTitle2').value.trim() || '音乐',
     aboutDesc2: document.getElementById('setAboutDesc2').value.trim() || '',
     aboutTitle3: document.getElementById('setAboutTitle3').value.trim() || '写作',
