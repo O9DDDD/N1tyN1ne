@@ -452,8 +452,9 @@ const Player = {
       }
       this._emit('lyricsync', activeIdx);
     }
-    // Preload next track when 45s or 70% through current track
-    if (dur > 0 && ((dur - ct) < 45 || (dur - ct) / dur < 0.3)) {
+    // Preload next track only when within 30s of end AND at least 80% through
+    // Using AND prevents bandwidth competition from prolonged dual-download
+    if (dur > 0 && (dur - ct) < 30 && (dur - ct) / dur < 0.2) {
       this._preloadNext();
     }
   },
