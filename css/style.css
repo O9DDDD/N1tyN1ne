@@ -1,4 +1,4 @@
-/* ─── N1tyN1ne · Warm Sage ──────────────────────────── */
+﻿/* 鈹€鈹€鈹€ N1tyN1ne 路 Warm Sage 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
@@ -42,7 +42,7 @@
   --grn-dark: #4a6b3a;
 }
 
-/* ─── Dark Theme ─────────────────────────────────────── */
+/* 鈹€鈹€鈹€ Dark Theme 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 [data-theme="dark"] {
   --accent: #8aab7a;
   --accent-light: #9dbf8d;
@@ -80,11 +80,8 @@
 [data-theme="dark"] .float-player { background: rgba(36,34,32,.88); }
 [data-theme="dark"] .search-wrap input:focus { box-shadow: 0 0 0 3px rgba(212,165,116,.15); }
 [data-theme="dark"] .blog-card::after { background: #252320; }
-  --grn: #8aab7a;
-  --grn-dark: #5a7a4a;
-}
 
-/* ─── Theme Toggle ───────────────────────────────────── */
+/* 鈹€鈹€鈹€ Theme Toggle 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 .theme-toggle {
   background: none; border: 1.5px solid var(--border);
   color: var(--text-dim); cursor: pointer;
@@ -117,7 +114,7 @@ body::before {
 }
 [data-theme="dark"] body::before { opacity: .05; }
 
-/* Paper edge shadow mixin — cards feel like layered paper */
+/* Paper edge shadow mixin 鈥?cards feel like layered paper */
 .blog-card, .sticky-note, .friend-card, .about-intro, .auth-box {
   position: relative;
 }
@@ -130,7 +127,7 @@ body::before {
 ::-webkit-scrollbar-thumb { background: #d9cfc1; border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: #c4b59e; }
 
-/* ─── Container ──────────────────────────────────────── */
+/* 鈹€鈹€鈹€ Container 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 .container {
   width: 100%;
   max-width: var(--container);
@@ -138,7 +135,7 @@ body::before {
   padding: 0 24px;
 }
 
-/* ─── Typography ─────────────────────────────────────── */
+/* 鈹€鈹€鈹€ Typography 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 .section-title {
   font-size: clamp(1.5rem, 4vw, 2.2rem);
   font-weight: 900;
@@ -164,7 +161,7 @@ body::before {
 a { color: var(--accent); text-decoration: none; transition: color .2s ease; }
 a:hover { color: var(--warm); }
 
-/* ─── Global Interaction Polish ──────────────────────── */
+/* 鈹€鈹€鈹€ Global Interaction Polish 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 html { scroll-behavior: smooth; scroll-padding-top: var(--nav-h); }
 body { text-rendering: optimizeLegibility; }
 
@@ -181,7 +178,7 @@ nav .links a:active { color: var(--accent); }
 /* Section transitions */
 section { transition: background .5s ease; }
 
-/* ─── Scroll Reveal ──────────────────────────────────── */
+/* 鈹€鈹€鈹€ Scroll Reveal 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 .reveal {
   opacity: 0;
   transform: translateY(20px);
@@ -198,7 +195,7 @@ section { transition: background .5s ease; }
 .reveal:nth-child(5) { transition-delay: .24s; }
 .reveal:nth-child(6) { transition-delay: .3s; }
 
-/* ─── Navigation ────────────────────────────────────── */
+/* 鈹€鈹€鈹€ Navigation 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   background: rgba(250,247,243,.92); height: var(--nav-h);
@@ -258,9 +255,9 @@ nav .links a:hover::after { transform: scaleX(1); }
 }
 .nav-toggle:hover { color: var(--accent); }
 
-/* ─── Sections ──────────────────────────────────────── */
+/* 鈹€鈹€鈹€ Sections 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 section { padding: clamp(64px, 8vw, 100px) 0; position: relative; }
-/* Section divider — asymmetric warm gradient line */
+/* Section divider 鈥?asymmetric warm gradient line */
 section + section::before {
   content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
   width: clamp(200px, 30vw, 360px); height: 1px;
@@ -268,7 +265,7 @@ section + section::before {
   opacity: .35;
 }
 
-/* ─── Hero ──────────────────────────────────────────── */
+/* 鈹€鈹€鈹€ Hero 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 #hero {
   margin-top: var(--nav-h);
   padding: clamp(56px, 10vw, 96px) 0;
@@ -298,7 +295,7 @@ section + section::before {
   display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
 }
 
-/* ─── Buttons ───────────────────────────────────────── */
+/* 鈹€鈹€鈹€ Buttons 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 .btn {
   padding: 10px 26px; font-weight: 600; font-size: .82rem;
   border: 2px solid var(--accent); cursor: pointer;
@@ -331,7 +328,7 @@ section + section::before {
 }
 @keyframes ripple { to { transform: scale(4); opacity: 0; } }
 
-/* ─── Auth Modal ────────────────────────────────────── */
+/* 鈹€鈹€鈹€ Auth Modal 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 .auth-overlay {
   position: fixed; inset: 0; z-index: 200;
   background: rgba(0,0,0,.45); display: none;
@@ -378,7 +375,7 @@ section + section::before {
   color: #dc2626; font-size: .78rem; display: none; margin-bottom: 8px;
 }
 
-/* ─── Search ────────────────────────────────────────── */
+/* 鈹€鈹€鈹€ Search 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 .search-wrap {
   position: relative; margin-bottom: 20px; max-width: 420px;
 }
@@ -400,7 +397,7 @@ section + section::before {
 }
 .search-wrap input:focus ~ .search-icon { color: var(--warm); }
 
-/* ─── Tag Filter ─────────────────────────────────────── */
+/* 鈹€鈹€鈹€ Tag Filter 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 .tag-filter {
   display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px;
 }
@@ -415,7 +412,7 @@ section + section::before {
   background: var(--accent); border-color: var(--accent); color: #fff;
 }
 
-/* ─── Blog Grid ─────────────────────────────────────── */
+/* 鈹€鈹€鈹€ Blog Grid 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 .blog-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -483,7 +480,7 @@ section + section::before {
 }
 .blog-card:hover .read-link { color: var(--warm-dark); }
 
-/* ─── Post Detail ───────────────────────────────────── */
+/* 鈹€鈹€鈹€ Post Detail 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 .post-detail { display: none; }
 .post-detail.open { display: block; animation: fadeUp .35s ease; }
 .post-list.open { display: block; }
@@ -551,7 +548,7 @@ section + section::before {
 .post-detail .body th { background: var(--bg-muted); font-weight: 600; }
 .post-detail .body hr { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
 
-/* ─── Comments ──────────────────────────────────────── */
+/* 鈹€鈹€鈹€ Comments 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 .comments { margin-top: 44px; padding-top: 28px; border-top: 1px solid var(--border); }
 .comments h3 {
   font-size: .95rem; font-weight: 700; color: var(--text-bright); margin-bottom: 18px;
@@ -578,7 +575,7 @@ section + section::before {
 .login-hint { font-size: .82rem; color: var(--text-dim); margin-bottom: 16px; }
 .login-hint span { color: var(--accent); cursor: pointer; font-weight: 600; }
 
-/* ─── About ──────────────────────────────────────────── */
+/* 鈹€鈹€鈹€ About 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 #about { background: linear-gradient(180deg, var(--bg) 0%, var(--paper) 40%, var(--bg-muted) 100%); }
 
 .about-intro {
@@ -634,7 +631,7 @@ section + section::before {
   .sticky-note { width: 100%; max-width: 300px; }
 }
 
-/* ─── Social Links ───────────────────────────────────── */
+/* 鈹€鈹€鈹€ Social Links 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 .social-links {
   display: flex; justify-content: center; gap: 16px;
 }
@@ -650,7 +647,7 @@ section + section::before {
   transform: translateY(-3px); box-shadow: 0 6px 16px var(--warm-glow);
 }
 
-/* ─── Friends Section ────────────────────────────────── */
+/* 鈹€鈹€鈹€ Friends Section 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 .friends-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -683,7 +680,7 @@ section + section::before {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-/* ─── Settings Panel ─────────────────────────────────── */
+/* 鈹€鈹€鈹€ Settings Panel 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 .settings-toggle {
   position: fixed; bottom: 24px; right: 24px; z-index: 99;
   width: 44px; height: 44px; border-radius: 50%;
@@ -734,7 +731,7 @@ section + section::before {
 .settings-panel .sp-actions { display: flex; gap: 10px; }
 .settings-panel .btn { font-size: .78rem; padding: 9px 18px; }
 
-/* ─── Floating Mini Player ───────────────────────────── */
+/* 鈹€鈹€鈹€ Floating Mini Player 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 .float-player {
   position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
   z-index: 98; display: none;
@@ -789,14 +786,14 @@ section + section::before {
   transition: width .2s linear; width: 0;
 }
 
-/* ─── Footer ────────────────────────────────────────── */
+/* 鈹€鈹€鈹€ Footer 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 footer {
   text-align: center; padding: 28px 24px;
   font-size: .76rem; color: var(--text-dim);
   border-top: 1px solid var(--border); background: var(--bg-muted);
 }
 
-/* ─── Skeleton ──────────────────────────────────────── */
+/* 鈹€鈹€鈹€ Skeleton 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 .skeleton {
   pointer-events: none; border-radius: var(--radius);
   background: var(--bg-muted);
@@ -816,7 +813,7 @@ footer {
   50% { opacity: .8; }
 }
 
-/* ─── Empty State ───────────────────────────────────── */
+/* 鈹€鈹€鈹€ Empty State 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 .empty-state {
   text-align: center; padding: 56px 20px;
   color: var(--text-dim); font-size: .9rem;
@@ -824,7 +821,7 @@ footer {
 .empty-state .empty-icon { font-size: 2.4rem; color: var(--warm-light); margin-bottom: 18px; opacity: .5; }
 .empty-state .empty-sub { font-size: .8rem; margin-top: 8px; color: #bfbbb3; }
 
-/* ─── Toast ─────────────────────────────────────────── */
+/* 鈹€鈹€鈹€ Toast 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 .toast-container {
   position: fixed; bottom: 24px; right: 24px; z-index: 300;
   display: flex; flex-direction: column; gap: 8px; pointer-events: none;
@@ -841,7 +838,7 @@ footer {
 .toast.show { transform: translateX(0); opacity: 1; }
 .toast.error { border-color: #fecaca; background: #fef2f2; color: #dc2626; }
 
-/* ─── Misc ──────────────────────────────────────────── */
+/* 鈹€鈹€鈹€ Misc 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 .hidden { display: none !important; }
 .user-badge {
   display: inline-flex; align-items: center; gap: 8px;
@@ -856,7 +853,7 @@ footer {
 }
 .user-badge .logout-btn:hover { color: #dc2626; background: #fef2f2; }
 
-/* ─── Admin ─────────────────────────────────────────── */
+/* 鈹€鈹€鈹€ Admin 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ */
 .admin-layout {
   display: grid; grid-template-columns: 210px 1fr;
   min-height: calc(100vh - var(--nav-h)); margin-top: var(--nav-h);
@@ -909,9 +906,8 @@ footer {
 }
 .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
 
-/* ═══════════════════════════════════════════════════════
-   RESPONSIVE
-   ═══════════════════════════════════════════════════════ */
+/* 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?   RESPONSIVE
+   鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?*/
 
 @media (max-width: 1024px) {
   .admin-layout { grid-template-columns: 1fr; }
