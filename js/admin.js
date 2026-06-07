@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Init floating player
   if (typeof Player !== 'undefined') { Player.init(); Player.load(); }
+  updateGHTokenStatus();
 
   document.querySelectorAll('.admin-sidebar a').forEach(a => {
     a.addEventListener('click', (e) => {
@@ -166,6 +167,40 @@ async function deleteMusic(id) {
   if (!confirm('确定删除？')) return;
   await dbDelete('music', 'id', id);
   await loadAdminMusic();
+}
+
+/* ─── GitHub Token Management ─────────────────────── */
+function saveGHToken() {
+  var input = document.getElementById('ghTokenInput');
+  var token = (input.value || '').trim();
+  if (!token) { alert('请粘贴 GitHub Token'); return; }
+  if (!token.startsWith('ghp_') && !token.startsWith('github_pat_')) {
+    alert('Token 格式不正确，应以 ghp_ 或 github_pat_ 开头');
+    return;
+  }
+  setGitHubPAT(token);
+  input.value = '';
+  updateGHTokenStatus();
+  alert('GitHub Token 已保存！大于 10MB 的音乐文件将自动上传到 GitHub。');
+}
+
+function clearGHToken() {
+  if (!confirm('确定清除 GitHub Token？大文件上传将回退到 Supabase。')) return;
+  setGitHubPAT('');
+  updateGHTokenStatus();
+}
+
+function updateGHTokenStatus() {
+  var el = document.getElementById('ghTokenStatus');
+  var input = document.getElementById('ghTokenInput');
+  if (!el) return;
+  if (hasGitHubStorage()) {
+    el.innerHTML = '<span style="color:var(--accent)"><i class="fas fa-check-circle"></i> GitHub Token 已配置 · 大文件将走 GitHub 存储（上限 100MB）</span>';
+    if (input) input.placeholder = '已配置，输入新 Token 可替换';
+  } else {
+    el.innerHTML = '<span style="color:var(--text-dim)"><i class="fas fa-info-circle"></i> 未配置 · 使用 Supabase 存储（免费套餐上限约 50MB）</span>';
+    if (input) input.placeholder = 'ghp_xxxxxxxxxxxxxxxxxxxx';
+  }
 }
 
 /* ─── Batch Music Upload ──────────────────────────── */
@@ -455,6 +490,10 @@ function removeFromQueue(i) {
 async function uploadAll() {
   var ready = uploadQueue.filter(function(e) { return e.status === 'ready'; });
   if (!ready.length) return;
+
+  // Check if GitHub storage is available for large files
+  var useGitHub = typeof githubUploadFile === 'function' && hasGitHubStorage();
+
   for (var i = 0; i < ready.length; i++) {
     var entry = ready[i];
     entry.status = 'uploading';
@@ -464,18 +503,27 @@ async function uploadAll() {
       var ts = Date.now();
       var ext = entry.file.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '');
       if (!ext) ext = 'mp3';
-      // 只保留 ASCII 安全字符，中文等全删掉
       var safeName = (entry.title || 'audio').replace(/[^a-zA-Z0-9_-]/g, '');
       if (!safeName) safeName = 'audio';
       var audioPath = ts + '_' + safeName + '.' + ext;
 
-      // Upload audio with progress (0-80%)
-      var audioUrl = await uploadFileWithProgress('music', audioPath, entry.file, function(pct) {
-        entry.progress = Math.floor(pct * 0.8);
-        renderQueue();
-      });
+      // Upload audio: prefer GitHub for large files (>10MB), Supabase for small files
+      var audioUrl;
+      var fileSizeMB = entry.file.size / 1024 / 1024;
+      if (useGitHub && fileSizeMB > 10) {
+        // Use GitHub for large audio files (bypasses Supabase 50MB limit, GitHub allows up to 100MB)
+        audioUrl = await githubUploadFile(entry.file, 'public/music', audioPath, function(pct) {
+          entry.progress = Math.floor(pct * 0.8);
+          renderQueue();
+        });
+      } else {
+        audioUrl = await uploadFileWithProgress('music', audioPath, entry.file, function(pct) {
+          entry.progress = Math.floor(pct * 0.8);
+          renderQueue();
+        });
+      }
 
-      // Upload cover with progress (80-95%)
+      // Upload cover (always Supabase — covers are small)
       var coverUrl = '';
       if (entry.coverBlob) {
         var coverExt = entry.coverBlob.type.split('/')[1] || 'jpg';
@@ -505,9 +553,11 @@ async function uploadAll() {
     } catch(e) {
       entry.status = 'error';
       var msg = e.message || '上传失败';
-      // Detect size-related errors
       if (msg.includes('Payload') || msg.includes('413') || msg.includes('size') || msg.includes('exceed') || msg.includes('too large')) {
-        msg = '文件过大：超出服务器限制。免费套餐单文件上限约 50MB，请压缩音频或升级 Supabase 套餐。(' + msg + ')';
+        msg = '文件过大：超出服务器限制。免费套餐单文件上限约 50MB，可配置 GitHub Token 上传大文件。(' + msg + ')';
+      }
+      if (msg.includes('Token') || msg.includes('unauthorized')) {
+        msg = 'GitHub Token 无效。请在下方设置中重新输入。';
       }
       entry.errorMsg = msg;
       renderQueue();

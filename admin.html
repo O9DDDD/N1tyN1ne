@@ -55,7 +55,17 @@
           <div class="label" style="color:var(--text-dim);font-size:.8rem;margin-top:4px">留言</div>
         </div>
       </div>
-      <p style="color:var(--text-dim);font-size:.85rem">选择一个栏目开始管理。</p>
+      <p style="color:var(--text-dim);font-size:.85rem;margin-bottom:16px">选择一个栏目开始管理。</p>
+      <div style="background:var(--bg-muted);padding:18px 20px;border-radius:var(--radius-sm);border:1px solid var(--border);max-width:520px">
+        <h4 style="font-size:.88rem;font-weight:700;color:var(--text-bright);margin-bottom:8px"><i class="fab fa-github"></i> GitHub 存储（免支付 · 上传大文件）</h4>
+        <p style="font-size:.76rem;color:var(--text-dim);margin-bottom:10px">上传超过 10MB 的音乐文件将自动使用 GitHub 存储，突破 Supabase 免费套餐 50MB 限制（单文件上限 100MB）。需要 <a href="https://github.com/settings/tokens/new?scopes=repo&description=N1tyN1ne+Music+Upload" target="_blank" rel="noopener" style="color:var(--warm)">创建 GitHub Token</a>（仅勾选 repo 权限）。</p>
+        <div style="display:flex;gap:8px">
+          <input type="password" id="ghTokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-xs);background:var(--bg);color:var(--text);font-size:.82rem;font-family:monospace;outline:none">
+          <button class="btn btn-ghost btn-sm" onclick="saveGHToken()" style="white-space:nowrap">保存</button>
+          <button class="btn btn-ghost btn-sm" onclick="clearGHToken()" style="white-space:nowrap;color:#dc2626">清除</button>
+        </div>
+        <p id="ghTokenStatus" style="font-size:.72rem;margin-top:6px;color:var(--text-dim)"></p>
+      </div>
     </div>
 
     <!-- Posts -->
@@ -155,6 +165,7 @@ function closeNav() { document.getElementById('navLinks').classList.remove('open
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/player.js"></script>
+<script src="js/github-storage.js"></script>
 <script>
 // jsmediatags 多重 CDN 加载（中国网络兼容）
 (function() {
