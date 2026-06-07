@@ -200,16 +200,51 @@ async function getOrCreateMVRelease() {
 }
 
 /**
- * Upload a large file (>100MB, up to 2GB) as a GitHub Release asset.
+ * Upload a file as a GitHub Release asset (up to 2GB).
  * Uses XHR for real-time progress tracking.
+ * Automatically falls back to repo file API for files ≤100MB if uploads.github.com is blocked.
  * Returns the direct download URL.
  */
 async function githubUploadReleaseAsset(file, filename, onProgress) {
   var pat = getGitHubPAT();
   if (!pat) throw new Error('未配置 GitHub Token');
 
-  var releaseId = await getOrCreateMVRelease();
+  // Quick token check first
+  try {
+    await ghApi('/user');
+  } catch(e) {
+    throw new Error('GitHub Token 无效或已过期，请重新设置。');
+  }
 
+  var releaseId = await getOrCreateMVRelease();
+  var fileSizeMB = file.size / 1024 / 1024;
+
+  // Try uploads.github.com with XHR for progress
+  try {
+    var assetUrl = await _xhrUploadAsset(releaseId, file, filename, pat, onProgress);
+    return assetUrl;
+  } catch(xhrErr) {
+    console.warn('Release asset XHR failed:', xhrErr.message);
+
+    // Fallback: if file ≤100MB, try Git Blob API (uses api.github.com, more likely accessible)
+    if (fileSizeMB <= 100) {
+      if (onProgress) onProgress(10);
+      try {
+        var cdnUrl = await githubUploadFile(file, 'public/mv', filename, function(pct) {
+          if (onProgress) onProgress(10 + Math.floor(pct * 0.9));
+        });
+        return cdnUrl;
+      } catch(blobErr) {
+        console.warn('Git Blob fallback also failed:', blobErr.message);
+        throw new Error('上传失败：uploads.github.com 无法访问（可能被墙），且文件过大无法走 Git API。请尝试：1) 检查网络代理 2) 压缩文件到 50MB 以下使用 Supabase');
+      }
+    }
+
+    throw new Error('上传失败：无法连接到 GitHub 上传服务器（uploads.github.com 可能被墙）。建议：1) 开启代理/VPN 2) 将文件压缩到 50MB 以下用 Supabase 上传');
+  }
+}
+
+function _xhrUploadAsset(releaseId, file, filename, pat, onProgress) {
   return new Promise(function(resolve, reject) {
     var xhr = new XMLHttpRequest();
     var url = 'https://uploads.github.com/repos/' + GH_REPO_OWNER + '/' + GH_REPO_NAME + '/releases/' + releaseId + '/assets?name=' + encodeURIComponent(filename);
@@ -221,29 +256,36 @@ async function githubUploadReleaseAsset(file, filename, onProgress) {
 
     if (onProgress) {
       xhr.upload.onprogress = function(e) {
-        if (e.lengthComputable) onProgress(Math.round(e.loaded / e.total * 100));
+        if (e.lengthComputable) {
+          var pct = Math.round(e.loaded / e.total * 100);
+          onProgress(Math.min(pct, 99));
+        }
       };
     }
 
     xhr.onload = function() {
       if (xhr.status === 201) {
+        if (onProgress) onProgress(100);
         var asset = JSON.parse(xhr.responseText);
-        // Return direct browser download URL (supports range requests for video)
         resolve(asset.browser_download_url);
+      } else if (xhr.status === 0) {
+        // Status 0 usually means CORS/network blocked
+        reject(new Error('请求被阻止（CORS 或网络不通）'));
       } else {
-        var msg = '上传失败';
+        var msg = '上传失败 (HTTP ' + xhr.status + ')';
         try {
           var d = JSON.parse(xhr.responseText);
           msg = d.message || d.errors?.[0]?.message || msg;
           if (msg.includes('size')) msg = '文件过大：GitHub Release 单文件上限为 2GB。';
           if (msg.includes('rate')) msg = 'GitHub API 限流，请稍后再试。';
+          if (msg.includes('401') || msg.includes('Bad credentials')) msg = 'GitHub Token 无效或已过期。';
         } catch(e) {}
         reject(new Error(msg));
       }
     };
-    xhr.onerror = function() { reject(new Error('网络错误，请检查网络连接')); };
-    xhr.ontimeout = function() { reject(new Error('上传超时，文件可能过大')); };
-    xhr.timeout = 7200000; // 2 hour timeout for large files
+    xhr.onerror = function() { reject(new Error('网络不通：无法访问 uploads.github.com，可能是被墙或 DNS 问题')); };
+    xhr.ontimeout = function() { reject(new Error('上传超时，文件过大或网速太慢')); };
+    xhr.timeout = 7200000;
     xhr.send(file);
   });
 }
