@@ -7,8 +7,8 @@
 
 -- 1. 创建存储桶（如果不存在）
 INSERT INTO storage.buckets (id, name, public, file_size_limit)
-VALUES ('music', 'music', true, 104857600)
-ON CONFLICT (id) DO UPDATE SET public = true, file_size_limit = 104857600;
+VALUES ('music', 'music', true, 524288000)
+ON CONFLICT (id) DO UPDATE SET public = true, file_size_limit = 524288000;
 
 INSERT INTO storage.buckets (id, name, public, file_size_limit)
 VALUES ('covers', 'covers', true, 5242880)

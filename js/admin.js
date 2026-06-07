@@ -209,15 +209,24 @@ function cancelMusicUpload() {
 }
 
 async function addFiles(files) {
+  var MAX_SIZE = 500 * 1024 * 1024; // 500MB
   var audioFiles = [];
   var lrcFiles = [];
+  var oversized = [];
   for (var i = 0; i < files.length; i++) {
     var f = files[i];
     if (f.name.match(/\.lrc$/i)) {
       lrcFiles.push(f);
     } else if (f.type.startsWith('audio/') || f.name.match(/\.(mp3|flac|wav|ogg|m4a|aac)$/i)) {
-      audioFiles.push(f);
+      if (f.size > MAX_SIZE) {
+        oversized.push(f.name + ' (' + (f.size / 1024 / 1024).toFixed(1) + ' MB)');
+      } else {
+        audioFiles.push(f);
+      }
     }
+  }
+  if (oversized.length) {
+    alert('以下文件超过 500MB 限制，已跳过：\n\n' + oversized.join('\n') + '\n\n提示：免费套餐单文件上限为 50MB，Pro 套餐为 5GB。');
   }
   // Read all LRC contents upfront
   var lrcMap = {};
@@ -495,7 +504,12 @@ async function uploadAll() {
       renderQueue();
     } catch(e) {
       entry.status = 'error';
-      entry.errorMsg = e.message;
+      var msg = e.message || '上传失败';
+      // Detect size-related errors
+      if (msg.includes('Payload') || msg.includes('413') || msg.includes('size') || msg.includes('exceed') || msg.includes('too large')) {
+        msg = '文件过大：超出服务器限制。免费套餐单文件上限约 50MB，请压缩音频或升级 Supabase 套餐。(' + msg + ')';
+      }
+      entry.errorMsg = msg;
       renderQueue();
     }
   }
