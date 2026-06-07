@@ -505,7 +505,7 @@ section + section::before {
 }
 .post-detail .body {
   font-size: .96rem; line-height: 1.9; word-break: break-word;
-  color: #333;
+  color: var(--text);
 }
 .post-detail .body h2 {
   font-size: 1.15rem; color: var(--accent-dark);

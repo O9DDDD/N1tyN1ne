@@ -1,6 +1,7 @@
 /* ─── Unified Music Player ───────────────────────────── */
 const Player = {
   audio: new Audio(),
+  _nextAudio: null,
   tracks: [],
   idx: -1,
   playing: false,
@@ -9,46 +10,95 @@ const Player = {
   lyrics: [],
   lyricTimer: null,
   _listeners: {},
+  _preloadedIdx: -1,
+  _restored: false,
 
   /* ─── Init ────────────────────────────────────────── */
   init() {
     this.audio.volume = 0.7;
-    this.audio.addEventListener('timeupdate', () => this._tick());
-    this.audio.addEventListener('loadedmetadata', () => this._emit('durupdate'));
-    this.audio.addEventListener('ended', () => this.next());
-    this.audio.addEventListener('play', () => this._onPlay());
-    this.audio.addEventListener('pause', () => this._onPause());
-    this.audio.addEventListener('error', () => { if (this.tracks.length) this.next(); });
+    this._bindAudio(this.audio);
     this._restoreState();
     this._renderFloat();
+    // Try immediate resume before any data fetch
+    this._tryQuickResume();
+  },
+
+  _bindAudio(el) {
+    el.addEventListener('timeupdate', () => this._tick());
+    el.addEventListener('loadedmetadata', () => this._emit('durupdate'));
+    el.addEventListener('ended', () => this._onEnded());
+    el.addEventListener('play', () => this._onPlay());
+    el.addEventListener('pause', () => this._onPause());
+    el.addEventListener('error', () => { if (this.tracks.length) this.next(); });
+  },
+
+  /* ─── Quick resume (before data loads) ────────────── */
+  _tryQuickResume() {
+    try {
+      var raw = sessionStorage.getItem('player_quick');
+      if (!raw) return;
+      var s = JSON.parse(raw);
+      if (!s || !s.url || !s.playing) return;
+      this.audio.src = https(s.url);
+      this.audio.currentTime = s.pos || 0;
+      this.audio.play().catch(function(){});
+      // Temporary display data until real data loads
+      if (s.title) {
+        var t = { title: s.title, artist: s.artist || '', cover_url: s.cover || '', lyrics: s.lyrics || '' };
+        this.tracks = [t];
+        this.idx = 0;
+        this._emit('track', t);
+        this.parseLyrics(s.lyrics || '');
+      }
+      this._restored = true;
+    } catch(e) {}
   },
 
   /* ─── Event system ────────────────────────────────── */
   on(ev, fn) { (this._listeners[ev] = this._listeners[ev] || []).push(fn); },
-  _emit(ev, data) { (this._listeners[ev] || []).forEach(fn => fn(data)); },
+  _emit(ev, data) { (this._listeners[ev] || []).forEach(function(fn) { fn(data); }); },
 
   /* ─── Load tracks ─────────────────────────────────── */
   async load() {
     try {
-      const data = await dbSelect('music', { order: { col: 'created_at', dir: 'desc' } });
+      var data = await dbSelect('music', { order: { col: 'created_at', dir: 'desc' } });
       this.tracks = (data || []).reverse();
       this._renderFloat();
       this._emit('playlist');
-      // Restore playing if we had state
-      const st = this._getState();
-      if (st && st.playing && st.idx >= 0 && st.idx < this.tracks.length) {
-        this.idx = st.idx;
-        this.audio.src = https(this.tracks[st.idx]?.audio_url || '');
-        if (st.pos > 0) { this.audio.currentTime = st.pos; }
-        this.audio.play().catch(() => {});
-        this._updateInfo();
-        this.parseLyrics(this.tracks[st.idx]?.lyrics || '');
+      // If quick-resume already running, match the track
+      if (this._restored && this.tracks.length) {
+        var st = this._getState();
+        if (st && st.idx >= 0 && st.idx < this.tracks.length) {
+          this.idx = st.idx;
+          this._updateInfo();
+          this._emit('playlist');
+          // Reload with real data if needed
+          var t = this.tracks[this.idx];
+          if (t && this.audio.src.indexOf(t.audio_url) === -1) {
+            this.audio.src = https(t.audio_url);
+          }
+          this.parseLyrics(t ? (t.lyrics || '') : '');
+        }
+        this._restored = false;
       } else {
-        if (this.tracks.length) document.getElementById('noLyrics') && (document.getElementById('noLyrics').textContent = '选择一首歌开始');
+        var st2 = this._getState();
+        if (st2 && st2.playing && st2.idx >= 0 && st2.idx < this.tracks.length) {
+          this.idx = st2.idx;
+          this.audio.src = https(this.tracks[st2.idx]?.audio_url || '');
+          if (st2.pos > 0) { this.audio.currentTime = st2.pos; }
+          this.audio.play().catch(function(){});
+          this._updateInfo();
+          this.parseLyrics(this.tracks[st2.idx]?.lyrics || '');
+        } else {
+          if (this.tracks.length) {
+            var el = document.getElementById('noLyrics');
+            if (el) el.textContent = '选择一首歌开始';
+          }
+        }
       }
     } catch(e) {
-      const el = document.getElementById('noLyrics');
-      if (el) el.textContent = '加载失败，请刷新重试';
+      var el2 = document.getElementById('noLyrics');
+      if (el2) el2.textContent = '加载失败，请刷新重试';
     }
   },
 
@@ -56,27 +106,28 @@ const Player = {
   play(i) {
     if (!this.tracks.length) return;
     this.idx = i;
-    const t = this.tracks[i];
+    var t = this.tracks[i];
     if (!t) return;
     this.audio.src = https(t.audio_url);
     this.audio.load();
-    this.audio.play().catch(() => {});
+    this.audio.play().catch(function(){});
     this._updateInfo();
     this.parseLyrics(t.lyrics || '');
     this._saveState();
     this._emit('playlist');
     this._renderFloat();
+    this._preloadedIdx = -1;
   },
 
   toggle() {
     if (!this.tracks.length) return;
     if (this.idx < 0) { this.play(0); return; }
-    this.audio.paused ? this.audio.play().catch(() => {}) : this.audio.pause();
+    this.audio.paused ? this.audio.play().catch(function(){}) : this.audio.pause();
   },
 
   prev() {
     if (!this.tracks.length) return;
-    let i = this.idx - 1;
+    var i = this.idx - 1;
     if (i < 0) i = this.tracks.length - 1;
     this.play(i);
   },
@@ -84,7 +135,7 @@ const Player = {
   next() {
     if (!this.tracks.length) return;
     if (this.repeat && this.idx >= 0) { this.play(this.idx); return; }
-    let i;
+    var i;
     if (this.shuffle) {
       do { i = Math.floor(Math.random() * this.tracks.length); }
       while (i === this.idx && this.tracks.length > 1);
@@ -95,14 +146,71 @@ const Player = {
     this.play(i);
   },
 
+  _onEnded() {
+    if (this._nextAudio && this._preloadedIdx >= 0 && this._preloadedIdx < this.tracks.length) {
+      // Gapless: swap to preloaded audio
+      var nextIdx = this._preloadedIdx;
+      var oldAudio = this.audio;
+      // Bind events to new audio
+      this.audio = this._nextAudio;
+      this._bindAudio(this.audio);
+      // Reset old audio for next preload
+      this._nextAudio = oldAudio;
+      try { this._nextAudio.pause(); this._nextAudio.currentTime = 0; } catch(e) {}
+      this._preloadedIdx = -1;
+      this.idx = nextIdx;
+      this.playing = true;
+      this._updateInfo();
+      var t = this.tracks[this.idx];
+      if (t) this.parseLyrics(t.lyrics || '');
+      this._saveState();
+      this._emit('play');
+      this._emit('playlist');
+      this._syncLyrics();
+      this._renderFloat();
+      this._preloadNext();
+    } else {
+      this.next();
+    }
+  },
+
+  /* ─── Gapless preload ─────────────────────────────── */
+  _preloadNext() {
+    if (!this.tracks.length) return;
+    var nextIdx;
+    if (this.repeat) {
+      nextIdx = this.idx;
+    } else if (this.shuffle) {
+      do { nextIdx = Math.floor(Math.random() * this.tracks.length); }
+      while (nextIdx === this.idx && this.tracks.length > 1);
+    } else {
+      nextIdx = this.idx + 1;
+      if (nextIdx >= this.tracks.length) nextIdx = 0;
+    }
+    if (nextIdx === this._preloadedIdx) return;
+    var t = this.tracks[nextIdx];
+    if (!t || !t.audio_url) return;
+    if (!this._nextAudio) {
+      this._nextAudio = new Audio();
+      this._nextAudio.volume = this.audio.volume;
+    }
+    this._nextAudio.src = https(t.audio_url);
+    this._nextAudio.load();
+    this._preloadedIdx = nextIdx;
+  },
+
   seek(e) {
-    const bar = e.currentTarget;
-    const rect = bar.getBoundingClientRect();
-    const frac = (e.clientX - rect.left) / rect.width;
+    var bar = e.currentTarget;
+    var rect = bar.getBoundingClientRect();
+    var frac = (e.clientX - rect.left) / rect.width;
     this.audio.currentTime = frac * (this.audio.duration || 0);
   },
 
-  setVolume(v) { this.audio.volume = parseFloat(v); this._saveState(); },
+  setVolume(v) {
+    this.audio.volume = parseFloat(v);
+    if (this._nextAudio) this._nextAudio.volume = parseFloat(v);
+    this._saveState();
+  },
 
   toggleShuffle() {
     this.shuffle = !this.shuffle;
@@ -133,15 +241,19 @@ const Player = {
   },
 
   _tick() {
-    const ct = this.audio.currentTime, dur = this.audio.duration || 0;
-    const pct = dur ? (ct / dur) * 100 : 0;
-    this._emit('tick', { ct, dur, pct });
+    var ct = this.audio.currentTime, dur = this.audio.duration || 0;
+    var pct = dur ? (ct / dur) * 100 : 0;
+    this._emit('tick', { ct: ct, dur: dur, pct: pct });
     this._renderFloat();
     this._saveState();
+    // Preload next track when 30s or 80% through current track
+    if (dur > 0 && (dur - ct) < 30 && (dur - ct) / dur < 0.2) {
+      this._preloadNext();
+    }
   },
 
   _updateInfo() {
-    const t = this.tracks[this.idx];
+    var t = this.tracks[this.idx];
     if (!t) return;
     this._emit('track', t);
   },
@@ -149,6 +261,7 @@ const Player = {
   /* ─── State persistence ───────────────────────────── */
   _saveState() {
     try {
+      var t = this.tracks[this.idx];
       sessionStorage.setItem('player_state', JSON.stringify({
         idx: this.idx,
         pos: this.audio.currentTime || 0,
@@ -157,13 +270,26 @@ const Player = {
         repeat: this.repeat,
         vol: this.audio.volume
       }));
+      // Quick-resume data for cross-page continuity
+      if (t && this.playing) {
+        sessionStorage.setItem('player_quick', JSON.stringify({
+          url: t.audio_url,
+          pos: this.audio.currentTime || 0,
+          playing: true,
+          title: t.title,
+          artist: t.artist,
+          cover: t.cover_url,
+          lyrics: t.lyrics,
+          idx: this.idx
+        }));
+      }
     } catch(e) {}
   },
   _getState() {
     try { return JSON.parse(sessionStorage.getItem('player_state')); } catch(e) { return null; }
   },
   _restoreState() {
-    const st = this._getState();
+    var st = this._getState();
     if (st) {
       this.shuffle = st.shuffle || false;
       this.repeat = st.repeat || false;
@@ -178,28 +304,28 @@ const Player = {
       this._emit('lyrics', []);
       return;
     }
-    // NFKC normalize — fixes Kangxi radicals → standard CJK (e.g., ⼼→心, ⾥→里, ⿊→黑)
-    const normalized = lrcText.normalize('NFKC');
-    const lines = normalized.split('\n');
-    const timeRe = /\[(\d{1,3}):(\d{2})(?:\.(\d{2,3}))?\]/;
-    for (const line of lines) {
-      const match = line.match(timeRe);
-      if (!match) continue;
-      const min = parseInt(match[1]), sec = parseInt(match[2]);
-      const ms = parseInt(match[3] || '0');
-      const time = min * 60 + sec + ms / (match[3] && match[3].length === 3 ? 1000 : 100);
-      const text = line.replace(timeRe, '').trim();
-      if (text) this.lyrics.push({ time, text });
-    }
-    this.lyrics.sort((a, b) => a.time - b.time);
+    var normalized = lrcText.normalize('NFKC');
+    var lines = normalized.split('\n');
+    var timeRe = /\[(\d{1,3}):(\d{2})(?:\.(\d{2,3}))?\]/;
+    var self = this;
+    lines.forEach(function(line) {
+      var match = line.match(timeRe);
+      if (!match) return;
+      var min = parseInt(match[1]), sec = parseInt(match[2]);
+      var ms = parseInt(match[3] || '0');
+      var time = min * 60 + sec + ms / (match[3] && match[3].length === 3 ? 1000 : 100);
+      var text = line.replace(timeRe, '').trim();
+      if (text) self.lyrics.push({ time: time, text: text });
+    });
+    this.lyrics.sort(function(a, b) { return a.time - b.time; });
     this._emit('lyrics', this.lyrics);
   },
 
   getCurrentLyric() {
-    const ct = this.audio.currentTime;
-    let active = null;
-    for (const l of this.lyrics) {
-      if (ct >= l.time) active = l;
+    var ct = this.audio.currentTime;
+    var active = null;
+    for (var i = 0; i < this.lyrics.length; i++) {
+      if (ct >= this.lyrics[i].time) active = this.lyrics[i];
     }
     return active;
   },
@@ -207,38 +333,40 @@ const Player = {
   _syncLyrics() {
     if (this.lyricTimer) clearInterval(this.lyricTimer);
     if (!this.lyrics.length) return;
-    this.lyricTimer = setInterval(() => {
-      const ct = this.audio.currentTime;
-      let activeIdx = -1;
-      for (let i = this.lyrics.length - 1; i >= 0; i--) {
-        if (ct >= this.lyrics[i].time) { activeIdx = i; break; }
+    var self = this;
+    this.lyricTimer = setInterval(function() {
+      var ct = self.audio.currentTime;
+      var activeIdx = -1;
+      for (var i = self.lyrics.length - 1; i >= 0; i--) {
+        if (ct >= self.lyrics[i].time) { activeIdx = i; break; }
       }
-      this._emit('lyricsync', activeIdx);
+      self._emit('lyricsync', activeIdx);
     }, 200);
   },
 
   /* ─── Formatting ──────────────────────────────────── */
   fmt(s) {
     if (isNaN(s)) return '0:00';
-    const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+    var m = Math.floor(s / 60), sec = Math.floor(s % 60);
     return m + ':' + String(sec).padStart(2, '0');
   },
 
   /* ─── Floating Mini Player ────────────────────────── */
   _renderFloat() {
-    const el = document.getElementById('floatPlayer');
+    var el = document.getElementById('floatPlayer');
     if (!el) return;
-    const hasTracks = this.tracks.length > 0;
-    const hasActive = this.idx >= 0 && this.tracks[this.idx];
-    if (!hasTracks) { el.classList.remove('show'); return; }
+    var hasTracks = this.tracks.length > 0;
+    var hasActive = this.idx >= 0 && this.tracks[this.idx];
+    var playerOpen = document.getElementById('playerView') && document.getElementById('playerView').classList.contains('open');
+    if (!hasTracks || playerOpen) { el.classList.remove('show'); return; }
     el.classList.add('show');
 
-    const t = hasActive ? this.tracks[this.idx] : null;
-    const cover = el.querySelector('.fp-cover');
-    const title = el.querySelector('.fp-title');
-    const lyric = el.querySelector('.fp-lyric');
-    const bar = el.querySelector('.fp-bar');
-    const playIcon = el.querySelector('#fpPlayIcon');
+    var t = hasActive ? this.tracks[this.idx] : null;
+    var cover = el.querySelector('.fp-cover');
+    var title = el.querySelector('.fp-title');
+    var lyric = el.querySelector('.fp-lyric');
+    var bar = el.querySelector('.fp-bar');
+    var playIcon = el.querySelector('#fpPlayIcon');
 
     if (cover) {
       cover.src = t?.cover_url ? https(t.cover_url) : 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect fill="%23f3f0eb" width="40" height="40"/><text x="20" y="26" text-anchor="middle" font-size="16" fill="%236b8e5a">♪</text></svg>';
@@ -246,11 +374,11 @@ const Player = {
     }
     if (title) title.textContent = t?.title || '未选择';
     if (lyric) {
-      const cl = this.getCurrentLyric();
+      var cl = this.getCurrentLyric();
       lyric.textContent = cl ? cl.text : (t?.artist || '');
     }
     if (bar) {
-      const dur = this.audio.duration || 0;
+      var dur = this.audio.duration || 0;
       bar.style.width = (dur ? (this.audio.currentTime / dur) * 100 : 0) + '%';
     }
     if (playIcon) {
@@ -261,23 +389,22 @@ const Player = {
   /* ─── 3D Tilt for cover card ──────────────────────── */
   initTilt(el) {
     if (!el) return;
-    el.addEventListener('mousemove', e => {
-      const rect = el.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const cx = rect.width / 2, cy = rect.height / 2;
-      const rx = ((y - cy) / cy) * -12;
-      const ry = ((x - cx) / cx) * 12;
-      el.style.transform = `perspective(600px) rotateX(${rx}deg) rotateY(${ry}deg) scale3d(1.02,1.02,1.02)`;
-      // Gloss follow
-      const gloss = el.querySelector('.tilt-gloss');
+    el.addEventListener('mousemove', function(e) {
+      var rect = el.getBoundingClientRect();
+      var x = e.clientX - rect.left;
+      var y = e.clientY - rect.top;
+      var cx = rect.width / 2, cy = rect.height / 2;
+      var rx = ((y - cy) / cy) * -12;
+      var ry = ((x - cx) / cx) * 12;
+      el.style.transform = 'perspective(600px) rotateX(' + rx + 'deg) rotateY(' + ry + 'deg) scale3d(1.02,1.02,1.02)';
+      var gloss = el.querySelector('.tilt-gloss');
       if (gloss) {
-        gloss.style.background = `radial-gradient(circle at ${(x/rect.width)*100}% ${(y/rect.height)*100}%, rgba(255,255,255,.4) 0%, transparent 60%)`;
+        gloss.style.background = 'radial-gradient(circle at ' + (x/rect.width)*100 + '% ' + (y/rect.height)*100 + '%, rgba(255,255,255,.4) 0%, transparent 60%)';
       }
     });
-    el.addEventListener('mouseleave', () => {
+    el.addEventListener('mouseleave', function() {
       el.style.transform = 'perspective(600px) rotateX(0) rotateY(0) scale3d(1,1,1)';
-      const gloss = el.querySelector('.tilt-gloss');
+      var gloss = el.querySelector('.tilt-gloss');
       if (gloss) gloss.style.background = 'transparent';
     });
   }
@@ -285,17 +412,17 @@ const Player = {
 
 /* Backwards-compat aliases */
 const AudioPlayer = {
-  init() { Player.init(); },
-  load(tracks) { Player.tracks = tracks || []; Player._emit('playlist'); Player._renderFloat(); },
-  play(i) { Player.play(i); },
-  toggle() { Player.toggle(); },
-  prev() { Player.prev(); },
-  next() { Player.next(); },
-  seek(e) { Player.seek(e); },
-  setVolume(v) { Player.setVolume(v); },
-  toggleShuffle() { Player.toggleShuffle(); },
-  toggleRepeat() { Player.toggleRepeat(); },
-  parseLyrics(lrc) { Player.parseLyrics(lrc); },
+  init: function() { Player.init(); },
+  load: function(tracks) { Player.tracks = tracks || []; Player._emit('playlist'); Player._renderFloat(); },
+  play: function(i) { Player.play(i); },
+  toggle: function() { Player.toggle(); },
+  prev: function() { Player.prev(); },
+  next: function() { Player.next(); },
+  seek: function(e) { Player.seek(e); },
+  setVolume: function(v) { Player.setVolume(v); },
+  toggleShuffle: function() { Player.toggleShuffle(); },
+  toggleRepeat: function() { Player.toggleRepeat(); },
+  parseLyrics: function(lrc) { Player.parseLyrics(lrc); },
   get audio() { return Player.audio; },
   get playlist() { return Player.tracks; },
   get currentIndex() { return Player.idx; },
@@ -304,5 +431,5 @@ const AudioPlayer = {
   get repeat() { return Player.repeat; },
   get lyrics() { return Player.lyrics; },
   set shuffle(v) { Player.shuffle = v; },
-  set repeat(v) { Player.repeat = v; },
+  set repeat(v) { Player.repeat = v; }
 };
