@@ -5,10 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
   <title>N1tyN1ne · 管理</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="css/style.css">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>⚙</text></svg>">
 </head>
@@ -207,42 +204,7 @@
   <div class="fp-progress"><div class="fp-bar" id="fpBar"></div></div>
 </div>
 
-<script>
-function toggleNav() { document.getElementById('navLinks').classList.toggle('open'); }
-function closeNav() { document.getElementById('navLinks').classList.remove('open'); }
-// Theme
-var Theme = {
-  init: function() {
-    var saved = localStorage.getItem('theme');
-    if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme:dark)').matches)) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    }
-    this._updateIcon();
-    this._listenSystem();
-  },
-  toggle: function() {
-    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
-    localStorage.setItem('theme', isDark ? 'light' : 'dark');
-    this._updateIcon();
-  },
-  _updateIcon: function() {
-    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    var icon = document.querySelector('#themeToggle i');
-    if (icon) icon.className = 'fas fa-' + (isDark ? 'sun' : 'moon');
-  },
-  _listenSystem: function() {
-    var self = this;
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
-      if (!localStorage.getItem('theme')) {
-        document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : '');
-        self._updateIcon();
-      }
-    });
-  }
-};
-Theme.init();
-</script>
+<script src="js/theme.js"></script>
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/player.js"></script>

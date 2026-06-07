@@ -107,12 +107,6 @@ function getSession() {
   return _cachedSession;
 }
 
-function getUser() {
-  return _cachedSession ? _cachedSession.user : null;
-}
-
-async function getJWT() {
-  if (!_cachedSession) return null;
   // Refresh if expiring within 60 seconds
   var exp = getJWTExpiry(_cachedSession.access_token);
   if (exp && exp < Date.now() + 60000) {
@@ -256,12 +250,6 @@ async function uploadFileWithProgress(bucket, path, file, onProgress) {
   });
 }
 
-function getFileUrl(bucket, path) {
-  return SUPABASE_URL + '/storage/v1/object/public/' + bucket + '/' + path;
-}
 
 // ─── Helpers ─────────────────────────────────────────
 function https(url) {
-  if (!url || typeof url !== 'string') return url;
-  return url.replace(/^http:\/\//i, 'https://');
-}

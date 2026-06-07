@@ -107,9 +107,6 @@ const Player = {
         var st2 = this._getState();
         if (st2 && st2.playing && st2.idx >= 0 && st2.idx < this.tracks.length) {
           this.idx = st2.idx;
-          this.audio.src = https(this.tracks[st2.idx]?.audio_url || '');
-          if (st2.pos > 0) { this.audio.currentTime = st2.pos; }
-          this.audio.play().catch(function(){});
           this._updateInfo();
           this.parseLyrics(this.tracks[st2.idx]?.lyrics || '');
         } else {
@@ -256,9 +253,6 @@ const Player = {
       this._preloadedLyrics = this._parseLyricsText(t.lyrics);
     } else {
       this._preloadedLyrics = [];
-    }
-  },
-
   seek(e) {
     var bar = e.currentTarget;
     var rect = bar.getBoundingClientRect();
@@ -493,26 +487,3 @@ const Player = {
   }
 };
 
-/* Backwards-compat aliases */
-const AudioPlayer = {
-  init: function() { Player.init(); },
-  load: function(tracks) { Player.tracks = tracks || []; Player._emit('playlist'); Player._renderFloat(); },
-  play: function(i) { Player.play(i); },
-  toggle: function() { Player.toggle(); },
-  prev: function() { Player.prev(); },
-  next: function() { Player.next(); },
-  seek: function(e) { Player.seek(e); },
-  setVolume: function(v) { Player.setVolume(v); },
-  toggleShuffle: function() { Player.toggleShuffle(); },
-  toggleRepeat: function() { Player.toggleRepeat(); },
-  parseLyrics: function(lrc) { Player.parseLyrics(lrc); },
-  get audio() { return Player.audio; },
-  get playlist() { return Player.tracks; },
-  get currentIndex() { return Player.idx; },
-  get isPlaying() { return Player.playing; },
-  get shuffle() { return Player.shuffle; },
-  get repeat() { return Player.repeat; },
-  get lyrics() { return Player.lyrics; },
-  set shuffle(v) { Player.shuffle = v; },
-  set repeat(v) { Player.repeat = v; }
-};
