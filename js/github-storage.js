@@ -24,6 +24,7 @@ function hasGitHubStorage() {
 /* ─── Low-level helpers ─────────────────────────────── */
 
 async function ghApi(path, opts) {
+  opts = opts || {};
   var pat = getGitHubPAT();
   if (!pat) throw new Error('未配置 GitHub Token');
   var url = 'https://api.github.com' + path;
