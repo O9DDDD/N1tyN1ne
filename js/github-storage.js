@@ -277,12 +277,15 @@ async function _testUploadsConnectivity() {
 function _xhrUploadAsset(releaseId, file, filename, pat, onProgress) {
   return new Promise(function(resolve, reject) {
     var xhr = new XMLHttpRequest();
-    var url = 'https://uploads.github.com/repos/' + GH_REPO_OWNER + '/' + GH_REPO_NAME + '/releases/' + releaseId + '/assets?name=' + encodeURIComponent(filename);
+    // Key: avoid CORS preflight by NOT sending custom headers.
+    // Token passed as query param (deprecated but uploads.github.com still accepts it).
+    // Content-Type forced to text/plain (a "simple" type per CORS spec).
+    // This combination = simple request → no OPTIONS preflight → no CORS block.
+    var url = 'https://uploads.github.com/repos/' + GH_REPO_OWNER + '/' + GH_REPO_NAME + '/releases/' + releaseId + '/assets?name=' + encodeURIComponent(filename) + '&access_token=' + encodeURIComponent(pat);
 
     xhr.open('POST', url);
-    xhr.setRequestHeader('Authorization', 'Bearer ' + pat);
-    xhr.setRequestHeader('Accept', 'application/vnd.github+json');
-    xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+    // Must be a simple Content-Type to avoid preflight
+    xhr.setRequestHeader('Content-Type', 'text/plain');
 
     if (onProgress) {
       xhr.upload.onprogress = function(e) {
@@ -299,7 +302,6 @@ function _xhrUploadAsset(releaseId, file, filename, pat, onProgress) {
         var asset = JSON.parse(xhr.responseText);
         resolve(asset.browser_download_url);
       } else if (xhr.status === 0) {
-        // Status 0 usually means CORS/network blocked
         reject(new Error('请求被阻止（CORS 或网络不通）'));
       } else {
         var msg = '上传失败 (HTTP ' + xhr.status + ')';
@@ -313,7 +315,7 @@ function _xhrUploadAsset(releaseId, file, filename, pat, onProgress) {
         reject(new Error(msg));
       }
     };
-    xhr.onerror = function() { reject(new Error('网络不通：无法访问 uploads.github.com，可能是被墙或 DNS 问题')); };
+    xhr.onerror = function() { reject(new Error('网络不通：无法访问 uploads.github.com')); };
     xhr.ontimeout = function() { reject(new Error('上传超时，文件过大或网速太慢')); };
     xhr.timeout = 7200000;
     xhr.send(file);
