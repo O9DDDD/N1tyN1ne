@@ -700,9 +700,13 @@ const MusicApp = {
         if (!this.albumIndex[album].artist && t.album_artist) this.albumIndex[album].artist = t.album_artist;
         if (!this.albumIndex[album].year && t.album_year) this.albumIndex[album].year = t.album_year;
       }
-      const artist = (t.artist || '').trim() || '未知歌手';
-      if (!this.artistIndex[artist]) this.artistIndex[artist] = [];
-      this.artistIndex[artist].push(t);
+      const artistRaw = (t.artist || '').trim() || '未知歌手';
+      const artistList = artistRaw.split('/').map(function(s) { return s.trim(); }).filter(Boolean);
+      if (!artistList.length) artistList.push('未知歌手');
+      artistList.forEach(function(a) {
+        if (!this.artistIndex[a]) this.artistIndex[a] = [];
+        this.artistIndex[a].push(t);
+      }, this);
     }
     for (var albumName in this.albumIndex) {
       this.albumIndex[albumName].tracks.sort(function(a, b) {
@@ -808,7 +812,7 @@ const MusicApp = {
         html += '<div class="song-row' + (isPlaying ? ' playing' : '') + '" data-track="' + globalIdx + '" onclick="MusicApp.playTrack(' + globalIdx + ')" style="animation-delay:' + (i * 0.08).toFixed(2) + 's">' +
           '<span class="sr-num">' + (isPlaying ? '<i class="fas fa-play" style="font-size:8px"></i>' : (start + i + 1)) + '</span>' +
           '<img class="sr-cover" src="' + https(t.cover_url || '') + '" onerror="this.style.display=\'none\'" alt="">' +
-          '<div class="sr-song-info"><span class="sr-title">' + escHtml(t.title) + '</span><span class="sr-artist">' + escHtml(t.artist || '') + '</span></div>' +
+          '<div class="sr-song-info"><span class="sr-title">' + escHtml(t.title) + '</span><span class="sr-artist">' + escHtml(fmtArtist(t.artist)) + '</span></div>' +
           '<span class="sr-album">' + escHtml(t.album || '—') + '</span>' +
           '<span class="sr-album">' + escHtml(t.genre || '—') + '</span>' +
           '<span class="sr-dur">' + (t.duration || '') + '</span>' +
@@ -900,7 +904,7 @@ const MusicApp = {
       html += '<div class="song-row' + (isPlaying ? ' playing' : '') + '" data-track="' + globalIdx + '" onclick="MusicApp.playAlbumTrack(\'' + escAttr(name) + '\',' + i + ')" style="animation-delay:' + (i * 0.08).toFixed(2) + 's">' +
         '<span class="sr-num">' + (isPlaying ? '<i class="fas fa-play" style="font-size:8px"></i>' : (i + 1)) + '</span>' +
         '<img class="sr-cover" src="' + https(t.cover_url || info.cover || '') + '" onerror="this.style.display=\'none\'" alt="">' +
-        '<div class="sr-song-info"><span class="sr-title">' + escHtml(t.title) + '</span><span class="sr-artist">' + escHtml(t.artist || '') + '</span></div>' +
+        '<div class="sr-song-info"><span class="sr-title">' + escHtml(t.title) + '</span><span class="sr-artist">' + escHtml(fmtArtist(t.artist)) + '</span></div>' +
         '<span class="sr-album"></span>' +
         '<span class="sr-album"></span>' +
         '<span class="sr-dur">' + (t.duration || '') + '</span>' +
@@ -931,7 +935,7 @@ const MusicApp = {
       html += '<div class="song-row' + (isPlaying ? ' playing' : '') + '" data-track="' + globalIdx + '" onclick="MusicApp.playArtistTrack(\'' + escAttr(name) + '\',' + i + ')" style="animation-delay:' + (i * 0.08).toFixed(2) + 's">' +
         '<span class="sr-num">' + (isPlaying ? '<i class="fas fa-play" style="font-size:8px"></i>' : (i + 1)) + '</span>' +
         '<img class="sr-cover" src="' + https(t.cover_url || '') + '" onerror="this.style.display=\'none\'" alt="">' +
-        '<div class="sr-song-info"><span class="sr-title">' + escHtml(t.title) + '</span><span class="sr-artist">' + escHtml(t.artist || '') + '</span></div>' +
+        '<div class="sr-song-info"><span class="sr-title">' + escHtml(t.title) + '</span><span class="sr-artist">' + escHtml(fmtArtist(t.artist)) + '</span></div>' +
         '<span class="sr-album">' + escHtml(t.album || '—') + '</span>' +
         '<span class="sr-album"></span>' +
         '<span class="sr-dur">' + (t.duration || '') + '</span>' +
@@ -1176,6 +1180,7 @@ function escHtml(str) {
   _escDiv.textContent = str || '';
   return _escDiv.innerHTML;
 }
+function fmtArtist(a) { return (a || '').replace(/\s*\/\s*/g, ' · '); }
 function escAttr(str) {
   return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
 }
@@ -1389,7 +1394,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       div.className = 'pl-track' + (i === Player.idx ? ' active' : '');
       div.innerHTML =
         '<div class="pl-num">' + (i === Player.idx && Player.playing ? '<i class="fas fa-play" style="font-size:7px"></i>' : (i + 1)) + '</div>' +
-        '<div class="pl-info"><div class="pl-t">' + escHtml(t.title || '未知') + '</div><div class="pl-a">' + escHtml(t.artist || '—') + '</div></div>' +
+        '<div class="pl-info"><div class="pl-t">' + escHtml(t.title || '未知') + '</div><div class="pl-a">' + escHtml(fmtArtist(t.artist) || '—') + '</div></div>' +
         '<div class="pl-dur">' + (t.duration || '--:--') + '</div>';
       div.onclick = () => {
         Player.play(i);
