@@ -171,9 +171,12 @@ async function signOut() {
 // ─── Database ─────────────────────────────────────────
 async function dbSelect(table, opts) {
   opts = opts || {};
-  var url = SUPABASE_URL + '/rest/v1/' + table + '?select=*';
+  var select = opts.select || '*';
+  var url = SUPABASE_URL + '/rest/v1/' + table + '?select=' + select;
   if (opts.eq) url += '&' + opts.eq.col + '=eq.' + encodeURIComponent(opts.eq.val);
   if (opts.order) url += '&order=' + opts.order.col + '.' + (opts.order.dir || 'desc');
+  if (opts.limit != null) url += '&limit=' + opts.limit;
+  if (opts.offset != null) url += '&offset=' + opts.offset;
   if (opts.single) url += '&limit=1';
   var r = await fetch(url, { headers: apiHeaders(await getJWT()) });
   var d = await r.json();

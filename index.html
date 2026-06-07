@@ -20,6 +20,7 @@
   <div class="container">
     <a href="#" class="logo" onclick="scrollToTop()">N1tyN1ne</a>
     <div class="nav-right">
+      <button class="theme-toggle" onclick="Theme.toggle()" title="切换深色/浅色模式" id="themeToggle"><i class="fas fa-moon"></i></button>
       <span id="authUI"><button class="nav-btn" onclick="Auth.open()">登录</button></span>
       <button class="nav-toggle" onclick="UI.toggleNav()" aria-label="菜单"><i class="fas fa-bars"></i></button>
     </div>
@@ -87,24 +88,25 @@
 </section>
 
 <!-- ═══ About ═══ -->
-<section id="about" style="background:linear-gradient(180deg, var(--bg) 0%, #fef9f2 40%, var(--bg-muted) 100%)">
+<section id="about">
   <div class="container">
     <h2 class="section-title reveal">关于</h2>
     <p class="section-subtitle reveal">Who am I</p>
 
-    <div class="about-grid reveal">
-      <div class="about-card" id="aboutCard1">
-        <div class="about-icon"><i class="fas fa-code"></i></div>
-        <h3 id="aboutTitle1">代码</h3>
-        <p id="aboutDesc1">热爱编程，享受创造的乐趣。关注前端技术、工具开发和开源社区。</p>
-      </div>
-      <div class="about-card" id="aboutCard2">
-        <div class="about-icon"><i class="fas fa-music"></i></div>
+    <div class="about-intro reveal">
+      <p>热爱编程，享受创造的乐趣。关注前端技术、工具开发和开源社区。用代码构建想法，用文字记录思考，用音乐填充生活。</p>
+    </div>
+
+    <div class="about-notes reveal">
+      <div class="sticky-note" id="aboutNote2">
+        <div class="note-tape"></div>
+        <div class="note-icon"><i class="fas fa-music"></i></div>
         <h3 id="aboutTitle2">音乐</h3>
         <p id="aboutDesc2">音乐是灵魂的深呼吸。喜欢电子、后摇、独立音乐，偶尔自己也做点东西。</p>
       </div>
-      <div class="about-card" id="aboutCard3">
-        <div class="about-icon"><i class="fas fa-pen-to-square"></i></div>
+      <div class="sticky-note" id="aboutNote3">
+        <div class="note-tape"></div>
+        <div class="note-icon"><i class="fas fa-pen-to-square"></i></div>
         <h3 id="aboutTitle3">写作</h3>
         <p id="aboutDesc3">用文字记录思考。写技术文章，也写生活随笔。分享让知识更有价值。</p>
       </div>
@@ -170,45 +172,34 @@
   <div class="fp-progress"><div class="fp-bar" id="fpBar"></div></div>
 </div>
 
-<!-- ═══ Settings ═══ -->
-<button class="settings-toggle" id="settingsToggle" onclick="Settings.open()" title="自定义"><i class="fas fa-palette"></i></button>
-<div class="settings-backdrop" id="settingsBackdrop" onclick="Settings.close()"></div>
-<div class="settings-panel" id="settingsPanel">
-  <h3>自定义站点 <button class="sp-close" onclick="Settings.close()"><i class="fas fa-xmark"></i></button></h3>
-  <div class="sp-group">
-    <label>Hero 标题</label>
-    <input type="text" id="setHeroTitle" placeholder="N1tyN1ne">
-  </div>
-  <div class="sp-group">
-    <label>Hero 简介</label>
-    <input type="text" id="setHeroDesc" placeholder="记录、思考、分享。">
-  </div>
-  <div class="sp-group">
-    <label>关于 - 卡片 1</label>
-    <input type="text" id="setAboutTitle1" placeholder="标题">
-    <textarea id="setAboutDesc1" placeholder="描述"></textarea>
-  </div>
-  <div class="sp-group">
-    <label>关于 - 卡片 2</label>
-    <input type="text" id="setAboutTitle2" placeholder="标题">
-    <textarea id="setAboutDesc2" placeholder="描述"></textarea>
-  </div>
-  <div class="sp-group">
-    <label>关于 - 卡片 3</label>
-    <input type="text" id="setAboutTitle3" placeholder="标题">
-    <textarea id="setAboutDesc3" placeholder="描述"></textarea>
-  </div>
-  <div class="sp-actions">
-    <button class="btn btn-primary" onclick="Settings.save()">保存</button>
-    <button class="btn btn-ghost" onclick="Settings.reset()">恢复默认</button>
-  </div>
-</div>
-
 <!-- ═══ Toast ═══ -->
 <div class="toast-container" id="toastContainer"></div>
 
 <!-- ══════════════ Core Inline Scripts ══════════════ -->
 <script>
+// ─── Theme ──────────────────────────────────────────
+const Theme = {
+  init() {
+    var saved = localStorage.getItem('theme');
+    if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme:dark)').matches)) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+    this._updateIcon();
+  },
+  toggle() {
+    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
+    localStorage.setItem('theme', isDark ? 'light' : 'dark');
+    this._updateIcon();
+  },
+  _updateIcon() {
+    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    var icon = document.querySelector('#themeToggle i');
+    if (icon) icon.className = 'fas fa-' + (isDark ? 'sun' : 'moon');
+  }
+};
+Theme.init();
+
 // ─── UI Helpers ──────────────────────────────────────
 const UI = {
   toggleNav() { document.getElementById('navLinks').classList.toggle('open'); },
@@ -410,87 +401,30 @@ const Blog = {
   }
 };
 
-// ─── Settings ──────────────────────────────────────
-const Settings = {
-  _defaults: {
+// ─── Site Content Loader ───────────────────────────
+(function() {
+  var defaults = {
     heroTitle: 'N1tyN1ne',
     heroDesc: '记录、思考、分享。',
-    aboutTitle1: '代码', aboutDesc1: '热爱编程，享受创造的乐趣。关注前端技术、工具开发和开源社区。',
     aboutTitle2: '音乐', aboutDesc2: '音乐是灵魂的深呼吸。喜欢电子、后摇、独立音乐，偶尔自己也做点东西。',
     aboutTitle3: '写作', aboutDesc3: '用文字记录思考。写技术文章，也写生活随笔。分享让知识更有价值。'
-  },
-
-  open() {
-    document.getElementById('settingsPanel').classList.add('open');
-    document.getElementById('settingsBackdrop').classList.add('open');
-    const s = this._load();
-    document.getElementById('setHeroTitle').value = s.heroTitle;
-    document.getElementById('setHeroDesc').value = s.heroDesc;
-    document.getElementById('setAboutTitle1').value = s.aboutTitle1;
-    document.getElementById('setAboutDesc1').value = s.aboutDesc1;
-    document.getElementById('setAboutTitle2').value = s.aboutTitle2;
-    document.getElementById('setAboutDesc2').value = s.aboutDesc2;
-    document.getElementById('setAboutTitle3').value = s.aboutTitle3;
-    document.getElementById('setAboutDesc3').value = s.aboutDesc3;
-  },
-
-  close() {
-    document.getElementById('settingsPanel').classList.remove('open');
-    document.getElementById('settingsBackdrop').classList.remove('open');
-  },
-
-  save() {
-    const data = {
-      heroTitle: document.getElementById('setHeroTitle').value.trim() || this._defaults.heroTitle,
-      heroDesc: document.getElementById('setHeroDesc').value.trim() || this._defaults.heroDesc,
-      aboutTitle1: document.getElementById('setAboutTitle1').value.trim() || this._defaults.aboutTitle1,
-      aboutDesc1: document.getElementById('setAboutDesc1').value.trim() || this._defaults.aboutDesc1,
-      aboutTitle2: document.getElementById('setAboutTitle2').value.trim() || this._defaults.aboutTitle2,
-      aboutDesc2: document.getElementById('setAboutDesc2').value.trim() || this._defaults.aboutDesc2,
-      aboutTitle3: document.getElementById('setAboutTitle3').value.trim() || this._defaults.aboutTitle3,
-      aboutDesc3: document.getElementById('setAboutDesc3').value.trim() || this._defaults.aboutDesc3,
-    };
-    localStorage.setItem('site_settings', JSON.stringify(data));
-    this._apply(data);
-    this.close();
-    UI.toast('设置已保存');
-  },
-
-  reset() {
-    localStorage.removeItem('site_settings');
-    this._apply(this._defaults);
-    this.close();
-    UI.toast('已恢复默认设置');
-    this.open(); // Re-open to show defaults
-    this.close();
-  },
-
-  _load() {
-    try {
-      const raw = localStorage.getItem('site_settings');
-      return raw ? { ...this._defaults, ...JSON.parse(raw) } : { ...this._defaults };
-    } catch(e) { return { ...this._defaults }; }
-  },
-
-  _apply(s) {
-    document.getElementById('heroTitle').textContent = s.heroTitle;
-    document.getElementById('heroDesc').textContent = s.heroDesc;
-    document.title = s.heroTitle;
-    document.getElementById('aboutTitle1').textContent = s.aboutTitle1;
-    document.getElementById('aboutDesc1').textContent = s.aboutDesc1;
-    document.getElementById('aboutTitle2').textContent = s.aboutTitle2;
-    document.getElementById('aboutDesc2').textContent = s.aboutDesc2;
-    document.getElementById('aboutTitle3').textContent = s.aboutTitle3;
-    document.getElementById('aboutDesc3').textContent = s.aboutDesc3;
-  },
-
-  init() {
-    this._apply(this._load());
-  }
-};
-
-// Init settings on load
-document.addEventListener('DOMContentLoaded', () => Settings.init());
+  };
+  var s = {};
+  try {
+    var raw = localStorage.getItem('site_settings');
+    if (raw) s = JSON.parse(raw);
+  } catch(e) {}
+  s = Object.assign({}, defaults, s);
+  document.getElementById('heroTitle').textContent = s.heroTitle;
+  document.getElementById('heroDesc').textContent = s.heroDesc;
+  document.title = s.heroTitle;
+  var t2 = document.getElementById('aboutTitle2'), d2 = document.getElementById('aboutDesc2');
+  var t3 = document.getElementById('aboutTitle3'), d3 = document.getElementById('aboutDesc3');
+  if (t2) t2.textContent = s.aboutTitle2;
+  if (d2) d2.textContent = s.aboutDesc2;
+  if (t3) t3.textContent = s.aboutTitle3;
+  if (d3) d3.textContent = s.aboutDesc3;
+})();
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>

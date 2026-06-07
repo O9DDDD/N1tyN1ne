@@ -18,6 +18,7 @@
   <div class="container">
     <span class="logo">N1tyN1ne · 管理</span>
     <div class="nav-right">
+      <button class="theme-toggle" onclick="Theme.toggle()" title="切换深色/浅色模式" id="themeToggle"><i class="fas fa-moon"></i></button>
       <span id="adminAuthUI"></span>
       <button class="nav-toggle" onclick="toggleNav()" aria-label="菜单"><i class="fas fa-bars"></i></button>
     </div>
@@ -34,6 +35,8 @@
     <a href="#" data-section="posts"><i class="fas fa-file-lines"></i> 文章</a>
     <a href="#" data-section="music"><i class="fas fa-music"></i> 音乐</a>
     <a href="#" data-section="comments"><i class="fas fa-comment"></i> 留言</a>
+    <a href="#" data-section="friends"><i class="fas fa-link"></i> 友链</a>
+    <a href="#" data-section="settings"><i class="fas fa-sliders"></i> 站点设置</a>
   </div>
 
   <div class="admin-content">
@@ -120,7 +123,7 @@
       </div>
       <div class="table-wrap">
         <table class="admin-table" id="musicTable">
-          <thead><tr><th style="width:44px"></th><th>歌曲</th><th>艺术家</th><th>日期</th><th>操作</th></tr></thead>
+          <thead><tr><th style="width:44px"></th><th>歌曲</th><th>艺术家</th><th>专辑</th><th>风格</th><th>日期</th><th>操作</th></tr></thead>
           <tbody id="musicBody"></tbody>
         </table>
       </div>
@@ -134,6 +137,50 @@
           <thead><tr><th>用户</th><th>内容</th><th>文章</th><th>日期</th><th>操作</th></tr></thead>
           <tbody id="commentsBody"></tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- Friends -->
+    <div class="admin-section" id="section-friends">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+        <h2 style="margin:0">友链管理</h2>
+        <button class="btn btn-primary" onclick="showFriendEditor()" style="background:var(--grn-dark);color:#fff">+ 添加友链</button>
+      </div>
+      <div id="friendEditor" style="display:none;margin-bottom:24px;padding:20px;background:var(--blk-mid);border-radius:var(--radius-sm);border:1px solid var(--border)">
+        <h3 style="font-size:1rem;font-weight:700;color:var(--text-bright);margin-bottom:16px" id="friendEditorTitle">添加友链</h3>
+        <div class="form-group"><label>名称</label><input id="fName" placeholder="网站名称"></div>
+        <div class="form-group"><label>链接</label><input id="fUrl" placeholder="https://..."></div>
+        <div class="form-group"><label>描述</label><input id="fDesc" placeholder="简短描述"></div>
+        <div class="form-group"><label>头像 URL（可选）</label><input id="fAvatar" placeholder="https://..."></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-primary" onclick="saveFriend()" style="background:var(--grn-dark);color:#fff">保存</button>
+          <button class="btn btn-ghost btn-sm" onclick="cancelFriendEdit()">取消</button>
+        </div>
+        <input type="hidden" id="editFriendId">
+      </div>
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead><tr><th>名称</th><th>链接</th><th>描述</th><th>日期</th><th>操作</th></tr></thead>
+          <tbody id="friendsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Site Settings -->
+    <div class="admin-section" id="section-settings">
+      <h2>站点设置</h2>
+      <p style="color:var(--text-dim);font-size:.82rem;margin-bottom:20px">自定义首页显示的 Hero 标题和关于区域文字。</p>
+      <div style="max-width:560px;display:flex;flex-direction:column;gap:16px">
+        <div class="form-group"><label>Hero 标题</label><input id="setHeroTitle" placeholder="N1tyN1ne"></div>
+        <div class="form-group"><label>Hero 简介</label><input id="setHeroDesc" placeholder="记录、思考、分享。"></div>
+        <div class="form-group"><label>关于 - 卡片 2 标题</label><input id="setAboutTitle2" placeholder="音乐"></div>
+        <div class="form-group"><label>关于 - 卡片 2 描述</label><textarea id="setAboutDesc2" placeholder="描述" style="min-height:60px"></textarea></div>
+        <div class="form-group"><label>关于 - 卡片 3 标题</label><input id="setAboutTitle3" placeholder="写作"></div>
+        <div class="form-group"><label>关于 - 卡片 3 描述</label><textarea id="setAboutDesc3" placeholder="描述" style="min-height:60px"></textarea></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-primary" onclick="saveSiteSettings()" style="background:var(--grn-dark);color:#fff">保存</button>
+          <button class="btn btn-ghost btn-sm" onclick="resetSiteSettings()">恢复默认</button>
+        </div>
       </div>
     </div>
 
@@ -161,6 +208,28 @@
 <script>
 function toggleNav() { document.getElementById('navLinks').classList.toggle('open'); }
 function closeNav() { document.getElementById('navLinks').classList.remove('open'); }
+// Theme
+var Theme = {
+  init: function() {
+    var saved = localStorage.getItem('theme');
+    if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme:dark)').matches)) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+    this._updateIcon();
+  },
+  toggle: function() {
+    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
+    localStorage.setItem('theme', isDark ? 'light' : 'dark');
+    this._updateIcon();
+  },
+  _updateIcon: function() {
+    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    var icon = document.querySelector('#themeToggle i');
+    if (icon) icon.className = 'fas fa-' + (isDark ? 'sun' : 'moon');
+  }
+};
+Theme.init();
 </script>
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>

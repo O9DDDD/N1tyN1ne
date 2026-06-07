@@ -31,7 +31,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadAll() {
-  await Promise.all([loadAdminPosts(), loadAdminMusic(), loadAdminComments()]);
+  await Promise.all([loadAdminPosts(), loadAdminMusic(), loadAdminComments(), loadAdminFriends()]);
+  loadSiteSettings();
 }
 
 /* ─── Posts ─────────────────────────────────────────── */
@@ -111,13 +112,15 @@ async function loadAdminMusic() {
     var data = await dbSelect('music', { order: { col: 'created_at', dir: 'desc' } });
     document.getElementById('dashMusic').textContent = (data || []).length;
     var tbody = document.getElementById('musicBody');
-    if (!data || !data.length) { tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">暂无音乐</div></td></tr>'; return; }
+    if (!data || !data.length) { tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">暂无音乐</div></td></tr>'; return; }
     tbody.innerHTML = data.map(function(m) {
       if (editingMusicId === m.id) {
         return '<tr>' +
           '<td>' + coverThumb(m.cover_url) + '</td>' +
           '<td><input id="emTitle" value="' + escHtml(m.title) + '" style="width:100%;padding:4px 6px;background:var(--blk-mid);border:1px solid var(--border);color:var(--text-bright);font-size:.82rem;border-radius:4px"></td>' +
           '<td><input id="emArtist" value="' + escHtml(m.artist || '') + '" style="width:100%;padding:4px 6px;background:var(--blk-mid);border:1px solid var(--border);color:var(--text-bright);font-size:.82rem;border-radius:4px"></td>' +
+          '<td><input id="emAlbum" value="' + escHtml(m.album || '') + '" placeholder="专辑" style="width:100%;padding:4px 6px;background:var(--blk-mid);border:1px solid var(--border);color:var(--text-bright);font-size:.82rem;border-radius:4px"></td>' +
+          '<td><input id="emGenre" value="' + escHtml(m.genre || '') + '" placeholder="风格" style="width:100%;padding:4px 6px;background:var(--blk-mid);border:1px solid var(--border);color:var(--text-bright);font-size:.82rem;border-radius:4px"></td>' +
           '<td>' + (m.created_at ? new Date(m.created_at).toLocaleDateString('zh-CN') : '') + '</td>' +
           '<td><button class="btn btn-primary btn-sm" onclick="saveMusicEdit(\'' + m.id + '\')" style="background:var(--grn-dark);color:#fff">保存</button> ' +
           '<button class="btn btn-ghost btn-sm" onclick="cancelMusicEdit()">取消</button><br>' +
@@ -126,6 +129,7 @@ async function loadAdminMusic() {
       return '<tr>' +
         '<td>' + coverThumb(m.cover_url) + '</td>' +
         '<td style="color:var(--text-bright)">' + m.title + '</td><td>' + (m.artist || '—') + '</td>' +
+        '<td>' + (m.album || '—') + '</td><td>' + (m.genre || '—') + '</td>' +
         '<td>' + (m.created_at ? new Date(m.created_at).toLocaleDateString('zh-CN') : '') + '</td>' +
         '<td><button class="btn btn-ghost btn-sm" onclick="editMusic(\'' + m.id + '\')">编辑</button> ' +
         '<button class="btn btn-danger btn-sm" onclick="deleteMusic(\'' + m.id + '\')">删除</button></td></tr>';
@@ -155,7 +159,9 @@ async function saveMusicEdit(id) {
       var safeId = id.replace(/-/g, '').slice(0, 8);
       coverUrl = await uploadFile('covers', ts + '_edit_' + safeId + '.jpg', coverFile);
     }
-    var payload = { title: title, artist: artist };
+    var album = document.getElementById('emAlbum').value.trim();
+    var genre = document.getElementById('emGenre').value.trim();
+    var payload = { title: title, artist: artist, album: album, genre: genre };
     if (coverUrl) payload.cover_url = coverUrl;
     await dbUpdate('music', payload, 'id', id);
     editingMusicId = null;
@@ -461,6 +467,10 @@ function renderQueue() {
         '<div style="font-size:.7rem;color:var(--text-dim);margin-bottom:4px">' + escHtml(name) + '</div>' +
         '<input value="' + escHtml(entry.title) + '" onchange="uploadQueue[' + i + '].title=this.value" placeholder="歌曲名" style="width:100%;padding:6px 8px;background:var(--blk-mid);border:1px solid var(--border);border-radius:4px;color:var(--text-bright);font-size:.85rem;margin-bottom:6px">' +
         '<input value="' + escHtml(entry.artist) + '" onchange="uploadQueue[' + i + '].artist=this.value" placeholder="艺术家" style="width:100%;padding:6px 8px;background:var(--blk-mid);border:1px solid var(--border);border-radius:4px;color:var(--text-bright);font-size:.85rem;margin-bottom:6px">' +
+        '<div style="display:flex;gap:6px;margin-bottom:6px">' +
+          '<input value="' + escHtml(entry.album || '') + '" onchange="uploadQueue[' + i + '].album=this.value" placeholder="专辑" style="flex:1;padding:6px 8px;background:var(--blk-mid);border:1px solid var(--border);border-radius:4px;color:var(--text-bright);font-size:.82rem">' +
+          '<input value="' + escHtml(entry.genre || '') + '" onchange="uploadQueue[' + i + '].genre=this.value" placeholder="风格/分类" style="flex:1;padding:6px 8px;background:var(--blk-mid);border:1px solid var(--border);border-radius:4px;color:var(--text-bright);font-size:.82rem">' +
+        '</div>' +
         '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">' +
           lyricsBadge +
           '<span style="font-size:.7rem;color:var(--text-dim)">' + statusIcon + ' ' + statusText + '</span>' +
@@ -540,6 +550,9 @@ async function uploadAll() {
       await dbInsert('music', {
         title: entry.title,
         artist: entry.artist,
+        album: entry.album || '',
+        genre: entry.genre || '',
+        album_description: entry.album_description || '',
         duration: '',
         audio_url: audioUrl,
         cover_url: coverUrl,
@@ -598,4 +611,121 @@ async function deleteComment(id) {
   if (!confirm('确定删除？')) return;
   await dbDelete('comments', 'id', id);
   await loadAdminComments();
+}
+
+/* ─── Friends Management ──────────────────────────── */
+var editingFriendId = null;
+
+async function loadAdminFriends() {
+  try {
+    var data = [];
+    try {
+      data = await dbSelect('friends', { order: { col: 'created_at', dir: 'asc' } });
+    } catch(e) {}
+    var tbody = document.getElementById('friendsBody');
+    if (!data || !data.length) {
+      tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">暂无友链</div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(function(f) {
+      return '<tr>' +
+        '<td style="color:var(--text-bright);font-weight:500">' + (f.name || '—') + '</td>' +
+        '<td style="font-size:.78rem"><a href="' + (f.url || '#') + '" target="_blank" style="color:var(--accent)">' + (f.url || '—') + '</a></td>' +
+        '<td style="color:var(--text-dim);font-size:.8rem">' + (f.description || '—') + '</td>' +
+        '<td style="font-size:.78rem;color:var(--text-dim)">' + (f.created_at ? new Date(f.created_at).toLocaleDateString('zh-CN') : '') + '</td>' +
+        '<td><button class="btn btn-ghost btn-sm" onclick="editFriend(\'' + f.id + '\')">编辑</button> ' +
+        '<button class="btn btn-danger btn-sm" onclick="deleteFriend(\'' + f.id + '\')">删除</button></td></tr>';
+    }).join('');
+  } catch(e) {}
+}
+
+function showFriendEditor() {
+  editingFriendId = null;
+  document.getElementById('friendEditorTitle').textContent = '添加友链';
+  ['fName','fUrl','fDesc','fAvatar','editFriendId'].forEach(function(id) { document.getElementById(id).value = ''; });
+  document.getElementById('friendEditor').style.display = 'block';
+}
+
+function cancelFriendEdit() {
+  document.getElementById('friendEditor').style.display = 'none';
+  editingFriendId = null;
+}
+
+async function editFriend(id) {
+  try {
+    var data = await dbSelect('friends', { eq: { col: 'id', val: id }, single: true });
+    if (!data) return;
+    editingFriendId = id;
+    document.getElementById('friendEditorTitle').textContent = '编辑友链';
+    document.getElementById('fName').value = data.name || '';
+    document.getElementById('fUrl').value = data.url || '';
+    document.getElementById('fDesc').value = data.description || '';
+    document.getElementById('fAvatar').value = data.avatar_url || '';
+    document.getElementById('editFriendId').value = id;
+    document.getElementById('friendEditor').style.display = 'block';
+  } catch(e) {}
+}
+
+async function saveFriend() {
+  var name = document.getElementById('fName').value.trim();
+  var url = document.getElementById('fUrl').value.trim();
+  if (!name || !url) { alert('名称和链接不能为空'); return; }
+  var payload = {
+    name: name,
+    url: url,
+    description: document.getElementById('fDesc').value.trim(),
+    avatar_url: document.getElementById('fAvatar').value.trim()
+  };
+  try {
+    if (editingFriendId) {
+      await dbUpdate('friends', payload, 'id', editingFriendId);
+    } else {
+      await dbInsert('friends', payload);
+    }
+    cancelFriendEdit();
+    await loadAdminFriends();
+  } catch(e) { alert('保存失败: ' + e.message); }
+}
+
+async function deleteFriend(id) {
+  if (!confirm('确定删除？')) return;
+  try { await dbDelete('friends', 'id', id); } catch(e) {}
+  await loadAdminFriends();
+}
+
+/* ─── Site Settings ───────────────────────────────── */
+function loadSiteSettings() {
+  var defaults = {
+    heroTitle: 'N1tyN1ne', heroDesc: '记录、思考、分享。',
+    aboutTitle2: '音乐', aboutDesc2: '音乐是灵魂的深呼吸。喜欢电子、后摇、独立音乐，偶尔自己也做点东西。',
+    aboutTitle3: '写作', aboutDesc3: '用文字记录思考。写技术文章，也写生活随笔。分享让知识更有价值。'
+  };
+  var s = {};
+  try { var raw = localStorage.getItem('site_settings'); if (raw) s = JSON.parse(raw); } catch(e) {}
+  s = Object.assign({}, defaults, s);
+  document.getElementById('setHeroTitle').value = s.heroTitle;
+  document.getElementById('setHeroDesc').value = s.heroDesc;
+  document.getElementById('setAboutTitle2').value = s.aboutTitle2;
+  document.getElementById('setAboutDesc2').value = s.aboutDesc2;
+  document.getElementById('setAboutTitle3').value = s.aboutTitle3;
+  document.getElementById('setAboutDesc3').value = s.aboutDesc3;
+}
+
+function saveSiteSettings() {
+  var data = {
+    heroTitle: document.getElementById('setHeroTitle').value.trim() || 'N1tyN1ne',
+    heroDesc: document.getElementById('setHeroDesc').value.trim() || '记录、思考、分享。',
+    aboutTitle2: document.getElementById('setAboutTitle2').value.trim() || '音乐',
+    aboutDesc2: document.getElementById('setAboutDesc2').value.trim() || '',
+    aboutTitle3: document.getElementById('setAboutTitle3').value.trim() || '写作',
+    aboutDesc3: document.getElementById('setAboutDesc3').value.trim() || ''
+  };
+  localStorage.setItem('site_settings', JSON.stringify(data));
+  alert('站点设置已保存！刷新首页即可看到效果。');
+}
+
+function resetSiteSettings() {
+  localStorage.removeItem('site_settings');
+  loadSiteSettings();
+  alert('已恢复默认设置');
 }
