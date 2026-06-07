@@ -201,8 +201,7 @@ async function getOrCreateMVRelease() {
 
 /**
  * Upload a file as a GitHub Release asset (up to 2GB).
- * Uses XHR for real-time progress tracking.
- * Automatically falls back to repo file API for files ≤100MB if uploads.github.com is blocked.
+ * Pre-checks connectivity to uploads.github.com; falls back to Git API for ≤100MB files.
  * Returns the direct download URL.
  */
 async function githubUploadReleaseAsset(file, filename, onProgress) {
@@ -219,28 +218,59 @@ async function githubUploadReleaseAsset(file, filename, onProgress) {
   var releaseId = await getOrCreateMVRelease();
   var fileSizeMB = file.size / 1024 / 1024;
 
-  // Try uploads.github.com with XHR for progress
-  try {
-    var assetUrl = await _xhrUploadAsset(releaseId, file, filename, pat, onProgress);
-    return assetUrl;
-  } catch(xhrErr) {
-    console.warn('Release asset XHR failed:', xhrErr.message);
+  // Test connectivity to uploads subdomain
+  var canReachUploads = await _testUploadsConnectivity();
 
-    // Fallback: if file ≤100MB, try Git Blob API (uses api.github.com, more likely accessible)
-    if (fileSizeMB <= 100) {
-      if (onProgress) onProgress(10);
-      try {
-        var cdnUrl = await githubUploadFile(file, 'public/mv', filename, function(pct) {
-          if (onProgress) onProgress(10 + Math.floor(pct * 0.9));
-        });
-        return cdnUrl;
-      } catch(blobErr) {
-        console.warn('Git Blob fallback also failed:', blobErr.message);
-        throw new Error('上传失败：uploads.github.com 无法访问（可能被墙），且文件过大无法走 Git API。请尝试：1) 检查网络代理 2) 压缩文件到 50MB 以下使用 Supabase');
-      }
+  if (canReachUploads) {
+    // Try Release Asset upload with progress
+    try {
+      var assetUrl = await _xhrUploadAsset(releaseId, file, filename, pat, onProgress);
+      return assetUrl;
+    } catch(xhrErr) {
+      console.warn('Release asset XHR failed:', xhrErr.message);
     }
+  } else {
+    console.warn('uploads.github.com unreachable, skipping Release API');
+  }
 
-    throw new Error('上传失败：无法连接到 GitHub 上传服务器（uploads.github.com 可能被墙）。建议：1) 开启代理/VPN 2) 将文件压缩到 50MB 以下用 Supabase 上传');
+  // Fallback for files ≤100MB: Git Blob API (api.github.com)
+  if (fileSizeMB <= 100) {
+    if (onProgress) onProgress(5);
+    try {
+      var cdnUrl = await githubUploadFile(file, 'public/mv', filename, function(pct) {
+        if (onProgress) onProgress(5 + Math.floor(pct * 0.95));
+      });
+      return cdnUrl;
+    } catch(blobErr) {
+      console.warn('Git Blob fallback failed:', blobErr.message);
+      throw new Error('GitHub 上传失败：' + (blobErr.message || '未知错误'));
+    }
+  }
+
+  // >100MB and uploads subdomain unreachable
+  throw new Error(
+    '无法上传大文件（' + fileSizeMB.toFixed(0) + 'MB）：uploads.github.com 不可达。\n\n' +
+    '解决方案：\n' +
+    '1. 将 MV 压缩到 100MB 以下，自动走 Git API 上传\n' +
+    '2. 使用全局代理确保 uploads.github.com 可达\n' +
+    '3. 或者压缩到 50MB 以下，不填 GitHub Token 直接用 Supabase'
+  );
+}
+
+/** Quick connectivity test: can we reach uploads.github.com? */
+async function _testUploadsConnectivity() {
+  try {
+    var controller = new AbortController();
+    var timeout = setTimeout(function() { controller.abort(); }, 3000);
+    await fetch('https://uploads.github.com/', {
+      method: 'HEAD',
+      mode: 'no-cors',
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    return true;
+  } catch(e) {
+    return false;
   }
 }
 
