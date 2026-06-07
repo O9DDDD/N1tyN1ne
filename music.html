@@ -460,7 +460,7 @@ const MusicApp = {
     this.genreIndex = {};
     for (const t of this.allTracks) {
       // Album index
-      const album = (t.album || '').trim();
+      const album = (t.album || '').trim() || '未分类专辑';
       if (album) {
         if (!this.albumIndex[album]) this.albumIndex[album] = { tracks: [], cover: '', description: '', genre: '' };
         this.albumIndex[album].tracks.push(t);
@@ -469,11 +469,9 @@ const MusicApp = {
         if (!this.albumIndex[album].genre && t.genre) this.albumIndex[album].genre = t.genre;
       }
       // Genre index
-      const genre = (t.genre || '').trim();
-      if (genre) {
-        if (!this.genreIndex[genre]) this.genreIndex[genre] = [];
-        this.genreIndex[genre].push(t);
-      }
+      const genre = (t.genre || '').trim() || '未分类';
+      if (!this.genreIndex[genre]) this.genreIndex[genre] = [];
+      this.genreIndex[genre].push(t);
     }
   },
 
