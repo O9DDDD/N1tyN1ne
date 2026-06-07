@@ -141,3 +141,109 @@ async function githubUploadAll(entries, onEntryProgress) {
   }
   return results;
 }
+
+/* ─── GitHub Releases · Large File Upload (up to 2GB) ── */
+var _mvReleaseId = null;
+var _mvReleaseTag = 'mv-storage';
+
+/**
+ * Get or create the MV storage release.
+ * A hidden (draft) release acts as a file bucket for large MV files.
+ */
+async function getOrCreateMVRelease() {
+  if (_mvReleaseId) return _mvReleaseId;
+
+  var pat = getGitHubPAT();
+  if (!pat) throw new Error('未配置 GitHub Token');
+
+  // Try to find existing release by tag
+  try {
+    var existing = await ghApi('/repos/' + GH_REPO_OWNER + '/' + GH_REPO_NAME + '/releases/tags/' + _mvReleaseTag);
+    if (existing && existing.id) {
+      _mvReleaseId = existing.id;
+      return _mvReleaseId;
+    }
+  } catch(e) {
+    // Not found — create one
+  }
+
+  // Create a new draft release (hidden, not shown on repo page)
+  var release = await ghApi('/repos/' + GH_REPO_OWNER + '/' + GH_REPO_NAME + '/releases', {
+    method: 'POST',
+    body: {
+      tag_name: _mvReleaseTag,
+      name: 'MV Storage',
+      body: 'Auto-managed MV file storage. Do not delete this release.',
+      draft: true,
+      prerelease: false
+    }
+  });
+  _mvReleaseId = release.id;
+
+  // Also create the lightweight tag if it doesn't exist
+  try {
+    await ghApi('/repos/' + GH_REPO_OWNER + '/' + GH_REPO_NAME + '/git/refs/tags/' + _mvReleaseTag);
+  } catch(e) {
+    // Tag doesn't exist yet — create it pointing to main
+    try {
+      var mainRef = await ghApi('/repos/' + GH_REPO_OWNER + '/' + GH_REPO_NAME + '/git/refs/heads/main');
+      await ghApi('/repos/' + GH_REPO_OWNER + '/' + GH_REPO_NAME + '/git/refs', {
+        method: 'POST',
+        body: { ref: 'refs/tags/' + _mvReleaseTag, sha: mainRef.object.sha }
+      });
+    } catch(e2) {
+      // Tag already exists or other error — release creation succeeded anyway
+    }
+  }
+
+  return _mvReleaseId;
+}
+
+/**
+ * Upload a large file (>100MB, up to 2GB) as a GitHub Release asset.
+ * Uses XHR for real-time progress tracking.
+ * Returns the direct download URL.
+ */
+async function githubUploadReleaseAsset(file, filename, onProgress) {
+  var pat = getGitHubPAT();
+  if (!pat) throw new Error('未配置 GitHub Token');
+
+  var releaseId = await getOrCreateMVRelease();
+
+  return new Promise(function(resolve, reject) {
+    var xhr = new XMLHttpRequest();
+    var url = 'https://uploads.github.com/repos/' + GH_REPO_OWNER + '/' + GH_REPO_NAME + '/releases/' + releaseId + '/assets?name=' + encodeURIComponent(filename);
+
+    xhr.open('POST', url);
+    xhr.setRequestHeader('Authorization', 'Bearer ' + pat);
+    xhr.setRequestHeader('Accept', 'application/vnd.github+json');
+    xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+
+    if (onProgress) {
+      xhr.upload.onprogress = function(e) {
+        if (e.lengthComputable) onProgress(Math.round(e.loaded / e.total * 100));
+      };
+    }
+
+    xhr.onload = function() {
+      if (xhr.status === 201) {
+        var asset = JSON.parse(xhr.responseText);
+        // Return direct browser download URL (supports range requests for video)
+        resolve(asset.browser_download_url);
+      } else {
+        var msg = '上传失败';
+        try {
+          var d = JSON.parse(xhr.responseText);
+          msg = d.message || d.errors?.[0]?.message || msg;
+          if (msg.includes('size')) msg = '文件过大：GitHub Release 单文件上限为 2GB。';
+          if (msg.includes('rate')) msg = 'GitHub API 限流，请稍后再试。';
+        } catch(e) {}
+        reject(new Error(msg));
+      }
+    };
+    xhr.onerror = function() { reject(new Error('网络错误，请检查网络连接')); };
+    xhr.ontimeout = function() { reject(new Error('上传超时，文件可能过大')); };
+    xhr.timeout = 7200000; // 2 hour timeout for large files
+    xhr.send(file);
+  });
+}

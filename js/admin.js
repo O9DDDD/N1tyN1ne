@@ -690,13 +690,16 @@ async function uploadMVWithBitrates(mvFile, nameBase) {
   // Helper: pick upload method based on size
   async function uploadVideo(file, path) {
     var sizeMB = file.size / 1024 / 1024;
-    if (useGitHub && sizeMB > 10 && sizeMB <= 100) {
+    if (useGitHub && sizeMB > 100) {
+      // >100MB up to 2GB: GitHub Release assets (free!)
+      return await githubUploadReleaseAsset(file, path, function(){});
+    } else if (useGitHub && sizeMB > 10) {
       return await githubUploadFile(file, 'public/mv', path, function(){});
     } else {
       try {
         return await uploadFileWithProgress('mv', path, file, function(){});
       } catch(e) {
-        if (useGitHub && sizeMB <= 100) return await githubUploadFile(file, 'public/mv', path, function(){});
+        if (useGitHub) return await githubUploadFile(file, 'public/mv', path, function(){});
         throw e;
       }
     }
@@ -989,7 +992,7 @@ function cancelMVUpload() {
 }
 
 function addMVFiles(files) {
-  var MAX_SIZE = 500 * 1024 * 1024;
+  var MAX_SIZE = 2 * 1024 * 1024 * 1024; // 2GB GitHub Release limit
   var oversized = [];
   for (var i = 0; i < files.length; i++) {
     var f = files[i];
@@ -1008,7 +1011,7 @@ function addMVFiles(files) {
     });
   }
   if (oversized.length) {
-    alert('以下文件超过 500MB 限制，已跳过：\n\n' + oversized.join('\n') + '\n\n提示：Pro 套餐支持最大 5GB 单文件。');
+    alert('以下文件超过 2GB 限制，已跳过：\n\n' + oversized.join('\n') + '\n\n提示：GitHub Release 单文件上限为 2GB，如需更大文件请先压缩。');
   }
   renderMVQueue();
 }
@@ -1083,20 +1086,20 @@ async function uploadAllMVs() {
       var mvUrl;
       var fileSizeMB = entry.file.size / 1024 / 1024;
 
-      if (useGitHub && fileSizeMB <= 100) {
-        // GitHub: up to 100MB, good for mid-size MVs
+      if (useGitHub && fileSizeMB > 100) {
+        // >100MB up to 2GB: GitHub Release assets (free!)
+        mvUrl = await githubUploadReleaseAsset(entry.file, mvPath, function(pct) {
+          entry.progress = pct;
+          renderMVQueue();
+        });
+      } else if (useGitHub && fileSizeMB <= 100) {
+        // <=100MB: GitHub repo file API (jsDelivr CDN)
         mvUrl = await githubUploadFile(entry.file, 'public/mv', mvPath, function(pct) {
           entry.progress = pct;
           renderMVQueue();
         });
-      } else if (fileSizeMB > 100) {
-        // >100MB: must use Supabase (Pro plan supports up to 5GB)
-        mvUrl = await uploadFileWithProgress('mv', mvPath, entry.file, function(pct) {
-          entry.progress = pct;
-          renderMVQueue();
-        });
       } else {
-        // <=100MB, no GitHub token: try Supabase
+        // No GitHub token: try Supabase
         try {
           mvUrl = await uploadFileWithProgress('mv', mvPath, entry.file, function(pct) {
             entry.progress = pct;

@@ -137,14 +137,14 @@
         <h2 style="margin:0">MV 管理</h2>
         <button class="btn btn-primary" onclick="showMVUploader()" style="background:var(--grn-dark);color:#fff">+ 上传 MV</button>
       </div>
-      <p style="color:var(--text-dim);font-size:.82rem;margin-bottom:16px">上传 MV 视频文件，然后快速绑定到已有歌曲。大文件自动使用 GitHub 存储（≤100MB）或 Supabase 直传（≤500MB）。需先在 <a href="https://github.com/settings/tokens/new?scopes=repo&description=N1tyN1ne+MV+Upload" target="_blank" rel="noopener" style="color:var(--warm)">GitHub 创建 Token</a> 并填入下方。</p>
+      <p style="color:var(--text-dim);font-size:.82rem;margin-bottom:16px">上传 MV 视频文件，然后快速绑定到已有歌曲。通过 GitHub Release 存储大文件（免费 · 单个上限 2GB · 不限总容量）。需先在 <a href="https://github.com/settings/tokens/new?scopes=repo&description=N1tyN1ne+MV+Upload" target="_blank" rel="noopener" style="color:var(--warm)">GitHub 创建 Token</a> 并填入下方。</p>
 
       <div id="mvUploader" style="display:none;margin-bottom:24px;padding:20px;background:var(--blk-mid);border-radius:var(--radius-sm);border:1px solid var(--border)">
         <h3 style="font-size:1rem;font-weight:700;color:var(--text-bright);margin-bottom:16px">上传 MV 视频</h3>
         <div id="mvDropZone" style="border:2px dashed var(--border);border-radius:8px;padding:40px 20px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:16px">
           <i class="fas fa-cloud-upload-alt" style="font-size:2.5rem;color:var(--grn);display:block;margin-bottom:12px"></i>
           <p style="color:var(--text-bright);font-weight:600;margin:0 0 4px">拖拽 MV 文件到此处</p>
-          <p style="color:var(--text-dim);font-size:.82rem;margin:0 0 12px">支持 MP4 / WebM / MKV / MOV / AVI<br><span style="font-size:.72rem;color:#c4946b">大文件自动走 GitHub 存储（≤100MB）或 Supabase 直传（≤500MB）</span></p>
+          <p style="color:var(--text-dim);font-size:.82rem;margin:0 0 12px">支持 MP4 / WebM / MKV / MOV / AVI<br><span style="font-size:.72rem;color:#c4946b">通过 GitHub Release 免费存储，单文件上限 2GB</span></p>
           <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();document.getElementById('mvFileInput').click()" style="pointer-events:auto">或点击选择文件</button>
           <input type="file" id="mvFileInput" multiple accept="video/*,.webm,.mp4,.mkv,.mov,.avi" style="display:none" onchange="addMVFiles(this.files);this.value=''">
         </div>
