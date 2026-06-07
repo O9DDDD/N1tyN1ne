@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
-  <title>N1tyN1ne · 代码·音乐·生活</title>
+  <title>N1tyN1ne</title>
   <meta name="description" content="N1tyN1ne 的个人博客——记录代码、音乐、思考与生活。">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,17 +26,18 @@
     <div class="links" id="navLinks">
       <a href="#blog" onclick="UI.closeNav()">博客</a>
       <a href="#about" onclick="UI.closeNav()">关于</a>
+      <a href="#friends" onclick="UI.closeNav()">友链</a>
       <a href="music.html" onclick="UI.closeNav()">音乐</a>
     </div>
   </div>
 </nav>
 
 <!-- ═══ Hero ═══ -->
-<section id="hero" class="block-green">
+<section id="hero">
   <div class="container">
     <div class="hero-glow"></div>
-    <h1 class="reveal">N1tyN1ne</h1>
-    <p class="reveal">代码 &middot; 音乐 &middot; 思考 &middot; 生活</p>
+    <h1 class="reveal" id="heroTitle">N1tyN1ne</h1>
+    <p class="hero-desc reveal" id="heroDesc">记录、思考、分享。</p>
     <div class="hero-btns reveal">
       <a href="#blog" class="btn btn-primary">浏览博客</a>
       <a href="#about" class="btn btn-outline">关于我</a>
@@ -46,10 +47,16 @@
 </section>
 
 <!-- ═══ Blog ═══ -->
-<section id="blog" class="block-black">
+<section id="blog">
   <div class="container">
     <h2 class="section-title reveal">博客</h2>
     <p class="section-subtitle reveal">记录思考，分享见闻</p>
+
+    <!-- Search -->
+    <div class="search-wrap reveal">
+      <input type="text" id="searchInput" placeholder="搜索文章..." oninput="Blog.search(this.value)">
+      <i class="fas fa-search search-icon"></i>
+    </div>
 
     <!-- Tag filter -->
     <div class="tag-filter reveal" id="tagFilter" style="display:none">
@@ -58,9 +65,9 @@
 
     <div id="postList" class="post-list open">
       <div class="blog-grid" id="blogGrid">
-        <div class="blog-card skeleton"><div class="sk-line w-60"></div><div class="sk-line w-80"></div><div class="sk-line w-40"></div></div>
-        <div class="blog-card skeleton"><div class="sk-line w-40"></div><div class="sk-line w-90"></div><div class="sk-line w-50"></div></div>
-        <div class="blog-card skeleton"><div class="sk-line w-70"></div><div class="sk-line w-60"></div><div class="sk-line w-30"></div></div>
+        <div class="blog-card skeleton"><div class="sk-line"></div><div class="sk-line"></div><div class="sk-line"></div><div class="sk-line"></div></div>
+        <div class="blog-card skeleton"><div class="sk-line"></div><div class="sk-line"></div><div class="sk-line"></div><div class="sk-line"></div></div>
+        <div class="blog-card skeleton"><div class="sk-line"></div><div class="sk-line"></div><div class="sk-line"></div><div class="sk-line"></div></div>
       </div>
     </div>
 
@@ -80,87 +87,47 @@
 </section>
 
 <!-- ═══ About ═══ -->
-<section id="about" class="block-green">
+<section id="about" style="background:linear-gradient(180deg, var(--bg) 0%, #fef9f2 40%, var(--bg-muted) 100%)">
   <div class="container">
     <h2 class="section-title reveal">关于</h2>
     <p class="section-subtitle reveal">Who am I</p>
 
     <div class="about-grid reveal">
-      <div class="about-card">
+      <div class="about-card" id="aboutCard1">
         <div class="about-icon"><i class="fas fa-code"></i></div>
-        <h3>代码</h3>
-        <p>热爱编程，享受创造的乐趣。关注前端技术、工具开发和开源社区。</p>
+        <h3 id="aboutTitle1">代码</h3>
+        <p id="aboutDesc1">热爱编程，享受创造的乐趣。关注前端技术、工具开发和开源社区。</p>
       </div>
-      <div class="about-card">
+      <div class="about-card" id="aboutCard2">
         <div class="about-icon"><i class="fas fa-music"></i></div>
-        <h3>音乐</h3>
-        <p>音乐是灵魂的深呼吸。喜欢电子、后摇、独立音乐，偶尔自己也做点东西。</p>
+        <h3 id="aboutTitle2">音乐</h3>
+        <p id="aboutDesc2">音乐是灵魂的深呼吸。喜欢电子、后摇、独立音乐，偶尔自己也做点东西。</p>
       </div>
-      <div class="about-card">
+      <div class="about-card" id="aboutCard3">
         <div class="about-icon"><i class="fas fa-pen-to-square"></i></div>
-        <h3>写作</h3>
-        <p>用文字记录思考。写技术文章，也写生活随笔。分享让知识更有价值。</p>
+        <h3 id="aboutTitle3">写作</h3>
+        <p id="aboutDesc3">用文字记录思考。写技术文章，也写生活随笔。分享让知识更有价值。</p>
       </div>
     </div>
 
-    <div class="social-links reveal">
-      <a href="https://github.com/O9DDDD" target="_blank" rel="noopener" title="GitHub"><i class="fab fa-github"></i></a>
-      <a href="mailto:n1tyn1ne@qq.com" title="Email"><i class="fas fa-envelope"></i></a>
+    <div class="social-links reveal" id="socialLinks">
+      <a href="https://github.com/O9DDDD" target="_blank" rel="noopener" title="GitHub" id="slGithub"><i class="fab fa-github"></i></a>
+      <a href="mailto:n1tyn1ne@qq.com" title="Email" id="slEmail"><i class="fas fa-envelope"></i></a>
       <a href="#" id="rssLink" title="RSS 订阅"><i class="fas fa-rss"></i></a>
     </div>
   </div>
 </section>
 
-<!-- ═══ Music ═══ -->
-<section id="music" class="block-black">
+<!-- ═══ Friends ═══ -->
+<section id="friends">
   <div class="container">
-    <h2 class="section-title reveal">音乐</h2>
-    <p class="section-subtitle reveal">听歌是灵魂的深呼吸</p>
-
-    <div class="player-section reveal">
-      <div class="player-cover" id="playerCover">
-        <img id="coverImg" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><rect fill='%231a1a1a' width='200' height='200'/><text x='100' y='115' text-anchor='middle' font-size='50' fill='%235a7c3e'>♪</text></svg>" alt="cover">
-      </div>
-      <div class="player-info">
-        <div class="pi-title" id="songTitle">未选择歌曲</div>
-        <div class="pi-artist" id="songArtist">—</div>
-
-        <div class="controls">
-          <button onclick="AudioPlayer.prev()" title="上一首"><i class="fas fa-step-backward"></i></button>
-          <button class="play-btn" onclick="AudioPlayer.toggle()" id="playBtn" title="播放/暂停"><i class="fas fa-play"></i></button>
-          <button onclick="AudioPlayer.next()" title="下一首"><i class="fas fa-step-forward"></i></button>
-          <button onclick="AudioPlayer.toggleShuffle()" id="shuffleBtn" title="随机"><i class="fas fa-random"></i></button>
-          <button onclick="AudioPlayer.toggleRepeat()" id="repeatBtn" title="循环"><i class="fas fa-repeat"></i></button>
-        </div>
-
-        <div class="progress">
-          <span id="currentTime">0:00</span>
-          <div class="progress-bar" id="progressBar" onclick="AudioPlayer.seek(event)">
-            <div class="fill" id="progressFill"></div>
-            <div class="thumb" id="progressThumb"></div>
-          </div>
-          <span id="totalTime">0:00</span>
-        </div>
-
-        <div class="vol">
-          <i class="fas fa-volume-down" style="font-size:.8rem"></i>
-          <input type="range" min="0" max="1" step="0.01" id="volumeSlider" oninput="AudioPlayer.setVolume(this.value)">
-        </div>
-
-        <div class="lyrics-area" id="lyricsContainer">
-          <div class="no-lyrics">暂无歌词</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="playlist">
-      <h4>播放列表</h4>
-      <div class="pl-items" id="playlistItems">
-        <div class="pl-item" style="opacity:.4;pointer-events:none">
-          <div class="pl-idx">1</div>
-          <div class="pl-i"><div class="pl-t">等待加载...</div><div class="pl-a">—</div></div>
-          <div class="pl-d">--:--</div>
-        </div>
+    <h2 class="section-title reveal">友链</h2>
+    <p class="section-subtitle reveal">朋友们</p>
+    <div class="friends-grid reveal" id="friendsGrid">
+      <div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-icon"><i class="fas fa-link"></i></div>
+        <p>还没有友链</p>
+        <p class="empty-sub">登录管理后台添加好友链接</p>
       </div>
     </div>
   </div>
@@ -169,7 +136,7 @@
 <!-- ═══ Footer ═══ -->
 <footer>
   <div class="container">
-    <p>&copy; 2026 N1tyN1ne &middot; Built with <span style="color:var(--grn)">♥</span></p>
+    <p>&copy; 2026 N1tyN1ne</p>
   </div>
 </footer>
 
@@ -186,6 +153,54 @@
     <div class="switch-link">
       <span id="authSwitchText">没有账号？<span onclick="Auth.switchMode()">注册</span></span>
     </div>
+  </div>
+</div>
+
+<!-- ═══ Floating Player ═══ -->
+<div class="float-player" id="floatPlayer" onclick="if(event.target.closest('button'))return;window.location.href='music.html'">
+  <img class="fp-cover" id="fpCover" src="" alt="">
+  <div class="fp-info">
+    <div class="fp-title" id="fpTitle">—</div>
+    <div class="fp-lyric" id="fpLyric">—</div>
+  </div>
+  <div class="fp-ctrls">
+    <button onclick="event.stopPropagation();Player.toggle()"><i class="fas fa-play" id="fpPlayIcon"></i></button>
+    <button onclick="event.stopPropagation();Player.next()"><i class="fas fa-step-forward"></i></button>
+  </div>
+  <div class="fp-progress"><div class="fp-bar" id="fpBar"></div></div>
+</div>
+
+<!-- ═══ Settings ═══ -->
+<button class="settings-toggle" id="settingsToggle" onclick="Settings.open()" title="自定义"><i class="fas fa-palette"></i></button>
+<div class="settings-backdrop" id="settingsBackdrop" onclick="Settings.close()"></div>
+<div class="settings-panel" id="settingsPanel">
+  <h3>自定义站点 <button class="sp-close" onclick="Settings.close()"><i class="fas fa-xmark"></i></button></h3>
+  <div class="sp-group">
+    <label>Hero 标题</label>
+    <input type="text" id="setHeroTitle" placeholder="N1tyN1ne">
+  </div>
+  <div class="sp-group">
+    <label>Hero 简介</label>
+    <input type="text" id="setHeroDesc" placeholder="记录、思考、分享。">
+  </div>
+  <div class="sp-group">
+    <label>关于 - 卡片 1</label>
+    <input type="text" id="setAboutTitle1" placeholder="标题">
+    <textarea id="setAboutDesc1" placeholder="描述"></textarea>
+  </div>
+  <div class="sp-group">
+    <label>关于 - 卡片 2</label>
+    <input type="text" id="setAboutTitle2" placeholder="标题">
+    <textarea id="setAboutDesc2" placeholder="描述"></textarea>
+  </div>
+  <div class="sp-group">
+    <label>关于 - 卡片 3</label>
+    <input type="text" id="setAboutTitle3" placeholder="标题">
+    <textarea id="setAboutDesc3" placeholder="描述"></textarea>
+  </div>
+  <div class="sp-actions">
+    <button class="btn btn-primary" onclick="Settings.save()">保存</button>
+    <button class="btn btn-ghost" onclick="Settings.reset()">恢复默认</button>
   </div>
 </div>
 
@@ -222,15 +237,14 @@ function scrollToTop() {
         obs.unobserve(e.target);
       }
     });
-  }, { threshold: 0.15 });
+  }, { threshold: 0.1 });
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
   });
-  // Also observe dynamically added elements
   window._revealObs = obs;
 })();
 
-// ─── Auth Modal (no dependencies) ────────────────────
+// ─── Auth Modal ────────────────────────────────────
 const Auth = {
   _isLogin: true,
 
@@ -243,7 +257,7 @@ const Auth = {
       ? '没有账号？<span onclick="Auth.switchMode()">注册</span>'
       : '已有账号？<span onclick="Auth.switchMode()">登录</span>';
     document.getElementById('authError').style.display = 'none';
-    document.getElementById('authError').style.color = '#ff4444';
+    document.getElementById('authError').style.color = '#dc2626';
     document.getElementById('authModal').classList.add('open');
   },
 
@@ -287,13 +301,13 @@ const Auth = {
           await register(email, password, username);
           this.close();
           if (typeof loadPosts === 'function') loadPosts();
-          if (typeof loadMusic === 'function') loadMusic();
+          if (typeof Player !== 'undefined') Player.load();
           UI.toast('注册成功！欢迎，' + username);
         }
       }
     } catch (e) {
       errEl.textContent = e.message || '操作失败';
-      errEl.style.color = '#ff4444';
+      errEl.style.color = '#dc2626';
       errEl.style.display = 'block';
     }
   }
@@ -303,7 +317,22 @@ document.getElementById('authModal').addEventListener('click', function(e) {
   if (e.target === e.currentTarget) Auth.close();
 });
 
-// ─── Blog View ────────────────────────────────────────
+// ─── Button Ripple Effect ──────────────────────────
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.btn');
+  if (!btn) return;
+  const ripple = document.createElement('span');
+  ripple.className = 'ripple';
+  const rect = btn.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  ripple.style.width = ripple.style.height = size + 'px';
+  ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+  ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+  btn.appendChild(ripple);
+  ripple.addEventListener('animationend', () => ripple.remove());
+});
+
+// ─── Blog View ────────────────────────────────────
 const Blog = {
   _current: null,
   _allPosts: [],
@@ -312,6 +341,7 @@ const Blog = {
     this._current = null;
     document.getElementById('postDetail').classList.remove('open');
     document.getElementById('postList').classList.add('open');
+    document.getElementById('hero').scrollIntoView({ behavior: 'smooth' });
   },
 
   open(post) {
@@ -344,20 +374,29 @@ const Blog = {
     return Math.max(1, Math.ceil(words / 300));
   },
 
+  search(query) {
+    if (!query || !query.trim()) {
+      renderPosts(this._allPosts);
+      return;
+    }
+    const q = query.toLowerCase().trim();
+    const filtered = this._allPosts.filter(p =>
+      p.title.toLowerCase().includes(q) ||
+      (p.excerpt || '').toLowerCase().includes(q) ||
+      (p.tags || []).some(t => t.toLowerCase().includes(q))
+    );
+    renderPosts(filtered);
+  },
+
   filterByTag(tag) {
+    document.getElementById('searchInput').value = '';
     const cards = document.querySelectorAll('.blog-card:not(.skeleton)');
     document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
     const btn = document.querySelector('.tf-btn[data-tag="' + tag + '"]');
     if (btn) btn.classList.add('active');
-
-    if (tag === '*') {
-      cards.forEach(c => c.style.display = '');
-      return;
-    }
-    cards.forEach(c => {
-      const tags = c.dataset.tags || '';
-      c.style.display = tags.split(',').includes(tag) ? '' : 'none';
-    });
+    if (tag === '*') { renderPosts(this._allPosts); return; }
+    const filtered = this._allPosts.filter(p => (p.tags || []).includes(tag));
+    renderPosts(filtered);
   },
 
   async submitComment() {
@@ -370,6 +409,88 @@ const Blog = {
     } catch (e) { UI.toast('留言失败: ' + e.message, 'error'); }
   }
 };
+
+// ─── Settings ──────────────────────────────────────
+const Settings = {
+  _defaults: {
+    heroTitle: 'N1tyN1ne',
+    heroDesc: '记录、思考、分享。',
+    aboutTitle1: '代码', aboutDesc1: '热爱编程，享受创造的乐趣。关注前端技术、工具开发和开源社区。',
+    aboutTitle2: '音乐', aboutDesc2: '音乐是灵魂的深呼吸。喜欢电子、后摇、独立音乐，偶尔自己也做点东西。',
+    aboutTitle3: '写作', aboutDesc3: '用文字记录思考。写技术文章，也写生活随笔。分享让知识更有价值。'
+  },
+
+  open() {
+    document.getElementById('settingsPanel').classList.add('open');
+    document.getElementById('settingsBackdrop').classList.add('open');
+    const s = this._load();
+    document.getElementById('setHeroTitle').value = s.heroTitle;
+    document.getElementById('setHeroDesc').value = s.heroDesc;
+    document.getElementById('setAboutTitle1').value = s.aboutTitle1;
+    document.getElementById('setAboutDesc1').value = s.aboutDesc1;
+    document.getElementById('setAboutTitle2').value = s.aboutTitle2;
+    document.getElementById('setAboutDesc2').value = s.aboutDesc2;
+    document.getElementById('setAboutTitle3').value = s.aboutTitle3;
+    document.getElementById('setAboutDesc3').value = s.aboutDesc3;
+  },
+
+  close() {
+    document.getElementById('settingsPanel').classList.remove('open');
+    document.getElementById('settingsBackdrop').classList.remove('open');
+  },
+
+  save() {
+    const data = {
+      heroTitle: document.getElementById('setHeroTitle').value.trim() || this._defaults.heroTitle,
+      heroDesc: document.getElementById('setHeroDesc').value.trim() || this._defaults.heroDesc,
+      aboutTitle1: document.getElementById('setAboutTitle1').value.trim() || this._defaults.aboutTitle1,
+      aboutDesc1: document.getElementById('setAboutDesc1').value.trim() || this._defaults.aboutDesc1,
+      aboutTitle2: document.getElementById('setAboutTitle2').value.trim() || this._defaults.aboutTitle2,
+      aboutDesc2: document.getElementById('setAboutDesc2').value.trim() || this._defaults.aboutDesc2,
+      aboutTitle3: document.getElementById('setAboutTitle3').value.trim() || this._defaults.aboutTitle3,
+      aboutDesc3: document.getElementById('setAboutDesc3').value.trim() || this._defaults.aboutDesc3,
+    };
+    localStorage.setItem('site_settings', JSON.stringify(data));
+    this._apply(data);
+    this.close();
+    UI.toast('设置已保存');
+  },
+
+  reset() {
+    localStorage.removeItem('site_settings');
+    this._apply(this._defaults);
+    this.close();
+    UI.toast('已恢复默认设置');
+    this.open(); // Re-open to show defaults
+    this.close();
+  },
+
+  _load() {
+    try {
+      const raw = localStorage.getItem('site_settings');
+      return raw ? { ...this._defaults, ...JSON.parse(raw) } : { ...this._defaults };
+    } catch(e) { return { ...this._defaults }; }
+  },
+
+  _apply(s) {
+    document.getElementById('heroTitle').textContent = s.heroTitle;
+    document.getElementById('heroDesc').textContent = s.heroDesc;
+    document.title = s.heroTitle;
+    document.getElementById('aboutTitle1').textContent = s.aboutTitle1;
+    document.getElementById('aboutDesc1').textContent = s.aboutDesc1;
+    document.getElementById('aboutTitle2').textContent = s.aboutTitle2;
+    document.getElementById('aboutDesc2').textContent = s.aboutDesc2;
+    document.getElementById('aboutTitle3').textContent = s.aboutTitle3;
+    document.getElementById('aboutDesc3').textContent = s.aboutDesc3;
+  },
+
+  init() {
+    this._apply(this._load());
+  }
+};
+
+// Init settings on load
+document.addEventListener('DOMContentLoaded', () => Settings.init());
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>

@@ -22,6 +22,7 @@
       <button class="nav-toggle" onclick="toggleNav()" aria-label="菜单"><i class="fas fa-bars"></i></button>
     </div>
     <div class="links" id="navLinks">
+      <a href="write.html"><i class="fas fa-pen-to-square"></i> 写作</a>
       <a href="index.html" target="_blank"><i class="fas fa-external-link-alt"></i> 查看站点</a>
     </div>
   </div>
@@ -133,12 +134,27 @@
   <p>验证身份中...</p>
 </div>
 
+<!-- Floating Player -->
+<div class="float-player" id="floatPlayer" onclick="if(event.target.closest('button'))return;window.location.href='music.html'">
+  <img class="fp-cover" id="fpCover" src="" alt="">
+  <div class="fp-info">
+    <div class="fp-title" id="fpTitle">—</div>
+    <div class="fp-lyric" id="fpLyric">—</div>
+  </div>
+  <div class="fp-ctrls">
+    <button onclick="event.stopPropagation();Player.toggle()"><i class="fas fa-play" id="fpPlayIcon"></i></button>
+    <button onclick="event.stopPropagation();Player.next()"><i class="fas fa-step-forward"></i></button>
+  </div>
+  <div class="fp-progress"><div class="fp-bar" id="fpBar"></div></div>
+</div>
+
 <script>
 function toggleNav() { document.getElementById('navLinks').classList.toggle('open'); }
 function closeNav() { document.getElementById('navLinks').classList.remove('open'); }
 </script>
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/player.js"></script>
 <script>
 // jsmediatags 多重 CDN 加载（中国网络兼容）
 (function() {

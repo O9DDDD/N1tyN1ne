@@ -46,7 +46,7 @@ async function loginUser(email, password) {
   renderAuthUI();
   // Refresh posts after login
   if (typeof loadPosts === 'function') await loadPosts();
-  if (typeof loadMusic === 'function') await loadMusic();
+  if (typeof Player !== 'undefined') await Player.load();
   return data;
 }
 
@@ -55,7 +55,7 @@ async function logoutUser() {
   window._currentUser = null;
   window._currentProfile = null;
   renderAuthUI();
-  Blog.close();
+  if (typeof Blog !== 'undefined') Blog.close();
   if (typeof loadPosts === 'function') loadPosts();
 }
 

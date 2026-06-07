@@ -13,6 +13,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('adminAuthUI').innerHTML =
     '<span class="user-badge"><span>' + window._currentProfile.username + '</span><button class="logout-btn" onclick="logoutUser()">退出</button></span>';
 
+  // Init floating player
+  if (typeof Player !== 'undefined') { Player.init(); Player.load(); }
+
   document.querySelectorAll('.admin-sidebar a').forEach(a => {
     a.addEventListener('click', (e) => {
       e.preventDefault();

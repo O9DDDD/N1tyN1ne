@@ -1,9 +1,10 @@
 /* ─── Public Site App ───────────────────────────────── */
 document.addEventListener('DOMContentLoaded', async () => {
-  AudioPlayer.init();
+  Player.init();
   await initAuth();
   await loadPosts();
-  await loadMusic();
+  await loadFriends();
+  await Player.load();
 });
 
 /* ─── Blog ──────────────────────────────────────────── */
@@ -20,7 +21,6 @@ async function loadPosts() {
     Blog._allPosts = data;
     buildTagFilter(data);
     renderPosts(data);
-    // Observe new elements for scroll reveal
     document.querySelectorAll('.blog-card.reveal').forEach(el => {
       if (window._revealObs) window._revealObs.observe(el);
     });
@@ -38,7 +38,6 @@ function buildTagFilter(posts) {
 
   const filter = document.getElementById('tagFilter');
   filter.style.display = 'flex';
-  // Keep the "全部" button
   filter.querySelectorAll('.tf-btn:not([data-tag="*"])').forEach(b => b.remove());
 
   [...allTags].sort().forEach(tag => {
@@ -50,7 +49,6 @@ function buildTagFilter(posts) {
     filter.appendChild(btn);
   });
 
-  // Reset active state
   filter.querySelector('.tf-btn[data-tag="*"]').classList.add('active');
 }
 
@@ -70,7 +68,7 @@ function renderPosts(posts) {
   posts.forEach((p, i) => {
     const card = document.createElement('div');
     card.className = 'blog-card reveal';
-    card.style.transitionDelay = (i * 0.05) + 's';
+    card.style.transitionDelay = (i * 0.04) + 's';
     card.dataset.tags = (p.tags || []).join(',');
     const tags = (p.tags || []).map(t => '<span class="tag">' + t + '</span>').join('');
     card.innerHTML =
@@ -80,6 +78,9 @@ function renderPosts(posts) {
       '<span class="read-link">阅读全文 →</span>';
     card.onclick = () => Blog.open(p);
     grid.appendChild(card);
+  });
+  document.querySelectorAll('.blog-card.reveal').forEach(el => {
+    if (window._revealObs) window._revealObs.observe(el);
   });
 }
 
@@ -112,11 +113,35 @@ async function loadComments(postId) {
   } catch { list.innerHTML = ''; }
 }
 
-/* ─── Music ─────────────────────────────────────────── */
-async function loadMusic() {
+/* ─── Friends ───────────────────────────────────────── */
+const FRIENDS_TABLE = 'friends';
+
+async function loadFriends() {
+  const grid = document.getElementById('friendsGrid');
+  if (!grid) return;
   try {
-    let data = await dbSelect('music', { order: { col: 'created_at', dir: 'desc' } });
-    const tracks = (data || []).reverse();
-    AudioPlayer.load(tracks);
-  } catch {}
+    let data = [];
+    try {
+      data = await dbSelect(FRIENDS_TABLE, { order: { col: 'created_at', dir: 'asc' } });
+    } catch(e) {
+      // Table might not exist yet, use localStorage fallback
+      try {
+        const local = localStorage.getItem('friends_cache');
+        if (local) data = JSON.parse(local);
+      } catch(_) {}
+    }
+    if (!data || !data.length) {
+      grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon"><i class="fas fa-link"></i></div><p>还没有友链</p></div>';
+      return;
+    }
+    localStorage.setItem('friends_cache', JSON.stringify(data));
+    grid.innerHTML = data.map(f =>
+      '<a href="' + (f.url || '#') + '" class="friend-card" target="_blank" rel="noopener">' +
+      '<div class="fc-avatar">' + (f.avatar_url ? '<img src="' + https(f.avatar_url) + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover">' : (f.name || '?').charAt(0).toUpperCase()) + '</div>' +
+      '<div class="fc-info"><div class="fc-name">' + (f.name || '未命名') + '</div><div class="fc-desc">' + (f.description || '') + '</div></div>' +
+      '</a>'
+    ).join('');
+  } catch(e) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon"><i class="fas fa-link"></i></div><p>还没有友链</p></div>';
+  }
 }
