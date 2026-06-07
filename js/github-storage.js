@@ -233,8 +233,8 @@ async function githubUploadReleaseAsset(file, filename, onProgress) {
     console.warn('uploads.github.com unreachable, skipping Release API');
   }
 
-  // Fallback for files ≤100MB: Git Blob API (api.github.com)
-  if (fileSizeMB <= 100) {
+  // Fallback for files ≤50MB: Git Blob API (api.github.com), base64-safe threshold
+  if (fileSizeMB <= 50) {
     if (onProgress) onProgress(5);
     try {
       var cdnUrl = await githubUploadFile(file, 'public/mv', filename, function(pct) {
@@ -247,7 +247,7 @@ async function githubUploadReleaseAsset(file, filename, onProgress) {
     }
   }
 
-  // >100MB and uploads subdomain unreachable → chunked upload
+  // >50MB and uploads subdomain unreachable → chunked upload
   if (onProgress) onProgress(0);
   try {
     var manifestUrl = await githubUploadChunked(file, filename, function(pct) {
@@ -329,7 +329,7 @@ function _xhrUploadAsset(releaseId, file, filename, pat, onProgress) {
 }
 
 /* ─── Chunked Upload (for files >100MB when uploads.github.com is blocked) ── */
-var CHUNK_SIZE = 45 * 1024 * 1024; // 45MB per chunk (safe under 100MB blob limit)
+var CHUNK_SIZE = 25 * 1024 * 1024; // 25MB per chunk (base64 ~33MB, safe under 100MB limit)
 
 /**
  * Upload a large file in chunks via Git Blob API.
