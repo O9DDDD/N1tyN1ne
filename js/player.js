@@ -16,16 +16,6 @@ const Player = {
   _transitioning: false,
   _transitionDir: 0,
 
-  /* ─── MV state ────────────────────────────────────── */
-  mvMode: false,
-  mvUrl: null,
-  mvQualities: null,
-  mvCurrentQuality: 'auto',
-  _mvBandwidth: null,
-  _mvBufferCount: 0,
-  _mvSmoothCount: 0,
-  _mvManuallyOff: false,
-
   /* ─── Init ────────────────────────────────────────── */
   init() {
     this.audio.volume = 0.7;
@@ -154,8 +144,6 @@ const Player = {
     this._renderFloat();
     this._preloadedIdx = -1;
     this._preloadedLyrics = null;
-    // Setup MV
-    this._setupMV(t);
     // End transition after a short delay
     var self = this;
     if (this._transitioning) {
@@ -194,8 +182,6 @@ const Player = {
   },
 
   _onEnded() {
-    // If MV mode, switch to next track
-    if (this.mvMode) { this.next(); return; }
     if (this._nextAudio && this._preloadedIdx >= 0 && this._preloadedIdx < this.tracks.length) {
       var nextIdx = this._preloadedIdx;
       var nextLyrics = this._preloadedLyrics;
@@ -225,7 +211,6 @@ const Player = {
       this._emit('playlist');
       this._syncLyrics();
       this._renderFloat();
-      this._setupMV(t);
       this._preloadNext();
     } else {
       this.next();
@@ -261,130 +246,6 @@ const Player = {
     } else {
       this._preloadedLyrics = [];
     }
-  },
-
-  /* ─── MV Setup ────────────────────────────────────── */
-  _setupMV(t) {
-    if (!t || !t.mv_url) {
-      this.mvMode = false;
-      this.mvUrl = null;
-      this.mvQualities = null;
-      this._mvManuallyOff = false;
-      this._emit('mvchange', { hasMV: false });
-      return;
-    }
-    // Parse mv_url: could be JSON {"1080p":"url","720p":"url","480p":"url"} or plain URL string
-    var raw = t.mv_url.trim();
-    if (!raw || raw === 'null' || raw === 'undefined') {
-      this.mvMode = false;
-      this.mvUrl = null;
-      this.mvQualities = null;
-      this._mvManuallyOff = false;
-      this._emit('mvchange', { hasMV: false });
-      return;
-    }
-    try {
-      var parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object') {
-        this.mvQualities = parsed;
-        this.mvUrl = parsed['1080p'] || parsed['720p'] || parsed['480p'] || '';
-      } else {
-        this.mvQualities = null;
-        this.mvUrl = raw;
-      }
-    } catch(e) {
-      this.mvQualities = null;
-      this.mvUrl = raw;
-    }
-    // Validate URL looks reasonable
-    if (!this.mvUrl || !/^https?:\/\/.+/.test(this.mvUrl)) {
-      this.mvMode = false;
-      this.mvUrl = null;
-      this.mvQualities = null;
-      this._mvManuallyOff = false;
-      this._emit('mvchange', { hasMV: false });
-      return;
-    }
-    // Default audio mode, user can switch to MV
-    this.mvMode = false;
-    this.mvCurrentQuality = localStorage.getItem('mv_quality') || 'auto';
-    this._mvBufferCount = 0;
-    this._mvSmoothCount = 0;
-    this._mvManuallyOff = false;
-    this._emit('mvchange', { hasMV: true, url: this.mvUrl, qualities: this.mvQualities, mode: 'audio' });
-  },
-
-  /* ─── MV Quality Selection ────────────────────────── */
-  getMVUrl() {
-    if (!this.mvQualities) return this.mvUrl;
-    if (this.mvCurrentQuality !== 'auto') {
-      return this.mvQualities[this.mvCurrentQuality] || this.mvUrl;
-    }
-    // Auto: pick based on estimated bandwidth
-    if (this._mvBandwidth) {
-      if (this._mvBandwidth > 5000) return this.mvQualities['1080p'] || this.mvUrl;
-      if (this._mvBandwidth > 2000) return this.mvQualities['720p'] || this.mvUrl;
-      return this.mvQualities['480p'] || this.mvUrl;
-    }
-    // Default to 720p on first load
-    return this.mvQualities['720p'] || this.mvQualities['1080p'] || this.mvUrl;
-  },
-
-  setMVQuality(q) {
-    this.mvCurrentQuality = q;
-    localStorage.setItem('mv_quality', q);
-    this._emit('mvqualitychange', q);
-  },
-
-  estimateBandwidth(bps) {
-    this._mvBandwidth = bps;
-  },
-
-  reportMVBuffer() {
-    this._mvBufferCount++;
-    if (this._mvBufferCount >= 2 && this.mvCurrentQuality === 'auto' && this.mvQualities) {
-      // Downgrade
-      var keys = ['1080p', '720p', '480p'];
-      var curKey = this._getCurrentQualityKey();
-      var curIdx = keys.indexOf(curKey);
-      if (curIdx >= 0 && curIdx < keys.length - 1) {
-        this.mvUrl = this.mvQualities[keys[curIdx + 1]] || this.mvUrl;
-        this._mvBufferCount = 0;
-        this._emit('mvqualityauto', keys[curIdx + 1]);
-      }
-    }
-  },
-
-  reportMVSmooth() {
-    this._mvSmoothCount++;
-    if (this._mvSmoothCount >= 30 && this.mvCurrentQuality === 'auto' && this.mvQualities) {
-      var keys = ['1080p', '720p', '480p'];
-      var curKey = this._getCurrentQualityKey();
-      var curIdx = keys.indexOf(curKey);
-      if (curIdx > 0) {
-        this.mvUrl = this.mvQualities[keys[curIdx - 1]] || this.mvUrl;
-        this._mvSmoothCount = 0;
-        this._emit('mvqualityauto', keys[curIdx - 1]);
-      }
-    }
-  },
-
-  _getCurrentQualityKey() {
-    if (!this.mvQualities) return '';
-    var url = this.mvUrl;
-    for (var k in this.mvQualities) {
-      if (this.mvQualities[k] === url) return k;
-    }
-    return '1080p';
-  },
-
-  /* ─── MV Mode Toggle ──────────────────────────────── */
-  toggleMVMode() {
-    if (!this.tracks[this.idx] || !this.tracks[this.idx].mv_url) return;
-    if (!this.mvUrl) return;
-    this.mvMode = !this.mvMode;
-    this._mvManuallyOff = !this.mvMode;
-    this._emit('mvchange', { hasMV: true, url: this.mvUrl, qualities: this.mvQualities, mode: this.mvMode ? 'mv' : 'audio' });
   },
 
   seek(e) {
@@ -597,7 +458,6 @@ const Player = {
     if (!el) return;
     var _tiltRaf = null;
     el.addEventListener('mousemove', function(e) {
-      if (Player.mvMode) return;
       if (_tiltRaf) return; // throttle to rAF
       _tiltRaf = requestAnimationFrame(function() {
         _tiltRaf = null;

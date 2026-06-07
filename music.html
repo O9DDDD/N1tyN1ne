@@ -358,69 +358,6 @@
     }
     /* Fan transform applied via JS on each line's style attribute */
 
-    /* ─── MV Mode ──────────────────────────────────── */
-    .mv-container{
-      display:none;position:absolute;inset:0;z-index:5;background:#000;
-    }
-    .mv-container.active{display:flex;align-items:center;justify-content:center}
-    .mv-container video{
-      width:100%;height:100%;object-fit:contain;
-    }
-    .mv-controls{
-      position:absolute;bottom:0;left:0;right:0;z-index:6;
-      background:linear-gradient(transparent,rgba(0,0,0,.7));
-      padding:40px 24px 20px;display:flex;align-items:center;gap:12px;
-      transition:opacity .4s var(--ease-out);opacity:0;
-    }
-    .mv-container.visible .mv-controls{opacity:1}
-    .mv-controls button{
-      background:none;border:none;color:#fff;cursor:pointer;font-size:1.05rem;
-      padding:6px;border-radius:50%;transition:all .2s;
-    }
-    .mv-controls button:hover{transform:scale(1.12);color:var(--accent-light)}
-    .mv-controls .mv-progress{
-      flex:1;height:4px;background:rgba(255,255,255,.2);border-radius:99px;
-      cursor:pointer;position:relative;overflow:visible;
-    }
-    .mv-controls .mv-progress .mv-fill{
-      height:100%;background:var(--accent);border-radius:99px;transition:width .1s linear;
-    }
-    .mv-controls .mv-time{font-size:.7rem;color:#ccc;font-variant-numeric:tabular-nums;min-width:80px;text-align:center}
-    /* MV quality selector */
-    .mv-quality-btn{
-      position:absolute;top:16px;right:16px;z-index:7;
-      background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.15);
-      color:#ccc;cursor:pointer;font-size:.75rem;font-weight:600;
-      padding:6px 12px;border-radius:99px;backdrop-filter:blur(12px);
-      transition:all .25s;font-family:inherit;display:none;
-    }
-    .mv-quality-btn:hover{background:rgba(0,0,0,.75);color:#fff}
-    .mv-quality-btn.show{display:block}
-    .mv-quality-menu{
-      position:absolute;top:44px;right:16px;z-index:7;
-      background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.1);
-      border-radius:12px;padding:6px;backdrop-filter:blur(16px);
-      display:none;flex-direction:column;gap:2px;min-width:100px;
-    }
-    .mv-quality-menu.show{display:flex}
-    .mv-quality-menu button{
-      background:none;border:none;color:#ccc;cursor:pointer;font-size:.75rem;
-      padding:8px 14px;border-radius:8px;text-align:left;font-family:inherit;font-weight:500;
-      transition:all .2s;
-    }
-    .mv-quality-menu button:hover{background:rgba(255,255,255,.1);color:#fff}
-    .mv-quality-menu button.active{color:var(--accent-light);font-weight:700}
-    /* MV/Audio toggle */
-    .mv-toggle-btn{
-      background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.15);
-      color:#ccc;cursor:pointer;font-size:.75rem;font-weight:600;
-      padding:8px 16px;border-radius:99px;backdrop-filter:blur(12px);
-      transition:all .25s;font-family:inherit;
-      position:absolute;bottom:16px;right:16px;z-index:6;
-      display:none;
-    }
-    .mv-toggle-btn:hover{background:rgba(0,0,0,.7);color:#fff;transform:scale(1.04)}
-    .mv-toggle-btn.show{display:block}
 
     /* ─── Playlist Toggle & Drawer ─────────────────── */
     .playlist-toggle{
@@ -439,8 +376,6 @@
       width:20px;height:20px;border-radius:50%;display:flex;
       align-items:center;justify-content:center;
     }
-    .mv-mode .playlist-toggle{bottom:80px}
-
     .playlist-drawer{
       position:absolute;bottom:0;left:0;right:0;z-index:7;
       background:rgba(10,10,10,.92);border-top:1px solid rgba(255,255,255,.08);
@@ -474,11 +409,6 @@
     .pl-track .pl-info .pl-a{font-size:.7rem;color:#555}
     .pl-track .pl-dur{font-size:.7rem;color:#555;flex-shrink:0;font-variant-numeric:tabular-nums}
 
-    /* ─── Player mode: MV hides panels ─────────────── */
-    .player-main.mv-mode .cover-panel{opacity:0;pointer-events:none;transition:opacity .3s var(--ease-out)}
-    .player-main.mv-mode .lyrics-panel{opacity:0;pointer-events:none;transition:opacity .3s var(--ease-out)}
-    .player-main.mv-mode .playlist-toggle{opacity:0;pointer-events:none}
-    .player-main.mv-mode .bg-blur{opacity:0}
 
     /* ─── Player entrance polish ─────────────────── */
     .player-view.clip{
@@ -627,24 +557,6 @@
       <div class="no-lyrics" id="noLyrics">选择一首歌曲开始播放</div>
     </div>
 
-    <!-- MV Container -->
-    <div class="mv-container" id="mvContainer">
-      <video id="mvVideo" playsinline preload="auto" crossorigin="anonymous"></video>
-      <button class="mv-quality-btn" id="mvQualityBtn" onclick="MusicApp.toggleMVQualityMenu()"><i class="fas fa-cog"></i></button>
-      <div class="mv-quality-menu" id="mvQualityMenu"></div>
-      <button class="mv-toggle-btn" id="mvToggleBtn" onclick="Player.toggleMVMode()"><i class="fas fa-music"></i> <span id="mvToggleLabel">音频模式</span></button>
-      <div class="mv-controls" id="mvControls">
-        <button onclick="MusicApp.mvTogglePlay()" id="mvPlayBtn"><i class="fas fa-pause"></i></button>
-        <button onclick="MusicApp.mvPrev()"><i class="fas fa-step-backward"></i></button>
-        <button onclick="MusicApp.mvNext()"><i class="fas fa-step-forward"></i></button>
-        <span class="mv-time" id="mvTime">0:00 / 0:00</span>
-        <div class="mv-progress" id="mvProgress" onclick="MusicApp.mvSeek(event)">
-          <div class="mv-fill" id="mvFill"></div>
-        </div>
-        <button onclick="MusicApp.mvToggleFullscreen()"><i class="fas fa-expand"></i></button>
-      </div>
-    </div>
-
     <!-- Playlist Toggle Button -->
     <button class="playlist-toggle" id="playlistToggle" onclick="MusicApp.togglePlaylist()">
       <i class="fas fa-list"></i>
@@ -727,7 +639,6 @@ const MusicApp = {
   pageSize: 12,
   _lastBrowseHash: 'all',
   _playlistOpen: false,
-  _mvMouseTimer: null,
 
   async init() {
     Player.init();
@@ -752,7 +663,6 @@ const MusicApp = {
       Player.audio.play().catch(() => {});
       Player._updateInfo();
       Player.parseLyrics(this.allTracks[st.idx]?.lyrics || '');
-      Player._setupMV(this.allTracks[st.idx]);
     }
     document.getElementById("browseView").classList.add("loaded");
     this.route();
@@ -774,21 +684,6 @@ const MusicApp = {
     // Init cover card B as hidden
     document.getElementById('coverCardB').style.opacity = '0';
     document.getElementById('coverCardB').style.pointerEvents = 'none';
-    // MV mouse move → show controls
-    this._initMVControls();
-  },
-
-  _initMVControls() {
-    var container = document.getElementById('mvContainer');
-    var self = this;
-    container.addEventListener('mousemove', function() {
-      container.classList.add('visible');
-      clearTimeout(self._mvMouseTimer);
-      self._mvMouseTimer = setTimeout(function() { container.classList.remove('visible'); }, 3000);
-    });
-    container.addEventListener('mouseleave', function() {
-      container.classList.remove('visible');
-    });
   },
 
   buildIndices() {
@@ -827,8 +722,7 @@ const MusicApp = {
     var pv = document.getElementById('playerView');
     pv.classList.remove('open');
     pv.style.display = 'none';
-    // Always hide MV when browsing
-    this._exitMVMode();
+
     // Restore float player
     Player._renderFloat();
     // Parse hash
@@ -1131,9 +1025,6 @@ const MusicApp = {
       pv.style.top = ''; pv.style.left = '';
       pv.style.width = ''; pv.style.height = '';
       pv.style.borderRadius = '';
-      // MV: default audio mode, user manually switches
-      var t = Player.tracks[Player.idx];
-      Player._setupMV(t);
     }, { once: true });
 
     if (window.location.hash !== '#playing') {
@@ -1233,11 +1124,6 @@ const MusicApp = {
         pv.removeEventListener('transitionend', handler);
         pv.classList.remove('clip', 'unclip');
         pv.classList.add('open');
-        pv.style.top = ''; pv.style.left = '';
-        pv.style.width = ''; pv.style.height = '';
-        pv.style.borderRadius = '';
-        var t = Player.tracks[Player.idx];
-        Player._setupMV(t);
       }, { once: true });
     } else {
       document.getElementById('browseView').style.display = 'none';
@@ -1265,227 +1151,10 @@ const MusicApp = {
     pv.classList.remove('clip', 'unclip');
     document.getElementById('browseView').style.display = '';
     document.getElementById('pagination').style.display = '';
-    // Exit MV mode
-    this._exitMVMode();
-    // Restore float player
     Player._renderFloat();
     window.location.hash = '#' + this._lastBrowseHash;
   },
 
-  /* ─── MV Mode ───────────────────────────────────── */
-  _enterMVMode() {
-    var main = document.getElementById('playerMain');
-    var container = document.getElementById('mvContainer');
-    var video = document.getElementById('mvVideo');
-    main.classList.add('mv-mode');
-    container.classList.add('active');
-    container.classList.add('visible');
-    // Show quality and toggle buttons
-    if (Player.mvQualities) document.getElementById('mvQualityBtn').classList.add('show');
-    document.getElementById('mvToggleBtn').classList.add('show');
-
-    var url = Player.getMVUrl();
-    var currentTime = Player.audio.currentTime;
-
-    // Check if chunked MV (manifest.json)
-    if (/\.manifest\.json(\?|$)/.test(url)) {
-      this._playChunkedMV(url, video, container, currentTime);
-    } else {
-      video.src = https(url);
-      video.currentTime = currentTime;
-      video.play().catch(function(){});
-    }
-    // Pause audio
-    Player.audio.pause();
-    // Build quality menu
-    this._buildMVQualityMenu();
-    // Start bandwidth measurement
-    this._measureMVBandwidth();
-    // Auto-hide controls after 3s
-    var self = this;
-    clearTimeout(this._mvMouseTimer);
-    this._mvMouseTimer = setTimeout(function() { container.classList.remove('visible'); }, 3000);
-  },
-
-  async _playChunkedMV(manifestUrl, video, container, startTime) {
-    // Show loading state
-    var loadingEl = document.getElementById('mvLoading');
-    if (!loadingEl) {
-      loadingEl = document.createElement('div');
-      loadingEl.id = 'mvLoading';
-      loadingEl.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:5;pointer-events:none;background:rgba(0,0,0,.6)';
-      loadingEl.innerHTML = '<div style="width:48px;height:48px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite"></div><div id="mvLoadText" style="color:#fff;font-size:.85rem;font-weight:600">加载分片 MV...</div>';
-      container.appendChild(loadingEl);
-    }
-    loadingEl.style.display = 'flex';
-    var loadText = document.getElementById('mvLoadText');
-
-    try {
-      // Fetch manifest
-      var resp = await fetch(https(manifestUrl));
-      if (!resp.ok) throw new Error('Manifest fetch failed: ' + resp.status);
-      var manifest = await resp.json();
-      var totalChunks = manifest.totalChunks || (manifest.chunks && manifest.chunks.length) || 0;
-      if (!totalChunks) throw new Error('Invalid manifest');
-
-      // Download all chunks
-      var blobs = [];
-      var basePath = manifestUrl.replace(/\.manifest\.json$/, '');
-      for (var i = 0; i < totalChunks; i++) {
-        var chunkName = 'chunk_' + String(i).padStart(4, '0');
-        var chunkUrl = basePath + '/' + chunkName;
-        if (loadText) loadText.textContent = '加载中... ' + (i + 1) + '/' + totalChunks;
-        var chunkResp = await fetch(https(chunkUrl));
-        if (!chunkResp.ok) throw new Error('Chunk ' + i + ' fetch failed: ' + chunkResp.status);
-        blobs.push(await chunkResp.blob());
-      }
-
-      // Concatenate and play
-      if (loadText) loadText.textContent = '准备播放...';
-      var fullBlob = new Blob(blobs, { type: manifest.type || 'video/mp4' });
-      var blobUrl = URL.createObjectURL(fullBlob);
-      video.src = blobUrl;
-      video.currentTime = startTime;
-      video.play().catch(function(){});
-      // Clean up blob URL after video loads
-      video.onloadedmetadata = function() {
-        // Keep blob URL while video is playing, revoke on next change
-      };
-      // Store for cleanup
-      video._chunkBlobUrl = blobUrl;
-    } catch(e) {
-      console.error('Chunked MV failed:', e);
-      // Fallback: try direct URL
-      video.src = https(manifestUrl.replace(/\.manifest\.json$/, ''));
-      video.currentTime = startTime;
-      video.play().catch(function(){});
-    }
-    loadingEl.style.display = 'none';
-  },
-
-  _exitMVMode() {
-    var main = document.getElementById('playerMain');
-    var container = document.getElementById('mvContainer');
-    var video = document.getElementById('mvVideo');
-    main.classList.remove('mv-mode');
-    container.classList.remove('active', 'visible');
-    document.getElementById('mvQualityBtn').classList.remove('show');
-    document.getElementById('mvToggleBtn').classList.remove('show');
-    video.pause();
-    // Clean up chunked MV blob URL
-    if (video._chunkBlobUrl) { URL.revokeObjectURL(video._chunkBlobUrl); video._chunkBlobUrl = null; }
-    video.src = '';
-    // Reset manual off when exiting to browse
-    Player._mvManuallyOff = false;
-    // Resume audio playback
-    if (Player.playing) Player.audio.play().catch(function(){});
-  },
-
-  _buildMVQualityMenu() {
-    var menu = document.getElementById('mvQualityMenu');
-    if (!Player.mvQualities) { menu.innerHTML = ''; return; }
-    var current = Player.mvCurrentQuality;
-    var html = '';
-    var qualities = ['1080p', '720p', '480p'];
-    qualities.forEach(function(q) {
-      if (Player.mvQualities[q]) {
-        html += '<button class="' + (current === q ? 'active' : '') + '" onclick="MusicApp.selectMVQuality(\'' + q + '\')">' + q + '</button>';
-      }
-    });
-    html += '<button class="' + (current === 'auto' ? 'active' : '') + '" onclick="MusicApp.selectMVQuality(\'auto\')">自动</button>';
-    menu.innerHTML = html;
-  },
-
-  toggleMVQualityMenu() {
-    var menu = document.getElementById('mvQualityMenu');
-    menu.classList.toggle('show');
-  },
-
-  selectMVQuality(q) {
-    Player.setMVQuality(q);
-    var wasPaused = document.getElementById('mvVideo').paused;
-    var ct = document.getElementById('mvVideo').currentTime;
-    var url = Player.getMVUrl();
-    var video = document.getElementById('mvVideo');
-    video.src = https(url);
-    video.currentTime = ct;
-    if (!wasPaused) video.play().catch(function(){});
-    document.getElementById('mvQualityMenu').classList.remove('show');
-    this._buildMVQualityMenu();
-  },
-
-  _measureMVBandwidth() {
-    // Estimate bandwidth by loading a small chunk
-    var url = Player.getMVUrl();
-    if (!url) return;
-    var start = performance.now();
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', https(url), true);
-    xhr.responseType = 'arraybuffer';
-    var loaded = 0;
-    xhr.onprogress = function(e) { loaded = e.loaded; };
-    xhr.onload = function() {
-      var elapsed = (performance.now() - start) / 1000;
-      if (elapsed > 0 && loaded > 0) {
-        var bps = (loaded * 8) / elapsed / 1000; // kbps
-        Player.estimateBandwidth(bps);
-      }
-    };
-    xhr.send();
-    // Abort after 3 seconds
-    setTimeout(function() { if (xhr.readyState !== 4) xhr.abort(); }, 3000);
-  },
-
-  /* ─── MV Controls ───────────────────────────────── */
-  mvTogglePlay() {
-    var video = document.getElementById('mvVideo');
-    if (video.paused) { video.play().catch(function(){}); }
-    else { video.pause(); }
-  },
-
-  mvPrev() {
-    Player.prev();
-    this._syncMVWithTrack();
-  },
-
-  mvNext() {
-    Player.next();
-    this._syncMVWithTrack();
-  },
-
-  _syncMVWithTrack() {
-    var t = Player.tracks[Player.idx];
-    if (!t || !t.mv_url) {
-      this._exitMVMode();
-      return;
-    }
-    Player._setupMV(t);
-    var url = Player.getMVUrl();
-    var video = document.getElementById('mvVideo');
-    video.src = https(url);
-    video.play().catch(function(){});
-    this._buildMVQualityMenu();
-  },
-
-  mvSeek(e) {
-    var bar = e.currentTarget;
-    var rect = bar.getBoundingClientRect();
-    var frac = (e.clientX - rect.left) / rect.width;
-    var video = document.getElementById('mvVideo');
-    if (video.duration) {
-      video.currentTime = frac * video.duration;
-      Player.audio.currentTime = frac * (Player.audio.duration || 0);
-    }
-  },
-
-  mvToggleFullscreen() {
-    var container = document.getElementById('mvContainer');
-    if (document.fullscreenElement) {
-      document.exitFullscreen();
-    } else if (container.requestFullscreen) {
-      container.requestFullscreen();
-    }
-  },
 
   /* ─── Highlight ─────────────────────────────────── */
   _highlightPlaying() {
@@ -1597,80 +1266,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btnRepeat').classList.toggle('active-ctrl', Player.repeat);
   });
 
-  /* ─── MV events ─────────────────────────────────── */
-  Player.on('mvchange', function(data) {
-    var toggleBtn = document.getElementById('mvToggleBtn');
-    var qualityBtn = document.getElementById('mvQualityBtn');
-    var label = document.getElementById('mvToggleLabel');
-    var isOpen = document.getElementById('playerView').classList.contains('open');
-
-    if (data.hasMV && data.mode === 'mv') {
-      // User switched to MV mode
-      if (isOpen) MusicApp._enterMVMode();
-      if (label) label.textContent = '音频模式';
-    } else if (data.hasMV && data.mode === 'audio') {
-      // User switched to audio mode, or default
-      MusicApp._exitMVMode();
-      if (isOpen) {
-        toggleBtn.classList.add('show');
-        if (label) label.textContent = 'MV 模式';
-      }
-    } else if (!data.hasMV) {
-      // No MV available
-      MusicApp._exitMVMode();
-      toggleBtn.classList.remove('show');
-      qualityBtn.classList.remove('show');
-    }
-  });
-
-  // MV video events
-  var mvVideo = document.getElementById('mvVideo');
-  mvVideo.addEventListener('play', function() {
-    document.getElementById('mvPlayBtn').innerHTML = '<i class="fas fa-pause"></i>';
-    clearTimeout(MusicApp._mvMouseTimer);
-    var container = document.getElementById('mvContainer');
-    container.classList.add('visible');
-    MusicApp._mvMouseTimer = setTimeout(function() { container.classList.remove('visible'); }, 3000);
-  });
-  mvVideo.addEventListener('pause', function() {
-    document.getElementById('mvPlayBtn').innerHTML = '<i class="fas fa-play"></i>';
-  });
-  mvVideo.addEventListener('timeupdate', function() {
-    var dur = mvVideo.duration || 0;
-    var ct = mvVideo.currentTime;
-    var pct = dur ? (ct / dur) * 100 : 0;
-    document.getElementById('mvFill').style.width = pct + '%';
-    document.getElementById('mvTime').textContent = Player.fmt(ct) + ' / ' + Player.fmt(dur);
-    // Sync audio time
-    Player.audio.currentTime = ct;
-  });
-  mvVideo.addEventListener('ended', function() {
-    Player.next();
-  });
-  mvVideo.addEventListener('waiting', function() {
-    Player.reportMVBuffer();
-  });
-  mvVideo.addEventListener('playing', function() {
-    Player.reportMVSmooth();
-  });
-  mvVideo.addEventListener('error', function() {
-    // Try next quality level silently
-    if (Player.mvCurrentQuality === 'auto' && Player.mvQualities) {
-      var keys = ['1080p', '720p', '480p'];
-      var curKey = Player._getCurrentQualityKey();
-      var curIdx = keys.indexOf(curKey);
-      if (curIdx >= 0 && curIdx < keys.length - 1) {
-        Player.mvUrl = Player.mvQualities[keys[curIdx + 1]] || Player.mvUrl;
-        mvVideo.src = https(Player.mvUrl);
-        mvVideo.play().catch(function(){});
-        return;
-      }
-    }
-    // Silent fallback to audio
-    Player.mvMode = false;
-    Player._mvManuallyOff = true;
-    MusicApp._exitMVMode();
-  });
 
   /* ─── Fan-Shaped Lyrics ──────────────────────────── */
   Player.on('lyrics', (lyrics) => {
@@ -1866,14 +1461,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (Player.tracks.length && Player.idx >= 0) MusicApp.showPlayer();
   });
 
-  /* ─── Outside click → close MV quality menu ────── */
-  document.addEventListener('click', function(e) {
-    var menu = document.getElementById('mvQualityMenu');
-    var btn = document.getElementById('mvQualityBtn');
-    if (menu.classList.contains('show') && !menu.contains(e.target) && !btn.contains(e.target)) {
-      menu.classList.remove('show');
-    }
-  });
 });
 </script>
 </body>
