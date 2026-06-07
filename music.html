@@ -77,6 +77,7 @@
     .song-row.playing .sr-num{color:var(--warm);font-weight:700}
     .song-row.playing .sr-num i{animation:pulseIcon .8s ease-in-out infinite}
     @keyframes pulseIcon { 0%,100%{opacity:1} 50%{opacity:.4} }
+    @keyframes spin { to { transform:rotate(360deg); } }
     .song-row .sr-cover{
       width:40px;height:40px;border-radius:8px;object-fit:cover;background:var(--bg-muted);
       transition:transform .3s var(--ease-spring),box-shadow .3s var(--ease-out);
@@ -1283,12 +1284,18 @@ const MusicApp = {
     // Show quality and toggle buttons
     if (Player.mvQualities) document.getElementById('mvQualityBtn').classList.add('show');
     document.getElementById('mvToggleBtn').classList.add('show');
-    // Set video source
+
     var url = Player.getMVUrl();
     var currentTime = Player.audio.currentTime;
-    video.src = https(url);
-    video.currentTime = currentTime;
-    video.play().catch(function(){});
+
+    // Check if chunked MV (manifest.json)
+    if (/\.manifest\.json(\?|$)/.test(url)) {
+      this._playChunkedMV(url, video, container, currentTime);
+    } else {
+      video.src = https(url);
+      video.currentTime = currentTime;
+      video.play().catch(function(){});
+    }
     // Pause audio
     Player.audio.pause();
     // Build quality menu
@@ -1301,6 +1308,61 @@ const MusicApp = {
     this._mvMouseTimer = setTimeout(function() { container.classList.remove('visible'); }, 3000);
   },
 
+  async _playChunkedMV(manifestUrl, video, container, startTime) {
+    // Show loading state
+    var loadingEl = document.getElementById('mvLoading');
+    if (!loadingEl) {
+      loadingEl = document.createElement('div');
+      loadingEl.id = 'mvLoading';
+      loadingEl.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:5;pointer-events:none;background:rgba(0,0,0,.6)';
+      loadingEl.innerHTML = '<div style="width:48px;height:48px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite"></div><div id="mvLoadText" style="color:#fff;font-size:.85rem;font-weight:600">加载分片 MV...</div>';
+      container.appendChild(loadingEl);
+    }
+    loadingEl.style.display = 'flex';
+    var loadText = document.getElementById('mvLoadText');
+
+    try {
+      // Fetch manifest
+      var resp = await fetch(https(manifestUrl));
+      if (!resp.ok) throw new Error('Manifest fetch failed: ' + resp.status);
+      var manifest = await resp.json();
+      if (!manifest.chunks || !manifest.chunks.length) throw new Error('Invalid manifest');
+
+      // Download all chunks
+      var blobs = [];
+      var basePath = manifestUrl.replace(/\.manifest\.json$/, '');
+      for (var i = 0; i < manifest.chunks.length; i++) {
+        var chunkName = 'chunk_' + String(i).padStart(4, '0');
+        var chunkUrl = basePath + '/' + chunkName;
+        if (loadText) loadText.textContent = '加载中... ' + (i + 1) + '/' + manifest.chunks.length;
+        var chunkResp = await fetch(https(chunkUrl));
+        if (!chunkResp.ok) throw new Error('Chunk ' + i + ' fetch failed: ' + chunkResp.status);
+        blobs.push(await chunkResp.blob());
+      }
+
+      // Concatenate and play
+      if (loadText) loadText.textContent = '准备播放...';
+      var fullBlob = new Blob(blobs, { type: manifest.type || 'video/mp4' });
+      var blobUrl = URL.createObjectURL(fullBlob);
+      video.src = blobUrl;
+      video.currentTime = startTime;
+      video.play().catch(function(){});
+      // Clean up blob URL after video loads
+      video.onloadedmetadata = function() {
+        // Keep blob URL while video is playing, revoke on next change
+      };
+      // Store for cleanup
+      video._chunkBlobUrl = blobUrl;
+    } catch(e) {
+      console.error('Chunked MV failed:', e);
+      // Fallback: try direct URL
+      video.src = https(manifestUrl.replace(/\.manifest\.json$/, ''));
+      video.currentTime = startTime;
+      video.play().catch(function(){});
+    }
+    loadingEl.style.display = 'none';
+  },
+
   _exitMVMode() {
     var main = document.getElementById('playerMain');
     var container = document.getElementById('mvContainer');
@@ -1310,6 +1372,8 @@ const MusicApp = {
     document.getElementById('mvQualityBtn').classList.remove('show');
     document.getElementById('mvToggleBtn').classList.remove('show');
     video.pause();
+    // Clean up chunked MV blob URL
+    if (video._chunkBlobUrl) { URL.revokeObjectURL(video._chunkBlobUrl); video._chunkBlobUrl = null; }
     video.src = '';
     // Reset manual off when exiting to browse
     Player._mvManuallyOff = false;

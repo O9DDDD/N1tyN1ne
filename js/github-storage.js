@@ -247,14 +247,20 @@ async function githubUploadReleaseAsset(file, filename, onProgress) {
     }
   }
 
-  // >100MB and uploads subdomain unreachable
-  throw new Error(
-    '无法上传大文件（' + fileSizeMB.toFixed(0) + 'MB）：uploads.github.com 不可达。\n\n' +
-    '解决方案：\n' +
-    '1. 将 MV 压缩到 100MB 以下，自动走 Git API 上传\n' +
-    '2. 使用全局代理确保 uploads.github.com 可达\n' +
-    '3. 或者压缩到 50MB 以下，不填 GitHub Token 直接用 Supabase'
-  );
+  // >100MB and uploads subdomain unreachable → chunked upload
+  if (onProgress) onProgress(0);
+  try {
+    var manifestUrl = await githubUploadChunked(file, filename, function(pct) {
+      if (onProgress) onProgress(pct);
+    });
+    return manifestUrl;
+  } catch(chunkErr) {
+    console.warn('Chunked upload failed:', chunkErr.message);
+    throw new Error(
+      '分片上传失败（' + fileSizeMB.toFixed(0) + 'MB）：' + (chunkErr.message || '未知错误') + '\n\n' +
+      '建议：将 MV 压缩到 100MB 以下'
+    );
+  }
 }
 
 /** Quick connectivity test: can we reach uploads.github.com? */
@@ -320,4 +326,111 @@ function _xhrUploadAsset(releaseId, file, filename, pat, onProgress) {
     xhr.timeout = 7200000;
     xhr.send(file);
   });
+}
+
+/* ─── Chunked Upload (for files >100MB when uploads.github.com is blocked) ── */
+var CHUNK_SIZE = 45 * 1024 * 1024; // 45MB per chunk (safe under 100MB blob limit)
+
+/**
+ * Upload a large file in chunks via Git Blob API.
+ * Creates a manifest JSON + all chunk blobs in a single commit.
+ * Returns jsDelivr URL to the manifest file.
+ * Player side: fetches manifest, downloads chunks, concatenates via MediaSource.
+ */
+async function githubUploadChunked(file, filename, onProgress) {
+  var pat = getGitHubPAT();
+  if (!pat) throw new Error('未配置 GitHub Token');
+
+  var ts = Date.now();
+  var safeName = filename.replace(/[^a-zA-Z0-9._-]/g, '').slice(0, 40);
+  var totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+  var chunkSHAs = [];
+  var chunkPaths = [];
+
+  if (onProgress) onProgress(0);
+
+  // Phase 1: Upload all chunk blobs (0-80%)
+  for (var i = 0; i < totalChunks; i++) {
+    var start = i * CHUNK_SIZE;
+    var end = Math.min(start + CHUNK_SIZE, file.size);
+    var chunk = file.slice(start, end);
+
+    // Convert chunk to base64
+    var b64 = await fileToBase64(chunk);
+
+    // Create blob
+    var blobResp = await ghApi('/repos/' + GH_REPO_OWNER + '/' + GH_REPO_NAME + '/git/blobs', {
+      method: 'POST',
+      body: { content: b64, encoding: 'base64' }
+    });
+
+    chunkSHAs.push(blobResp.sha);
+    var chunkName = 'chunk_' + String(i).padStart(4, '0');
+    chunkPaths.push('public/mv/' + ts + '_' + safeName + '/' + chunkName);
+
+    if (onProgress) onProgress(Math.round((i + 1) / totalChunks * 80));
+  }
+
+  // Phase 2: Create manifest JSON (80-85%)
+  var manifest = JSON.stringify({
+    v: 1,
+    chunks: chunkSHAs,
+    name: filename,
+    size: file.size,
+    type: file.type || 'video/mp4'
+  });
+  var manifestB64 = btoa(unescape(encodeURIComponent(manifest)));
+  var manifestBlob = await ghApi('/repos/' + GH_REPO_OWNER + '/' + GH_REPO_NAME + '/git/blobs', {
+    method: 'POST',
+    body: { content: manifestB64, encoding: 'base64' }
+  });
+  if (onProgress) onProgress(83);
+
+  // Phase 3: Create tree + commit with all chunks and manifest (85-100%)
+  // Build tree entries
+  var treeEntries = [];
+  // Add folder for chunks
+  for (var j = 0; j < chunkPaths.length; j++) {
+    treeEntries.push({
+      path: chunkPaths[j],
+      mode: '100644',
+      type: 'blob',
+      sha: chunkSHAs[j]
+    });
+  }
+  // Add manifest file
+  var manifestPath = 'public/mv/' + ts + '_' + safeName + '.manifest.json';
+  treeEntries.push({
+    path: manifestPath,
+    mode: '100644',
+    type: 'blob',
+    sha: manifestBlob.sha
+  });
+
+  var mainRef = await ghApi('/repos/' + GH_REPO_OWNER + '/' + GH_REPO_NAME + '/git/refs/heads/main');
+  var baseCommit = await ghApi('/repos/' + GH_REPO_OWNER + '/' + GH_REPO_NAME + '/git/commits/' + mainRef.object.sha);
+
+  if (onProgress) onProgress(88);
+
+  var treeResp = await ghApi('/repos/' + GH_REPO_OWNER + '/' + GH_REPO_NAME + '/git/trees', {
+    method: 'POST',
+    body: { base_tree: baseCommit.tree.sha, tree: treeEntries }
+  });
+
+  if (onProgress) onProgress(93);
+
+  var newCommit = await ghApi('/repos/' + GH_REPO_OWNER + '/' + GH_REPO_NAME + '/git/commits', {
+    method: 'POST',
+    body: { message: 'upload(chunked): ' + filename, tree: treeResp.sha, parents: [mainRef.object.sha] }
+  });
+
+  await ghApi('/repos/' + GH_REPO_OWNER + '/' + GH_REPO_NAME + '/git/refs/heads/main', {
+    method: 'PATCH',
+    body: { sha: newCommit.sha, force: false }
+  });
+
+  if (onProgress) onProgress(100);
+
+  // Return jsDelivr URL to manifest
+  return 'https://cdn.jsdelivr.net/gh/' + GH_REPO_OWNER + '/' + GH_REPO_NAME + '@main/' + manifestPath;
 }
