@@ -256,7 +256,7 @@ function updateGHTokenStatus() {
   var input = document.getElementById('ghTokenInput');
   if (!el) return;
   if (hasGitHubStorage()) {
-    el.innerHTML = '<span style="color:var(--accent)"><i class="fas fa-check-circle"></i> GitHub Token 已配置 · 大文件将走 GitHub 存储（上限 100MB）</span>';
+    el.innerHTML = '<span style="color:var(--accent)"><i class="fas fa-check-circle"></i> GitHub Token 已配置 · 大文件走 GitHub 存储（上限 2GB）</span>';
     if (input) input.placeholder = '已配置，输入新 Token 可替换';
   } else {
     el.innerHTML = '<span style="color:var(--text-dim)"><i class="fas fa-info-circle"></i> 未配置 · 使用 Supabase 存储（免费套餐上限约 50MB）</span>';
