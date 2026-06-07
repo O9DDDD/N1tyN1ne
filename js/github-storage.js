@@ -3,6 +3,7 @@ const GH_REPO_OWNER = 'O9DDDD';
 const GH_REPO_NAME = 'N1tyN1ne';
 const GH_MUSIC_PATH = 'public/music';   // folder in repo for music files
 const GH_COVER_PATH = 'public/covers';   // folder for cover images
+const GH_MV_PATH = 'public/mv';         // folder for MV video files
 
 /* Load/save PAT from localStorage (admin only, minimal scope) */
 function getGitHubPAT() {
