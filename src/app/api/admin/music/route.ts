@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
       audio_url: body.audio_url,
       cover_url: body.cover_url ?? null,
       lyrics: body.lyrics ?? null,
+      mv_urls: body.mv_urls ?? null,
       uploaded_by: user.id,
     })
     .select()

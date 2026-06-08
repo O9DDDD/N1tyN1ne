@@ -4,6 +4,11 @@ import './globals.css'
 import { AuthProvider } from '@/components/auth/auth-provider'
 import { Nav } from '@/components/layout/nav'
 import { ThemeProvider } from '@/components/layout/theme-provider'
+import { PlayerProvider } from '@/components/music/player-provider'
+import { ToastProvider } from '@/components/layout/toast-provider'
+import { MainContent } from '@/components/layout/main-content'
+import { FloatingPlayer } from '@/components/music/floating-player'
+import { MvOverlay } from '@/components/music/mv-overlay'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -25,8 +30,14 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col" style={{ fontFamily: 'var(--font)' }}>
         <ThemeProvider>
           <AuthProvider>
-            <Nav />
-            <main className="flex-1">{children}</main>
+            <PlayerProvider>
+              <ToastProvider>
+                <Nav />
+                <MainContent>{children}</MainContent>
+                <FloatingPlayer />
+                <MvOverlay />
+              </ToastProvider>
+            </PlayerProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

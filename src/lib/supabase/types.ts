@@ -2,6 +2,12 @@
 // 运行: npx supabase gen types typescript --project-id fjybxoqfatxtgydltvuw > src/lib/supabase/types.ts
 // 当前为手动定义的核心表类型
 
+export interface MvUrls {
+  low?: string
+  medium?: string
+  high?: string
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -60,6 +66,7 @@ export interface Database {
           audio_url: string
           cover_url: string | null
           lyrics: string | null
+          mv_urls: MvUrls | null
           uploaded_by: string | null
           created_at: string
         }
@@ -77,6 +84,7 @@ export interface Database {
           audio_url: string
           cover_url?: string | null
           lyrics?: string | null
+          mv_urls?: MvUrls | null
           uploaded_by?: string | null
         }
         Update: {
@@ -92,6 +100,7 @@ export interface Database {
           audio_url?: string
           cover_url?: string | null
           lyrics?: string | null
+          mv_urls?: MvUrls | null
         }
         Relationships: never[]
       }
