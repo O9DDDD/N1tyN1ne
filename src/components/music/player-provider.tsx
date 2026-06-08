@@ -118,12 +118,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
   }, [isPlaying])
 
-  // Mute during MV
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.muted = isMvActive
-    }
-  }, [isMvActive])
+  // MV 视频无声音，音频保持播放，不静音
 
   const play = useCallback((track: PlayerTrack, newPlaylist?: PlayerTrack[]) => {
     setCurrentTrack(track)
