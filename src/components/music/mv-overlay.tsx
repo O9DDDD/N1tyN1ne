@@ -43,15 +43,12 @@ export function MvOverlay() {
   const [error, setError] = useState(false)
   const triedRef = useRef<Set<string>>(new Set())
 
-  if (!isMvActive || !currentTrack?.mv_urls) return null
-  if (error) return null
-
-  // 从 currentTrack.mv_urls 获取可用画质
-  const mv = currentTrack.mv_urls
-  const available = QUALITY_ORDER.filter((q) => !!mv[q])
+  const mv = currentTrack?.mv_urls ?? null
+  const available = QUALITY_ORDER.filter((q) => !!mv?.[q])
 
   // 当激活或画质偏好改变时重新选择画质
   useEffect(() => {
+    if (!isMvActive || !currentTrack?.mv_urls) return
     const q = detectQuality(currentTrack.mv_urls, mvQuality)
     setResolvedQuality(q)
     triedRef.current.clear()
@@ -59,7 +56,9 @@ export function MvOverlay() {
     setError(false)
   }, [isMvActive, mvQuality, currentTrack?.id])
 
-  const src = `/api/mv/stream?trackId=${encodeURIComponent(currentTrack.id)}&quality=${resolvedQuality}`
+  const src = currentTrack
+    ? `/api/mv/stream?trackId=${encodeURIComponent(currentTrack.id)}&quality=${resolvedQuality}`
+    : ''
 
   const handleLoaded = useCallback(() => setLoading(false), [])
   const handleEnded = useCallback(() => onMvEnd(), [onMvEnd])
@@ -90,6 +89,11 @@ export function MvOverlay() {
   }, [available, resolvedQuality, setMvQuality, audioRef])
 
   const handleClose = useCallback(() => onMvEnd(), [onMvEnd])
+
+  // 早期返回 — 所有 hooks 在此之前已完成
+  if (!isMvActive || !currentTrack?.mv_urls) return null
+  if (error) return null
+  if (available.length === 0) return null
 
   return (
     <div className="mv-overlay">
