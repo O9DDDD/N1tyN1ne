@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadAll() {
   await Promise.all([loadAdminPosts(), loadAdminMusic(), loadAdminComments(), loadAdminFriends()]);
-  loadSiteSettings();
+  await loadSiteSettings();
 }
 
 /* ─── Posts ─────────────────────────────────────────── */
@@ -769,42 +769,111 @@ async function deleteFriend(id) {
 }
 
 /* ─── Site Settings ───────────────────────────────── */
-function loadSiteSettings() {
-  var defaults = {
-    heroTitle: 'N1tyN1ne', heroDesc: '记录、思考、分享。',
-    aboutIntro: '热爱编程，享受创造的乐趣。关注前端技术、工具开发和开源社区。用代码构建想法，用文字记录思考，用音乐填充生活。',
-    aboutTitle2: '音乐', aboutDesc2: '音乐是灵魂的深呼吸。喜欢电子、后摇、独立音乐，偶尔自己也做点东西。',
-    aboutTitle3: '写作', aboutDesc3: '用文字记录思考。写技术文章，也写生活随笔。分享让知识更有价值。'
+var SITE_SETTINGS_DEFAULTS = {
+  heroTitle: 'N1tyN1ne', heroDesc: '记录、思考、分享。',
+  aboutIntro: '热爱编程，享受创造的乐趣。关注前端技术、工具开发和开源社区。用代码构建想法，用文字记录思考，用音乐填充生活。',
+  aboutTitle2: '音乐', aboutDesc2: '音乐是灵魂的深呼吸。喜欢电子、后摇、独立音乐，偶尔自己也做点东西。',
+  aboutTitle3: '写作', aboutDesc3: '用文字记录思考。写技术文章，也写生活随笔。分享让知识更有价值。'
+};
+
+function applySettingsToForm(s) {
+  s = Object.assign({}, SITE_SETTINGS_DEFAULTS, s);
+  document.getElementById('setHeroTitle').value = s.heroTitle || SITE_SETTINGS_DEFAULTS.heroTitle;
+  document.getElementById('setHeroDesc').value = s.heroDesc || SITE_SETTINGS_DEFAULTS.heroDesc;
+  document.getElementById('setAboutIntro').value = s.aboutIntro || SITE_SETTINGS_DEFAULTS.aboutIntro;
+  document.getElementById('setAboutTitle2').value = s.aboutTitle2 || SITE_SETTINGS_DEFAULTS.aboutTitle2;
+  document.getElementById('setAboutDesc2').value = s.aboutDesc2 || SITE_SETTINGS_DEFAULTS.aboutDesc2;
+  document.getElementById('setAboutTitle3').value = s.aboutTitle3 || SITE_SETTINGS_DEFAULTS.aboutTitle3;
+  document.getElementById('setAboutDesc3').value = s.aboutDesc3 || SITE_SETTINGS_DEFAULTS.aboutDesc3;
+}
+
+function rowToSettings(row) {
+  if (!row) return {};
+  return {
+    heroTitle: row.hero_title || '',
+    heroDesc: row.hero_desc || '',
+    aboutIntro: row.about_intro || '',
+    aboutTitle2: row.about_title2 || '',
+    aboutDesc2: row.about_desc2 || '',
+    aboutTitle3: row.about_title3 || '',
+    aboutDesc3: row.about_desc3 || ''
   };
+}
+
+function settingsToRow(s) {
+  return {
+    hero_title: s.heroTitle || SITE_SETTINGS_DEFAULTS.heroTitle,
+    hero_desc: s.heroDesc || SITE_SETTINGS_DEFAULTS.heroDesc,
+    about_intro: s.aboutIntro || SITE_SETTINGS_DEFAULTS.aboutIntro,
+    about_title2: s.aboutTitle2 || SITE_SETTINGS_DEFAULTS.aboutTitle2,
+    about_desc2: s.aboutDesc2 || SITE_SETTINGS_DEFAULTS.aboutDesc2,
+    about_title3: s.aboutTitle3 || SITE_SETTINGS_DEFAULTS.aboutTitle3,
+    about_desc3: s.aboutDesc3 || SITE_SETTINGS_DEFAULTS.aboutDesc3
+  };
+}
+
+async function loadSiteSettings() {
   var s = {};
-  try { var raw = localStorage.getItem('site_settings'); if (raw) s = JSON.parse(raw); } catch(e) {}
-  s = Object.assign({}, defaults, s);
-  document.getElementById('setHeroTitle').value = s.heroTitle;
-  document.getElementById('setHeroDesc').value = s.heroDesc;
-  document.getElementById('setAboutIntro').value = s.aboutIntro || '';
-  document.getElementById('setAboutTitle2').value = s.aboutTitle2;
-  document.getElementById('setAboutDesc2').value = s.aboutDesc2;
-  document.getElementById('setAboutTitle3').value = s.aboutTitle3;
-  document.getElementById('setAboutDesc3').value = s.aboutDesc3;
+  try {
+    var rows = await dbSelect('site_settings', { limit: 1 });
+    if (rows && rows.length > 0) {
+      s = rowToSettings(rows[0]);
+      localStorage.setItem('site_settings', JSON.stringify(s));
+    }
+  } catch(e) { console.error('loadSiteSettings:', e); }
+  if (Object.values(s).every(function(v) { return !v; })) {
+    try { var raw = localStorage.getItem('site_settings'); if (raw) s = JSON.parse(raw); } catch(e) {}
+  }
+  applySettingsToForm(s);
 }
 
-function saveSiteSettings() {
+async function saveSiteSettings() {
   var data = {
-    heroTitle: document.getElementById('setHeroTitle').value.trim() || 'N1tyN1ne',
-    heroDesc: document.getElementById('setHeroDesc').value.trim() || '记录、思考、分享。',
-    aboutIntro: document.getElementById('setAboutIntro').value.trim() || '',
-    aboutTitle2: document.getElementById('setAboutTitle2').value.trim() || '音乐',
-    aboutDesc2: document.getElementById('setAboutDesc2').value.trim() || '',
-    aboutTitle3: document.getElementById('setAboutTitle3').value.trim() || '写作',
-    aboutDesc3: document.getElementById('setAboutDesc3').value.trim() || ''
+    heroTitle: document.getElementById('setHeroTitle').value.trim(),
+    heroDesc: document.getElementById('setHeroDesc').value.trim(),
+    aboutIntro: document.getElementById('setAboutIntro').value.trim(),
+    aboutTitle2: document.getElementById('setAboutTitle2').value.trim(),
+    aboutDesc2: document.getElementById('setAboutDesc2').value.trim(),
+    aboutTitle3: document.getElementById('setAboutTitle3').value.trim(),
+    aboutDesc3: document.getElementById('setAboutDesc3').value.trim()
   };
-  localStorage.setItem('site_settings', JSON.stringify(data));
-  alert('站点设置已保存！刷新首页即可看到效果。');
+  var jwt = await getJWT();
+  if (!jwt) { alert('会话已过期，请重新登录'); return; }
+  try {
+    var r = await fetch(SUPABASE_URL + '/rest/v1/site_settings?id=eq.1', {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + jwt,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify(settingsToRow(data))
+    });
+    if (r.status >= 400) {
+      var err = await r.json();
+      throw new Error(err.message || '保存失败');
+    }
+    var result = await r.json();
+    // PostgREST 返回空数组 = 0 行被更新 = RLS 拦截或行不存在
+    if (Array.isArray(result) && result.length === 0) {
+      throw new Error('更新被拒绝，可能是权限不足，请重新登录后再试');
+    }
+    localStorage.setItem('site_settings', JSON.stringify(data));
+    alert('全站自定义已保存！所有访问者将看到更新后的内容。');
+  } catch(e) { alert('保存失败: ' + e.message); console.error('saveSiteSettings:', e); }
 }
 
-function resetSiteSettings() {
+async function resetSiteSettings() {
+  try {
+    await dbUpdate('site_settings', {
+      hero_title: null, hero_desc: null, about_intro: null,
+      about_title2: null, about_desc2: null,
+      about_title3: null, about_desc3: null
+    }, 'id', '1');
+  } catch(e) { console.error('resetSiteSettings:', e); }
   localStorage.removeItem('site_settings');
-  loadSiteSettings();
+  applySettingsToForm({});
   alert('已恢复默认设置');
 }
 
