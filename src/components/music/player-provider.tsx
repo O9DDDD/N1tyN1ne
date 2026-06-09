@@ -87,6 +87,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [repeatMode, setRepeatMode] = useState<RepeatMode>('off')
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const nextRef = useRef<() => void>(() => {})
+  const isPlayingRef = useRef(false)
 
   // Lazy-init audio element
   useEffect(() => {
@@ -118,11 +119,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (!audio || !currentTrack) return
 
     audio.src = currentTrack.audio_url
-    audio.load()
-    if (isPlaying) {
-      audio.play().catch(() => {})
+    const playWhenReady = () => {
+      audio.removeEventListener('canplay', playWhenReady)
+      if (isPlayingRef.current) audio.play().catch(() => {})
     }
+    audio.addEventListener('canplay', playWhenReady)
+    return () => audio.removeEventListener('canplay', playWhenReady)
   }, [currentTrack?.id])
+
+  // Keep isPlayingRef in sync
+  useEffect(() => {
+    isPlayingRef.current = isPlaying
+  }, [isPlaying])
 
   // Sync play/pause
   useEffect(() => {
