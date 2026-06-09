@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { usePathname } from 'next/navigation'
 import { usePlayer } from '@/components/music/player-provider'
 import { useToast } from '@/components/layout/toast-provider'
 import type { MvUrls } from '@/lib/supabase/types'
@@ -37,44 +38,57 @@ export function MvOverlay() {
     audioRef,
   } = usePlayer()
   const { showToast } = useToast()
+  const pathname = usePathname()
+
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [resolvedQuality, setResolvedQuality] = useState<'low' | 'medium' | 'high'>('medium')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(false)
+  const [loading, setLoading] = useState(true)
   const triedRef = useRef<Set<string>>(new Set())
+  const [srcKey, setSrcKey] = useState(0)
 
   const mv = currentTrack?.mv_urls ?? null
   const available = QUALITY_ORDER.filter((q) => !!mv?.[q])
 
-  // 当激活或画质偏好改变时重新选择画质
+  // Don't show on songs page (MusicHero handles it there)
+  if (pathname === '/songs' || pathname === '/music') return null
+
+  // Reset state when MV activates or track changes
   useEffect(() => {
     if (!isMvActive || !currentTrack?.mv_urls) return
     const q = detectQuality(currentTrack.mv_urls, mvQuality)
     setResolvedQuality(q)
     triedRef.current.clear()
     setLoading(true)
-    setError(false)
+    setSrcKey((k) => k + 1)
   }, [isMvActive, mvQuality, currentTrack?.id])
+
+  // Sync video time with audio on activation
+  useEffect(() => {
+    if (isMvActive && videoRef.current && audioRef.current) {
+      videoRef.current.currentTime = audioRef.current.currentTime
+    }
+  }, [isMvActive])
 
   const src = currentTrack
     ? `/api/mv/stream?trackId=${encodeURIComponent(currentTrack.id)}&quality=${resolvedQuality}`
     : ''
 
   const handleLoaded = useCallback(() => setLoading(false), [])
-  const handleEnded = useCallback(() => onMvEnd(), [onMvEnd])
 
   const handleError = useCallback(() => {
     triedRef.current.add(resolvedQuality)
     for (const q of available) {
       if (!triedRef.current.has(q)) {
         setResolvedQuality(q)
+        setSrcKey((k) => k + 1)
         return
       }
     }
     showToast('MV 加载失败，已切换为音频模式', 'error')
-    setError(true)
     onMvError()
   }, [resolvedQuality, available, showToast, onMvError])
+
+  const handleEnded = useCallback(() => onMvEnd(), [onMvEnd])
 
   const cycleQuality = useCallback(() => {
     const idx = available.indexOf(resolvedQuality)
@@ -82,6 +96,7 @@ export function MvOverlay() {
     setResolvedQuality(next)
     setMvQuality(next)
     setLoading(true)
+    setSrcKey((k) => k + 1)
     if (videoRef.current && audioRef.current) {
       videoRef.current.currentTime = audioRef.current.currentTime
     }
@@ -90,20 +105,33 @@ export function MvOverlay() {
 
   const handleClose = useCallback(() => onMvEnd(), [onMvEnd])
 
-  // 早期返回 — 所有 hooks 在此之前已完成
+  // Cleanup
+  useEffect(() => {
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.pause()
+        videoRef.current.removeAttribute('src')
+        videoRef.current.load()
+      }
+    }
+  }, [])
+
   if (!isMvActive || !currentTrack?.mv_urls) return null
-  if (error) return null
   if (available.length === 0) return null
 
   return (
     <div className="mv-overlay">
       <div className="mv-backdrop" />
+
       {loading && (
-        <div style={{ position: 'relative', zIndex: 1, color: '#fff', fontSize: '1rem' }}>
-          加载 MV...
+        <div className="mv-loading">
+          <div className="mv-spinner" />
+          <span>加载 MV...</span>
         </div>
       )}
+
       <video
+        key={srcKey}
         ref={videoRef}
         className="mv-video"
         src={src}
@@ -113,19 +141,19 @@ export function MvOverlay() {
         onEnded={handleEnded}
         onError={handleError}
       />
+
       <button className="mv-close-btn" onClick={handleClose} aria-label="关闭 MV">
         ✕
       </button>
+
       {available.length > 1 && (
-        <div className="mv-quality-btn-group">
-          <button
-            className="mv-quality-btn"
-            onClick={cycleQuality}
-            aria-label="切换画质"
-          >
-            {resolvedQuality === 'low' ? '360p' : resolvedQuality === 'medium' ? '720p' : '1080p'}
-          </button>
-        </div>
+        <button
+          className="mv-quality-btn"
+          onClick={cycleQuality}
+          aria-label="切换画质"
+        >
+          {resolvedQuality === 'low' ? '360p' : resolvedQuality === 'medium' ? '720p' : '1080p'}
+        </button>
       )}
     </div>
   )

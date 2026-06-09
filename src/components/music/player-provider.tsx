@@ -14,6 +14,8 @@ export interface PlayerTrack {
   mv_urls: MvUrls | null
 }
 
+export type RepeatMode = 'off' | 'one' | 'all'
+
 interface PlayerState {
   currentTrack: PlayerTrack | null
   isPlaying: boolean
@@ -22,14 +24,21 @@ interface PlayerState {
   mvQuality: 'low' | 'medium' | 'high' | 'auto'
   currentTime: number
   duration: number
+  volume: number
+  isShuffled: boolean
+  repeatMode: RepeatMode
   audioRef: React.RefObject<HTMLAudioElement | null>
   play: (track: PlayerTrack, playlist?: PlayerTrack[]) => void
   pause: () => void
   resume: () => void
   next: () => void
   prev: () => void
+  seek: (time: number) => void
+  setVolume: (v: number) => void
   setPlaylist: (tracks: PlayerTrack[]) => void
   setMvQuality: (q: 'low' | 'medium' | 'high' | 'auto') => void
+  toggleShuffle: () => void
+  toggleRepeat: () => void
   onMvEnd: () => void
   onMvError: () => void
 }
@@ -42,14 +51,21 @@ const PlayerContext = createContext<PlayerState>({
   mvQuality: 'auto',
   currentTime: 0,
   duration: 0,
+  volume: 0.8,
+  isShuffled: false,
+  repeatMode: 'off',
   audioRef: { current: null },
   play: () => {},
   pause: () => {},
   resume: () => {},
   next: () => {},
   prev: () => {},
+  seek: () => {},
+  setVolume: () => {},
   setPlaylist: () => {},
   setMvQuality: () => {},
+  toggleShuffle: () => {},
+  toggleRepeat: () => {},
   onMvEnd: () => {},
   onMvError: () => {},
 })
@@ -66,20 +82,24 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [mvQuality, setMvQuality] = useState<'low' | 'medium' | 'high' | 'auto'>('auto')
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
+  const [volume, setVolumeState] = useState(0.8)
+  const [isShuffled, setIsShuffled] = useState(false)
+  const [repeatMode, setRepeatMode] = useState<RepeatMode>('off')
   const audioRef = useRef<HTMLAudioElement | null>(null)
-  const prevTrackIdRef = useRef<string | null>(null)
+  const nextRef = useRef<() => void>(() => {})
 
   // Lazy-init audio element
   useEffect(() => {
     if (!audioRef.current) {
       audioRef.current = new Audio()
       audioRef.current.preload = 'auto'
+      audioRef.current.volume = volume
     }
     const audio = audioRef.current
 
     const onTimeUpdate = () => setCurrentTime(audio.currentTime)
     const onLoadedMeta = () => setDuration(audio.duration)
-    const onEnded = () => next()
+    const onEnded = () => nextRef.current()
 
     audio.addEventListener('timeupdate', onTimeUpdate)
     audio.addEventListener('loadedmetadata', onLoadedMeta)
@@ -90,15 +110,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       audio.removeEventListener('loadedmetadata', onLoadedMeta)
       audio.removeEventListener('ended', onEnded)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Sync src when track changes
   useEffect(() => {
     const audio = audioRef.current
     if (!audio || !currentTrack) return
-    if (currentTrack.id === prevTrackIdRef.current) return
-    prevTrackIdRef.current = currentTrack.id
 
     audio.src = currentTrack.audio_url
     audio.load()
@@ -118,7 +135,20 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
   }, [isPlaying])
 
-  // MV 视频无声音，音频保持播放，不静音
+  // Sync volume
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume
+    }
+  }, [volume])
+
+  // getShuffledIndex picks a random index != current
+  const getShuffledIndex = useCallback((currentIdx: number, length: number): number => {
+    if (length <= 1) return 0
+    let idx: number
+    do { idx = Math.floor(Math.random() * length) } while (idx === currentIdx && length > 1)
+    return idx
+  }, [])
 
   const play = useCallback((track: PlayerTrack, newPlaylist?: PlayerTrack[]) => {
     setCurrentTrack(track)
@@ -127,11 +157,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     else if (!playlist.some((t) => t.id === track.id)) {
       setPlaylist([track])
     }
-    if (track.mv_urls && (track.mv_urls.low || track.mv_urls.medium || track.mv_urls.high)) {
-      setIsMvActive(true)
-    } else {
-      setIsMvActive(false)
-    }
+    const hasMv = !!(track.mv_urls && (track.mv_urls.low || track.mv_urls.medium || track.mv_urls.high))
+    setIsMvActive(hasMv)
   }, [playlist])
 
   const pause = useCallback(() => setIsPlaying(false), [])
@@ -139,29 +166,55 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const next = useCallback(() => {
     if (!currentTrack) return
-    setIsMvActive(false)
     const idx = playlist.findIndex((t) => t.id === currentTrack.id)
-    if (idx < 0 || idx >= playlist.length - 1) {
+    if (idx < 0) { setIsPlaying(false); return }
+
+    setIsMvActive(false)
+
+    // Last track
+    if (idx >= playlist.length - 1) {
+      if (repeatMode === 'all') {
+        const nextTrack = playlist[0]
+        setCurrentTrack(nextTrack)
+        setIsPlaying(true)
+        const hasMv = !!(nextTrack.mv_urls && (nextTrack.mv_urls.low || nextTrack.mv_urls.medium || nextTrack.mv_urls.high))
+        if (hasMv) setIsMvActive(true)
+        return
+      }
       setIsPlaying(false)
       return
     }
-    const nextTrack = playlist[idx + 1]
+
+    let nextIdx: number
+    if (isShuffled) {
+      nextIdx = getShuffledIndex(idx, playlist.length)
+    } else {
+      nextIdx = idx + 1
+    }
+
+    const nextTrack = playlist[nextIdx]
     setCurrentTrack(nextTrack)
     setIsPlaying(true)
-    prevTrackIdRef.current = nextTrack.id
-    if (nextTrack.mv_urls && (nextTrack.mv_urls.low || nextTrack.mv_urls.medium || nextTrack.mv_urls.high)) {
-      setIsMvActive(true)
-    }
-  }, [currentTrack, playlist])
+    const hasMv = !!(nextTrack.mv_urls && (nextTrack.mv_urls.low || nextTrack.mv_urls.medium || nextTrack.mv_urls.high))
+    if (hasMv) setIsMvActive(true)
+  }, [currentTrack, playlist, isShuffled, repeatMode, getShuffledIndex])
+  nextRef.current = next
 
   const prev = useCallback(() => {
     if (!currentTrack) return
     const audio = audioRef.current
+
+    // If MV active, close it first
+    if (isMvActive) {
+      setIsMvActive(false)
+    }
+
+    // If more than 3s in, restart current track
     if (audio && audio.currentTime > 3) {
       audio.currentTime = 0
       return
     }
-    setIsMvActive(false)
+
     const idx = playlist.findIndex((t) => t.id === currentTrack.id)
     if (idx <= 0) {
       if (audio) audio.currentTime = 0
@@ -170,19 +223,28 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const prevTrack = playlist[idx - 1]
     setCurrentTrack(prevTrack)
     setIsPlaying(true)
-    prevTrackIdRef.current = prevTrack.id
-    if (prevTrack.mv_urls && (prevTrack.mv_urls.low || prevTrack.mv_urls.medium || prevTrack.mv_urls.high)) {
-      setIsMvActive(true)
-    }
-  }, [currentTrack, playlist])
+    const hasMv = !!(prevTrack.mv_urls && (prevTrack.mv_urls.low || prevTrack.mv_urls.medium || prevTrack.mv_urls.high))
+    if (hasMv) setIsMvActive(true)
+  }, [currentTrack, playlist, isMvActive])
 
-  const onMvEnd = useCallback(() => {
-    setIsMvActive(false)
+  const seek = useCallback((time: number) => {
+    const audio = audioRef.current
+    if (!audio) return
+    audio.currentTime = time
+    setCurrentTime(time)
   }, [])
 
-  const onMvError = useCallback(() => {
-    setIsMvActive(false)
+  const setVolume = useCallback((v: number) => {
+    setVolumeState(Math.max(0, Math.min(1, v)))
   }, [])
+
+  const toggleShuffle = useCallback(() => setIsShuffled((s) => !s), [])
+  const toggleRepeat = useCallback(() => {
+    setRepeatMode((m) => m === 'off' ? 'all' : m === 'all' ? 'one' : 'off')
+  }, [])
+
+  const onMvEnd = useCallback(() => setIsMvActive(false), [])
+  const onMvError = useCallback(() => setIsMvActive(false), [])
 
   return (
     <PlayerContext.Provider
@@ -194,14 +256,21 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         mvQuality,
         currentTime,
         duration,
+        volume,
+        isShuffled,
+        repeatMode,
         audioRef,
         play,
         pause,
         resume,
         next,
         prev,
+        seek,
+        setVolume,
         setPlaylist,
         setMvQuality,
+        toggleShuffle,
+        toggleRepeat,
         onMvEnd,
         onMvError,
       }}

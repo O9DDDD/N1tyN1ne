@@ -49,6 +49,18 @@ export async function middleware(request: NextRequest) {
 
   // ⚠ 重要：非 admin 路径也必须返回 supabaseResponse，
   // 因为 getUser() 可能已刷新了 session cookie（写入在 supabaseResponse 上）。
+
+  // 音乐页强制 CDN 不缓存
+  if (pathname === '/music' || pathname === '/songs') {
+    supabaseResponse.headers.set('Surrogate-Control', 'no-store, max-age=0')
+    supabaseResponse.headers.set('CDN-Cache-Control', 'no-store, max-age=0')
+  }
+
+  // 旧 /music 重定向到新 /songs（绕过 CDN 对 /music 的旧缓存）
+  if (pathname === '/music') {
+    return NextResponse.redirect(new URL('/songs', request.url))
+  }
+
   return supabaseResponse
 }
 

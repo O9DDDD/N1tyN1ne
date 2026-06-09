@@ -1,7 +1,15 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { usePlayer, type PlayerTrack } from '@/components/music/player-provider'
+import { usePathname, useRouter } from 'next/navigation'
+import { usePlayer } from '@/components/music/player-provider'
+
+function formatTime(s: number): string {
+  if (!isFinite(s) || s < 0) return '0:00'
+  const m = Math.floor(s / 60)
+  const sec = Math.floor(s % 60)
+  return `${m}:${sec.toString().padStart(2, '0')}`
+}
 
 export function FloatingPlayer() {
   const {
@@ -13,59 +21,64 @@ export function FloatingPlayer() {
     prev,
     pause,
     resume,
-    isMvActive,
   } = usePlayer()
 
+  const pathname = usePathname()
+  const router = useRouter()
   const [coverSwitching, setCoverSwitching] = useState(false)
   const prevTrackId = useRef<string | null>(null)
 
+  // Track change animation
   useEffect(() => {
     if (currentTrack && currentTrack.id !== prevTrackId.current) {
-      // No-MV transition: cover fade animation
-      if (!isMvActive) {
-        setCoverSwitching(true)
-        const t = setTimeout(() => setCoverSwitching(false), 400)
-        return () => clearTimeout(t)
-      }
+      setCoverSwitching(true)
+      const t = setTimeout(() => setCoverSwitching(false), 400)
       prevTrackId.current = currentTrack.id
+      return () => clearTimeout(t)
     }
-  }, [currentTrack?.id, isMvActive])
+  }, [currentTrack?.id])
 
+  // Hide on /songs page
+  if (pathname === '/songs' || pathname === '/music') return null
   if (!currentTrack) return null
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
 
+  const handleProgressClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const ratio = (e.clientX - rect.left) / rect.width
+    const audio = (document.querySelector('audio') as HTMLAudioElement | null)
+    if (audio && duration > 0) {
+      audio.currentTime = ratio * duration
+    }
+  }, [duration])
+
+  const goToSongs = useCallback(() => {
+    router.push('/songs')
+  }, [router])
+
   return (
     <div className="float-player">
       {/* Cover */}
-      {currentTrack.cover_url ? (
-        <img
-          src={currentTrack.cover_url}
-          alt={currentTrack.title}
-          className={`fp-cover${isPlaying && !coverSwitching ? ' playing' : ''}${coverSwitching ? ' cover-switching' : ''}`}
-        />
-      ) : (
-        <div
-          className={`fp-cover fp-cover-placeholder${isPlaying && !coverSwitching ? ' playing' : ''}${coverSwitching ? ' cover-switching' : ''}`}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'var(--bg-muted)',
-            color: 'var(--text-dim)',
-            fontSize: '1.2rem',
-          }}
-        >
-          ♪
-        </div>
-      )}
+      <div className="fp-cover-wrap" onClick={goToSongs}>
+        {currentTrack.cover_url ? (
+          <img
+            src={currentTrack.cover_url}
+            alt={currentTrack.title}
+            className={`fp-cover${isPlaying && !coverSwitching ? ' playing' : ''}${coverSwitching ? ' switching' : ''}`}
+          />
+        ) : (
+          <div className={`fp-cover fp-cover-ph${isPlaying && !coverSwitching ? ' playing' : ''}${coverSwitching ? ' switching' : ''}`}>
+            ♪
+          </div>
+        )}
+      </div>
 
       {/* Info */}
-      <div className="fp-info">
+      <div className="fp-info" onClick={goToSongs}>
         <div className="fp-title">{currentTrack.title}</div>
-        <div className="fp-lyric">
+        <div className="fp-artist">
           {currentTrack.artist ?? '未知艺术家'}
-          {currentTrack.album ? ` · ${currentTrack.album}` : ''}
         </div>
       </div>
 
@@ -87,9 +100,12 @@ export function FloatingPlayer() {
       </div>
 
       {/* Progress bar */}
-      <div className="fp-progress">
-        <div className="fp-bar" style={{ width: `${progress}%` }} />
+      <div className="fp-progress-bar" onClick={handleProgressClick}>
+        <div className="fp-progress-fill" style={{ width: `${progress}%` }} />
       </div>
+
+      {/* Time */}
+      <span className="fp-time">{formatTime(currentTime)} / {formatTime(duration)}</span>
     </div>
   )
 }

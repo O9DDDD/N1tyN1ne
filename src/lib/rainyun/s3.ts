@@ -1,4 +1,5 @@
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
+import { getSignedUrl as awsGetSignedUrl } from '@aws-sdk/s3-request-presigner'
 
 const ENDPOINT = process.env.RAINYUN_S3_ENDPOINT!
 const BUCKET = process.env.RAINYUN_S3_BUCKET!
@@ -15,13 +16,10 @@ const s3Client = new S3Client({
   forcePathStyle: true,
 })
 
-export async function getObject(key: string): Promise<ReadableStream | null> {
+export async function getSignedUrl(key: string): Promise<string | null> {
   try {
-    const res = await s3Client.send(new GetObjectCommand({
-      Bucket: BUCKET,
-      Key: key,
-    }))
-    return res.Body?.transformToWebStream() ?? null
+    const cmd = new GetObjectCommand({ Bucket: BUCKET, Key: key })
+    return await awsGetSignedUrl(s3Client, cmd, { expiresIn: 3600 })
   } catch {
     return null
   }
