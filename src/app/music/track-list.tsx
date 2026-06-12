@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import type { Music } from '@/lib/supabase/types'
 import { usePlayer, type PlayerTrack } from '@/components/music/player-provider'
 
@@ -23,6 +24,7 @@ function toPlayerTrack(t: Music): PlayerTrack {
 
 export function TrackList({ tracks }: { tracks: Music[] }) {
   const { play, currentTrack, isPlaying } = usePlayer()
+  const router = useRouter()
   const [search, setSearch] = useState('')
   const [genre, setGenre] = useState<string | null>(null)
 
@@ -53,6 +55,7 @@ export function TrackList({ tracks }: { tracks: Music[] }) {
     const mapped = toPlayerTrack(track)
     const fullPlaylist = tracks.map(toPlayerTrack)
     play(mapped, fullPlaylist)
+    router.push('/songs')
   }
 
   return (

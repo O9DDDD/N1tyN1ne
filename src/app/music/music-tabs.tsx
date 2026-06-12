@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import type { Music } from '@/lib/supabase/types'
 import { TrackList } from './track-list'
 import { usePlayer } from '@/components/music/player-provider'
@@ -10,6 +11,7 @@ type Tab = 'tracks' | 'artists' | 'albums'
 
 function ArtistGrid({ tracks }: { tracks: Music[] }) {
   const { play } = usePlayer()
+  const router = useRouter()
   const [artistImgs, setArtistImgs] = useState<Record<string, string | null>>({})
 
   const artists = useMemo(() => {
@@ -64,6 +66,7 @@ function ArtistGrid({ tracks }: { tracks: Music[] }) {
       lyrics: t.lyrics,
     }))
     play(mapped[0], mapped)
+    router.push('/songs')
   }
 
   const count = artists.length
@@ -94,6 +97,7 @@ function ArtistGrid({ tracks }: { tracks: Music[] }) {
 
 function AlbumGrid({ tracks }: { tracks: Music[] }) {
   const { play } = usePlayer()
+  const router = useRouter()
 
   const albums = useMemo(() => {
     const map = new Map<string, Music>()
@@ -121,6 +125,7 @@ function AlbumGrid({ tracks }: { tracks: Music[] }) {
       lyrics: t.lyrics,
     }))
     play(mapped[0], mapped)
+    router.push('/songs')
   }
 
   const count = albums.length

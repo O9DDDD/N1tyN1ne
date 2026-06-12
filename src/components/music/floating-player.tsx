@@ -70,7 +70,7 @@ export function FloatingPlayer() {
   }, [currentTrack?.id])
 
   // Hide on /songs page
-  if (pathname === '/songs' || pathname === '/music') return null
+  if (pathname === '/songs') return null
   if (!currentTrack) return null
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0

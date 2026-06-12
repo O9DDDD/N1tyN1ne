@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import { MusicHero } from '@/components/music/music-hero'
 import { MusicTabs } from './music-tabs'
 
 export const dynamic = 'force-dynamic'
@@ -16,7 +15,6 @@ export default async function MusicPage() {
 
   return (
     <div className="music-page">
-      <MusicHero />
       <MusicTabs tracks={trackList} />
     </div>
   )
