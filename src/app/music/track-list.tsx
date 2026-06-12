@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useMemo } from 'react'
 import type { Music } from '@/lib/supabase/types'
 import { usePlayer, type PlayerTrack } from '@/components/music/player-provider'
 
@@ -24,12 +23,9 @@ function toPlayerTrack(t: Music): PlayerTrack {
 
 export function TrackList({ tracks }: { tracks: Music[] }) {
   const { play, currentTrack, isPlaying } = usePlayer()
-  const router = useRouter()
   const [search, setSearch] = useState('')
   const [genre, setGenre] = useState<string | null>(null)
-  const [navigateToSongs, setNavigateToSongs] = useState(false)
 
-  // Extract unique genres
   const genres = useMemo(() => {
     const set = new Set<string>()
     for (const t of tracks) {
@@ -55,20 +51,14 @@ export function TrackList({ tracks }: { tracks: Music[] }) {
   function handlePlay(track: Music) {
     const mapped = toPlayerTrack(track)
     const fullPlaylist = tracks.map(toPlayerTrack)
+    sessionStorage.setItem('pendingTrack', JSON.stringify(mapped))
+    sessionStorage.setItem('pendingPlaylist', JSON.stringify(fullPlaylist))
     play(mapped, fullPlaylist)
-    setNavigateToSongs(true)
+    window.location.href = '/songs'
   }
-
-  useEffect(() => {
-    if (navigateToSongs) {
-      router.push('/songs')
-      setNavigateToSongs(false)
-    }
-  }, [navigateToSongs, router])
 
   return (
     <div className="track-list-section">
-      {/* Genre filter */}
       {genres.length > 0 && (
         <div className="genre-filter">
           <button
@@ -89,7 +79,6 @@ export function TrackList({ tracks }: { tracks: Music[] }) {
         </div>
       )}
 
-      {/* Search */}
       <div className="track-search">
         <span className="track-search-icon">🔍</span>
         <input
@@ -106,7 +95,6 @@ export function TrackList({ tracks }: { tracks: Music[] }) {
         )}
       </div>
 
-      {/* List */}
       <div className="track-list">
         {filtered.map((track) => {
           const isCurrent = currentTrack?.id === track.id
@@ -119,7 +107,6 @@ export function TrackList({ tracks }: { tracks: Music[] }) {
               tabIndex={0}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handlePlay(track) }}
             >
-              {/* Cover */}
               {track.cover_url ? (
                 <img
                   src={track.cover_url}
@@ -132,7 +119,6 @@ export function TrackList({ tracks }: { tracks: Music[] }) {
                 </div>
               )}
 
-              {/* Info */}
               <div className="track-info">
                 <div className="track-title-row">
                   <span className="track-title">{track.title}</span>
@@ -153,12 +139,10 @@ export function TrackList({ tracks }: { tracks: Music[] }) {
                 </div>
               </div>
 
-              {/* Duration */}
               {track.duration && (
                 <span className="track-duration">{track.duration}</span>
               )}
 
-              {/* Now playing indicator */}
               {isCurrent && (
                 <div className="track-current-dot" />
               )}

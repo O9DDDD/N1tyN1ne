@@ -21,6 +21,7 @@ export function MusicHero() {
     volume,
     isShuffled,
     repeatMode,
+    play,
     resume,
     pause,
     next,
@@ -30,6 +31,21 @@ export function MusicHero() {
     toggleShuffle,
     toggleRepeat,
   } = usePlayer()
+
+  // 从 sessionStorage 恢复硬导航传来的播放数据
+  useEffect(() => {
+    if (currentTrack) return
+    const trackJson = sessionStorage.getItem('pendingTrack')
+    if (!trackJson) return
+    try {
+      const track = JSON.parse(trackJson)
+      const playlistJson = sessionStorage.getItem('pendingPlaylist')
+      const playlist = playlistJson ? JSON.parse(playlistJson) : [track]
+      sessionStorage.removeItem('pendingTrack')
+      sessionStorage.removeItem('pendingPlaylist')
+      play(track, playlist)
+    } catch { /* ignore */ }
+  }, [])
 
   const [showLyrics, setShowLyrics] = useState(false)
   const lyricsRef = useRef<HTMLDivElement>(null)

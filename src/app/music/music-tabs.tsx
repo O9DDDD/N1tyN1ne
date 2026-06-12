@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import type { Music } from '@/lib/supabase/types'
 import { TrackList } from './track-list'
 import { usePlayer } from '@/components/music/player-provider'
@@ -11,9 +10,7 @@ type Tab = 'tracks' | 'artists' | 'albums'
 
 function ArtistGrid({ tracks }: { tracks: Music[] }) {
   const { play } = usePlayer()
-  const router = useRouter()
   const [artistImgs, setArtistImgs] = useState<Record<string, string | null>>({})
-  const [navigateToSongs, setNavigateToSongs] = useState(false)
 
   const artists = useMemo(() => {
     const map = new Map<string, Music[]>()
@@ -65,16 +62,11 @@ function ArtistGrid({ tracks }: { tracks: Music[] }) {
       duration: t.duration,
       lyrics: t.lyrics,
     }))
+    sessionStorage.setItem('pendingTrack', JSON.stringify(mapped[0]))
+    sessionStorage.setItem('pendingPlaylist', JSON.stringify(mapped))
     play(mapped[0], mapped)
-    setNavigateToSongs(true)
+    window.location.href = '/songs'
   }
-
-  useEffect(() => {
-    if (navigateToSongs) {
-      router.push('/songs')
-      setNavigateToSongs(false)
-    }
-  }, [navigateToSongs, router])
 
   const count = artists.length
 
@@ -104,8 +96,6 @@ function ArtistGrid({ tracks }: { tracks: Music[] }) {
 
 function AlbumGrid({ tracks }: { tracks: Music[] }) {
   const { play } = usePlayer()
-  const router = useRouter()
-  const [navigateToSongs, setNavigateToSongs] = useState(false)
 
   const albums = useMemo(() => {
     const map = new Map<string, Music>()
@@ -132,16 +122,11 @@ function AlbumGrid({ tracks }: { tracks: Music[] }) {
       duration: t.duration,
       lyrics: t.lyrics,
     }))
+    sessionStorage.setItem('pendingTrack', JSON.stringify(mapped[0]))
+    sessionStorage.setItem('pendingPlaylist', JSON.stringify(mapped))
     play(mapped[0], mapped)
-    setNavigateToSongs(true)
+    window.location.href = '/songs'
   }
-
-  useEffect(() => {
-    if (navigateToSongs) {
-      router.push('/songs')
-      setNavigateToSongs(false)
-    }
-  }, [navigateToSongs, router])
 
   const count = albums.length
 
