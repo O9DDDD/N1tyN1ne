@@ -15,11 +15,10 @@ export default function SongsError({
         background: 'var(--bg-card)',
         padding: 16,
         borderRadius: 8,
-        margin: '16px 0',
+        margin: '16px auto',
         fontSize: '.8rem',
         textAlign: 'left',
         maxWidth: 500,
-        margin: '0 auto',
         whiteSpace: 'pre-wrap',
         wordBreak: 'break-all',
       }}>
