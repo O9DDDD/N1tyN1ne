@@ -130,6 +130,15 @@ function AlbumGrid({ tracks }: { tracks: Music[] }) {
 
   const count = albums.length
 
+  if (count === 0) {
+    return (
+      <div className="library-section">
+        <p className="library-section-title">专辑 · 0</p>
+        <div className="track-empty">暂无专辑信息</div>
+      </div>
+    )
+  }
+
   return (
     <div className="library-section">
       <p className="library-section-title">专辑 · {count}</p>
@@ -137,6 +146,7 @@ function AlbumGrid({ tracks }: { tracks: Music[] }) {
         {albums.map(([name, track]) => (
           <button
             key={name}
+            type="button"
             className="album-card"
             onClick={() => handleAlbumClick(name, track)}
           >
