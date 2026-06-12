@@ -3,13 +3,11 @@
 import { useState, useMemo, useEffect } from 'react'
 import type { Music } from '@/lib/supabase/types'
 import { TrackList } from './track-list'
-import { usePlayer } from '@/components/music/player-provider'
 import { splitArtists } from '@/lib/artist'
 
 type Tab = 'tracks' | 'artists' | 'albums'
 
 function ArtistGrid({ tracks }: { tracks: Music[] }) {
-  const { play } = usePlayer()
   const [artistImgs, setArtistImgs] = useState<Record<string, string | null>>({})
 
   const artists = useMemo(() => {
@@ -64,7 +62,6 @@ function ArtistGrid({ tracks }: { tracks: Music[] }) {
     }))
     sessionStorage.setItem('pendingTrack', JSON.stringify(mapped[0]))
     sessionStorage.setItem('pendingPlaylist', JSON.stringify(mapped))
-    play(mapped[0], mapped)
     window.location.href = '/songs'
   }
 
@@ -95,8 +92,6 @@ function ArtistGrid({ tracks }: { tracks: Music[] }) {
 }
 
 function AlbumGrid({ tracks }: { tracks: Music[] }) {
-  const { play } = usePlayer()
-
   const albums = useMemo(() => {
     const map = new Map<string, Music>()
     for (const t of tracks) {
@@ -124,7 +119,6 @@ function AlbumGrid({ tracks }: { tracks: Music[] }) {
     }))
     sessionStorage.setItem('pendingTrack', JSON.stringify(mapped[0]))
     sessionStorage.setItem('pendingPlaylist', JSON.stringify(mapped))
-    play(mapped[0], mapped)
     window.location.href = '/songs'
   }
 

@@ -22,7 +22,7 @@ function toPlayerTrack(t: Music): PlayerTrack {
 }
 
 export function TrackList({ tracks }: { tracks: Music[] }) {
-  const { play, currentTrack, isPlaying } = usePlayer()
+  const { currentTrack, isPlaying } = usePlayer()
   const [search, setSearch] = useState('')
   const [genre, setGenre] = useState<string | null>(null)
 
@@ -53,7 +53,6 @@ export function TrackList({ tracks }: { tracks: Music[] }) {
     const fullPlaylist = tracks.map(toPlayerTrack)
     sessionStorage.setItem('pendingTrack', JSON.stringify(mapped))
     sessionStorage.setItem('pendingPlaylist', JSON.stringify(fullPlaylist))
-    play(mapped, fullPlaylist)
     window.location.href = '/songs'
   }
 
