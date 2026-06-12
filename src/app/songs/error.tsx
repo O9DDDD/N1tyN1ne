@@ -19,7 +19,7 @@ export default function SongsError({
         fontSize: '.8rem',
         textAlign: 'left',
         maxWidth: 500,
-        marginX: 'auto',
+        margin: '0 auto',
         whiteSpace: 'pre-wrap',
         wordBreak: 'break-all',
       }}>
