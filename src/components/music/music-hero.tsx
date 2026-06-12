@@ -83,22 +83,21 @@ export function MusicHero() {
     const toFetch = artists.filter((a) => !(a in artistImgs))
     if (toFetch.length === 0) return
     let canceled = false
-    Promise.all(
-      toFetch.map(async (a) => {
-        try {
-          const res = await fetch(`/api/artist/image?name=${encodeURIComponent(a)}`)
-          const j = await res.json()
-          return { name: a, url: j.url || null }
-        } catch { return { name: a, url: null } }
+    const names = toFetch.join(',')
+    fetch(`/api/artist/image?name=${encodeURIComponent(names)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (canceled) return
+        const map: Record<string, string | null> = data.results || {}
+        setArtistImgs((prev) => {
+          const next = { ...prev }
+          for (const name of toFetch) {
+            next[name] = map[name] ?? null
+          }
+          return next
+        })
       })
-    ).then((results) => {
-      if (canceled) return
-      setArtistImgs((prev) => {
-        const next = { ...prev }
-        for (const r of results) next[r.name] = r.url
-        return next
-      })
-    })
+      .catch(() => {})
     return () => { canceled = true }
   }, [artists.join(',')])
 

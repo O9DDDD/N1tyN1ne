@@ -1,11 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'fs'
+import { join } from 'path'
 
-// Simple in-memory cache: artist name → image URL
-const cache = new Map<string, { url: string | null; ts: number }>()
-const TTL = 24 * 60 * 60 * 1000 // 24 hours
+const CACHE_FILE = join('/tmp', 'artist-images.json')
+const TTL = 7 * 24 * 60 * 60 * 1000 // 7 days
+
+let cache: Map<string, { url: string | null; ts: number }> | null = null
+
+function loadCache(): Map<string, { url: string | null; ts: number }> {
+  if (cache) return cache
+  try {
+    if (existsSync(CACHE_FILE)) {
+      const raw = readFileSync(CACHE_FILE, 'utf-8')
+      const entries = JSON.parse(raw)
+      cache = new Map(entries)
+      return cache
+    }
+  } catch { /* corrupt file, start fresh */ }
+  cache = new Map()
+  return cache
+}
+
+function saveCache() {
+  try {
+    if (!existsSync('/tmp')) mkdirSync('/tmp', { recursive: true })
+    writeFileSync(CACHE_FILE, JSON.stringify([...cache!.entries()]))
+  } catch { /* ignore write errors */ }
+}
 
 async function searchArtist(name: string): Promise<string | null> {
-  // Try public NetEase proxy APIs
   const proxies = [
     `https://autumnfish.cn/search?keywords=${encodeURIComponent(name)}&type=100&limit=1`,
     `https://music.163.com/api/search/get?s=${encodeURIComponent(name)}&type=100&limit=1`,
@@ -29,19 +52,40 @@ async function searchArtist(name: string): Promise<string | null> {
 }
 
 export async function GET(request: NextRequest) {
-  const name = request.nextUrl.searchParams.get('name')
-  if (!name) {
+  const raw = request.nextUrl.searchParams.get('name')
+  if (!raw) {
     return NextResponse.json({ error: 'Missing name param' }, { status: 400 })
   }
 
-  // Check cache
-  const cached = cache.get(name)
-  if (cached && Date.now() - cached.ts < TTL) {
-    return NextResponse.json({ url: cached.url })
+  const names = raw.split(',').map((s) => s.trim()).filter(Boolean)
+  const c = loadCache()
+  const results: Record<string, string | null> = {}
+  const toFetch: string[] = []
+
+  for (const name of names) {
+    const cached = c.get(name)
+    if (cached && Date.now() - cached.ts < TTL) {
+      results[name] = cached.url
+    } else {
+      toFetch.push(name)
+    }
   }
 
-  const url = await searchArtist(name)
-  cache.set(name, { url, ts: Date.now() })
+  if (toFetch.length > 0) {
+    const fetched = await Promise.all(
+      toFetch.map(async (name) => {
+        const url = await searchArtist(name)
+        c.set(name, { url, ts: Date.now() })
+        results[name] = url
+      })
+    )
+    saveCache()
+  }
 
-  return NextResponse.json({ url })
+  // Single name → simple response (backwards compat)
+  if (names.length === 1) {
+    return NextResponse.json({ url: results[names[0]] })
+  }
+
+  return NextResponse.json({ results })
 }

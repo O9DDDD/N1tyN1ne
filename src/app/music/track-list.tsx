@@ -55,7 +55,7 @@ export function TrackList({ tracks }: { tracks: Music[] }) {
     const mapped = toPlayerTrack(track)
     const fullPlaylist = tracks.map(toPlayerTrack)
     play(mapped, fullPlaylist)
-    router.push('/songs')
+    requestAnimationFrame(() => router.push('/songs'))
   }
 
   return (
