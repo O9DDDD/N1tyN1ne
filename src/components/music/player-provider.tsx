@@ -10,6 +10,7 @@ export interface PlayerTrack {
   audio_url: string
   cover_url: string | null
   duration: string | null
+  lyrics: string | null
 }
 
 export type RepeatMode = 'off' | 'one' | 'all'

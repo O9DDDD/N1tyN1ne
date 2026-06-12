@@ -65,10 +65,10 @@ export function FloatingPlayer() {
           <img
             src={currentTrack.cover_url}
             alt={currentTrack.title}
-            className={`fp-cover${isPlaying && !coverSwitching ? ' playing' : ''}${coverSwitching ? ' switching' : ''}`}
+            className={`fp-cover${coverSwitching ? ' switching' : ''}`}
           />
         ) : (
-          <div className={`fp-cover fp-cover-ph${isPlaying && !coverSwitching ? ' playing' : ''}${coverSwitching ? ' switching' : ''}`}>
+          <div className={`fp-cover fp-cover-ph${coverSwitching ? ' switching' : ''}`}>
             ♪
           </div>
         )}

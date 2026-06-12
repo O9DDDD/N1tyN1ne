@@ -13,6 +13,7 @@ function toPlayerTrack(t: Music): PlayerTrack {
     audio_url: t.audio_url,
     cover_url: t.cover_url,
     duration: t.duration,
+    lyrics: t.lyrics,
   }
 }
 
@@ -73,7 +74,7 @@ export function TrackList({ tracks }: { tracks: Music[] }) {
                 <img
                   src={track.cover_url}
                   alt={track.title}
-                  className={`track-cover${isCurrent && isPlaying ? ' spinning' : ''}`}
+                  className="track-cover"
                 />
               ) : (
                 <div className="track-cover track-cover-placeholder">

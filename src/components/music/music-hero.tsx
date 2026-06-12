@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { usePlayer } from '@/components/music/player-provider'
 
 function formatTime(s: number): string {
@@ -29,6 +29,10 @@ export function MusicHero() {
     toggleShuffle,
     toggleRepeat,
   } = usePlayer()
+
+  const [showLyrics, setShowLyrics] = useState(false)
+  const lyrics = currentTrack?.lyrics ?? null
+  const hasLyrics = !!lyrics
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
 
@@ -74,6 +78,17 @@ export function MusicHero() {
           {currentTrack.album ? ` · ${currentTrack.album}` : ''}
         </p>
       </div>
+
+      {/* Lyrics */}
+      {hasLyrics && showLyrics && (
+        <div className="hero-lyrics">
+          {lyrics!.split('\n').map((line, i) => (
+            <p key={i} className={line.trim() ? '' : 'lyrics-break'}>
+              {line.trim() || ' '}
+            </p>
+          ))}
+        </div>
+      )}
 
       {/* Progress Bar */}
       <div className="hero-progress">
@@ -128,6 +143,17 @@ export function MusicHero() {
           >
             {repeatLabel}
           </button>
+
+          {/* Lyrics toggle */}
+          {hasLyrics && (
+            <button
+              className={`hero-btn-sm${showLyrics ? ' active' : ''}`}
+              onClick={() => setShowLyrics((v) => !v)}
+              title={showLyrics ? '隐藏歌词' : '显示歌词'}
+            >
+              词
+            </button>
+          )}
 
           {/* Volume */}
           <div className="hero-volume">
