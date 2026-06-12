@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Music } from '@/lib/supabase/types'
 import { TrackList } from './track-list'
@@ -65,7 +65,7 @@ function ArtistGrid({ tracks }: { tracks: Music[] }) {
       lyrics: t.lyrics,
     }))
     play(mapped[0], mapped)
-    requestAnimationFrame(() => router.push('/songs'))
+    startTransition(() => router.push('/songs'))
   }
 
   const count = artists.length
@@ -124,7 +124,7 @@ function AlbumGrid({ tracks }: { tracks: Music[] }) {
       lyrics: t.lyrics,
     }))
     play(mapped[0], mapped)
-    requestAnimationFrame(() => router.push('/songs'))
+    startTransition(() => router.push('/songs'))
   }
 
   const count = albums.length

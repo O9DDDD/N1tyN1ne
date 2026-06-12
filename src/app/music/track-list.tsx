@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Music } from '@/lib/supabase/types'
 import { usePlayer, type PlayerTrack } from '@/components/music/player-provider'
@@ -55,7 +55,7 @@ export function TrackList({ tracks }: { tracks: Music[] }) {
     const mapped = toPlayerTrack(track)
     const fullPlaylist = tracks.map(toPlayerTrack)
     play(mapped, fullPlaylist)
-    requestAnimationFrame(() => router.push('/songs'))
+    startTransition(() => router.push('/songs'))
   }
 
   return (
