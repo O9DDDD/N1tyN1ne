@@ -105,9 +105,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const audio = audioRef.current
     if (!audio || !currentTrack) return
 
+    audio.currentTime = 0
     audio.src = currentTrack.audio_url
     const playWhenReady = () => {
       audio.removeEventListener('canplay', playWhenReady)
+      audio.currentTime = 0
       if (isPlayingRef.current) audio.play().catch(() => {})
     }
     audio.addEventListener('canplay', playWhenReady)

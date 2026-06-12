@@ -1,12 +1,17 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useTheme } from '@/components/layout/theme-provider'
 
 export function Nav() {
   const { isAuthenticated, isAdmin, username, loading, signOut } = useAuth()
   const { theme, toggle } = useTheme()
+  const pathname = usePathname()
+
+  // Hide nav on fullscreen player page
+  if (pathname === '/songs') return null
 
   return (
     <nav>

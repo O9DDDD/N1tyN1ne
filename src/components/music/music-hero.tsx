@@ -2,29 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { usePlayer } from '@/components/music/player-provider'
-
-interface LyricLine {
-  time: number
-  text: string
-}
-
-function parseLRC(lrc: string): LyricLine[] {
-  const lines: LyricLine[] = []
-  const re = /^\[(\d{2}):(\d{2})\.(\d{2,3})\]/
-
-  for (const raw of lrc.split('\n')) {
-    const m = raw.match(re)
-    if (!m) continue
-    const min = parseInt(m[1], 10)
-    const sec = parseInt(m[2], 10)
-    const ms = parseInt(m[3].padEnd(3, '0'), 10)
-    const time = min * 60 + sec + ms / 1000
-    const text = raw.slice(m[0].length).trim()
-    if (text) lines.push({ time, text })
-  }
-
-  return lines
-}
+import { parseLRC, getActiveIndex } from '@/lib/lrc'
 
 function formatTime(s: number): string {
   if (!isFinite(s) || s < 0) return '0:00'
@@ -69,12 +47,7 @@ export function MusicHero() {
   // Find current lyric line index
   const activeIndex = useMemo(() => {
     if (!lrcLines) return -1
-    let idx = -1
-    for (let i = 0; i < lrcLines.length; i++) {
-      if (lrcLines[i].time <= currentTime) idx = i
-      else break
-    }
-    return idx
+    return getActiveIndex(lrcLines, currentTime)
   }, [lrcLines, currentTime])
 
   // Auto-scroll to active line
