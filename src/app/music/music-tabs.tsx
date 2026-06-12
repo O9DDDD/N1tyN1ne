@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, startTransition } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Music } from '@/lib/supabase/types'
 import { TrackList } from './track-list'
@@ -13,6 +13,7 @@ function ArtistGrid({ tracks }: { tracks: Music[] }) {
   const { play } = usePlayer()
   const router = useRouter()
   const [artistImgs, setArtistImgs] = useState<Record<string, string | null>>({})
+  const [navigateToSongs, setNavigateToSongs] = useState(false)
 
   const artists = useMemo(() => {
     const map = new Map<string, Music[]>()
@@ -65,8 +66,15 @@ function ArtistGrid({ tracks }: { tracks: Music[] }) {
       lyrics: t.lyrics,
     }))
     play(mapped[0], mapped)
-    startTransition(() => router.push('/songs'))
+    setNavigateToSongs(true)
   }
+
+  useEffect(() => {
+    if (navigateToSongs) {
+      router.push('/songs')
+      setNavigateToSongs(false)
+    }
+  }, [navigateToSongs, router])
 
   const count = artists.length
 
@@ -97,6 +105,7 @@ function ArtistGrid({ tracks }: { tracks: Music[] }) {
 function AlbumGrid({ tracks }: { tracks: Music[] }) {
   const { play } = usePlayer()
   const router = useRouter()
+  const [navigateToSongs, setNavigateToSongs] = useState(false)
 
   const albums = useMemo(() => {
     const map = new Map<string, Music>()
@@ -124,8 +133,15 @@ function AlbumGrid({ tracks }: { tracks: Music[] }) {
       lyrics: t.lyrics,
     }))
     play(mapped[0], mapped)
-    startTransition(() => router.push('/songs'))
+    setNavigateToSongs(true)
   }
+
+  useEffect(() => {
+    if (navigateToSongs) {
+      router.push('/songs')
+      setNavigateToSongs(false)
+    }
+  }, [navigateToSongs, router])
 
   const count = albums.length
 

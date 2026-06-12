@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, startTransition } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Music } from '@/lib/supabase/types'
 import { usePlayer, type PlayerTrack } from '@/components/music/player-provider'
@@ -27,6 +27,7 @@ export function TrackList({ tracks }: { tracks: Music[] }) {
   const router = useRouter()
   const [search, setSearch] = useState('')
   const [genre, setGenre] = useState<string | null>(null)
+  const [navigateToSongs, setNavigateToSongs] = useState(false)
 
   // Extract unique genres
   const genres = useMemo(() => {
@@ -55,8 +56,15 @@ export function TrackList({ tracks }: { tracks: Music[] }) {
     const mapped = toPlayerTrack(track)
     const fullPlaylist = tracks.map(toPlayerTrack)
     play(mapped, fullPlaylist)
-    startTransition(() => router.push('/songs'))
+    setNavigateToSongs(true)
   }
+
+  useEffect(() => {
+    if (navigateToSongs) {
+      router.push('/songs')
+      setNavigateToSongs(false)
+    }
+  }, [navigateToSongs, router])
 
   return (
     <div className="track-list-section">
