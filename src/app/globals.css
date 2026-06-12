@@ -234,6 +234,9 @@ section + section::before {
   background: linear-gradient(90deg, var(--warm) 0%, var(--accent) 60%, transparent 100%);
   border-radius: 2px; opacity: .4;
 }
+.section-subtitle {
+  color: var(--text-muted); font-size: 1rem; margin-top: 4px;
+}
 
 /* ─── Container ─── */
 .container { width: 100%; max-width: var(--container); margin: 0 auto; padding: 0 24px; }
@@ -1245,11 +1248,6 @@ section + section::before {
 }
 
 @media (max-width: 768px) {
-  .float-player {
-    bottom: calc(66px + env(safe-area-inset-bottom, 0px));
-    border-radius: 12px;
-    min-width: auto;
-  }
   .fp-main { padding: 6px 10px; gap: 8px; }
   .fp-lyrics { max-height: 150px; padding: 6px 10px 0; }
   .fp-lrc-line { font-size: .74rem; padding: 4px 0; }

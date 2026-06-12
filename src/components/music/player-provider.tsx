@@ -116,7 +116,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       audio.currentTime = 0
       if (isPlayingRef.current) audio.play().catch(() => {})
     }
-    audio.addEventListener('canplay', playWhenReady)
+    // 已缓存的音频 readyState >= 2 时 canplay 不会触发
+    if (audio.readyState >= 2) {
+      playWhenReady()
+    } else {
+      audio.addEventListener('canplay', playWhenReady)
+    }
     return () => audio.removeEventListener('canplay', playWhenReady)
   }, [currentTrack?.id])
 

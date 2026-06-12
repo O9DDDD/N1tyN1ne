@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           isAuthenticated: data.isAuthenticated,
           isAdmin: data.isAdmin,
           username: data.username ?? null,
-          userId: data.isAuthenticated ? 'authenticated' : null,
+          userId: data.userId ?? null,
           loading: false,
         })
       })

@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
         .from('profiles')
         .select('role')
         .eq('id', user.id)
-        .single()
+        .maybeSingle()
       role = (data as { role: string } | null)?.role
     }
 

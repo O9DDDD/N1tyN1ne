@@ -17,6 +17,7 @@ export async function GET() {
   return NextResponse.json({
     isAuthenticated: true,
     isAdmin: role === 'admin',
+    userId: user.id,
     username:
       user.user_metadata?.username ??
       user.email?.split('@')[0] ??

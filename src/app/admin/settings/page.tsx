@@ -10,7 +10,7 @@ export default async function AdminSettingsPage() {
     .from('site_settings')
     .select('*')
     .limit(1)
-    .single()
+    .maybeSingle()
 
   return (
     <div>
