@@ -10,6 +10,10 @@ function toPlayerTrack(t: Music): PlayerTrack {
     title: t.title,
     artist: t.artist,
     album: t.album,
+    album_artist: t.album_artist,
+    album_year: t.album_year,
+    album_description: t.album_description,
+    genre: t.genre,
     audio_url: t.audio_url,
     cover_url: t.cover_url,
     duration: t.duration,
@@ -20,16 +24,30 @@ function toPlayerTrack(t: Music): PlayerTrack {
 export function TrackList({ tracks }: { tracks: Music[] }) {
   const { play, currentTrack, isPlaying } = usePlayer()
   const [search, setSearch] = useState('')
+  const [genre, setGenre] = useState<string | null>(null)
+
+  // Extract unique genres
+  const genres = useMemo(() => {
+    const set = new Set<string>()
+    for (const t of tracks) {
+      if (t.genre) set.add(t.genre)
+    }
+    return [...set].sort()
+  }, [tracks])
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return tracks
-    const q = search.toLowerCase()
-    return tracks.filter((t) =>
-      t.title.toLowerCase().includes(q) ||
-      (t.artist && t.artist.toLowerCase().includes(q)) ||
-      (t.album && t.album.toLowerCase().includes(q))
-    )
-  }, [tracks, search])
+    let result = tracks
+    if (genre) result = result.filter((t) => t.genre === genre)
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      result = result.filter((t) =>
+        t.title.toLowerCase().includes(q) ||
+        (t.artist && t.artist.toLowerCase().includes(q)) ||
+        (t.album && t.album.toLowerCase().includes(q))
+      )
+    }
+    return result
+  }, [tracks, search, genre])
 
   function handlePlay(track: Music) {
     const mapped = toPlayerTrack(track)
@@ -39,6 +57,27 @@ export function TrackList({ tracks }: { tracks: Music[] }) {
 
   return (
     <div className="track-list-section">
+      {/* Genre filter */}
+      {genres.length > 0 && (
+        <div className="genre-filter">
+          <button
+            className={`genre-chip${!genre ? ' genre-active' : ''}`}
+            onClick={() => setGenre(null)}
+          >
+            全部
+          </button>
+          {genres.map((g) => (
+            <button
+              key={g}
+              className={`genre-chip${genre === g ? ' genre-active' : ''}`}
+              onClick={() => setGenre(genre === g ? null : g)}
+            >
+              {g}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Search */}
       <div className="track-search">
         <span className="track-search-icon">🔍</span>
@@ -86,6 +125,9 @@ export function TrackList({ tracks }: { tracks: Music[] }) {
               <div className="track-info">
                 <div className="track-title-row">
                   <span className="track-title">{track.title}</span>
+                  {track.genre && (
+                    <span className="track-genre-mini">{track.genre}</span>
+                  )}
                   {isCurrent && isPlaying && (
                     <span className="track-eq">
                       <span />
@@ -115,7 +157,7 @@ export function TrackList({ tracks }: { tracks: Music[] }) {
 
         {filtered.length === 0 && (
           <div className="track-empty">
-            {search ? '没有匹配的歌曲' : '暂无音乐'}
+            {search || genre ? '没有匹配的歌曲' : '暂无音乐'}
           </div>
         )}
       </div>

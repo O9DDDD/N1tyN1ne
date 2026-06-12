@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { usePlayer } from '@/components/music/player-provider'
 import { parseLRC, getActiveIndex } from '@/lib/lrc'
+import { splitArtists, extractFeat } from '@/lib/artist'
 
 function formatTime(s: number): string {
   if (!isFinite(s) || s < 0) return '0:00'
@@ -44,13 +45,11 @@ export function MusicHero() {
 
   const hasLyrics = !!lrcLines
 
-  // Find current lyric line index
   const activeIndex = useMemo(() => {
     if (!lrcLines) return -1
     return getActiveIndex(lrcLines, currentTime)
   }, [lrcLines, currentTime])
 
-  // Auto-scroll to active line
   useEffect(() => {
     if (activeRef.current && showLyrics) {
       activeRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -69,6 +68,39 @@ export function MusicHero() {
   }, [seek])
 
   const repeatLabel = repeatMode === 'one' ? '🔂' : repeatMode === 'all' ? '🔁' : '🔁'
+
+  // Parse artists
+  const artists = useMemo(() => splitArtists(currentTrack?.artist ?? null), [currentTrack?.artist])
+  const featArtist = useMemo(() => extractFeat(currentTrack?.artist ?? null), [currentTrack?.artist])
+  const displayArtist = artists.length > 0 ? artists.join(' · ') : (currentTrack?.artist ?? '未知艺术家')
+  const albumName = currentTrack?.album_artist || currentTrack?.album || null
+  const albumYear = currentTrack?.album_year || null
+
+  // Artist images
+  const [artistImgs, setArtistImgs] = useState<Record<string, string | null>>({})
+  useEffect(() => {
+    if (artists.length === 0) return
+    const toFetch = artists.filter((a) => !(a in artistImgs))
+    if (toFetch.length === 0) return
+    let canceled = false
+    Promise.all(
+      toFetch.map(async (a) => {
+        try {
+          const res = await fetch(`/api/artist/image?name=${encodeURIComponent(a)}`)
+          const j = await res.json()
+          return { name: a, url: j.url || null }
+        } catch { return { name: a, url: null } }
+      })
+    ).then((results) => {
+      if (canceled) return
+      setArtistImgs((prev) => {
+        const next = { ...prev }
+        for (const r of results) next[r.name] = r.url
+        return next
+      })
+    })
+    return () => { canceled = true }
+  }, [artists.join(',')])
 
   if (!currentTrack) {
     return (
@@ -100,11 +132,34 @@ export function MusicHero() {
       {/* Track Info */}
       <div className="hero-info">
         <h2 className="hero-title">{currentTrack.title}</h2>
-        <p className="hero-artist">
-          {currentTrack.artist ?? '未知艺术家'}
-          {currentTrack.album ? ` · ${currentTrack.album}` : ''}
-        </p>
+        {/* Artist Avatars */}
+        {artists.length > 0 && Object.values(artistImgs).some(Boolean) && (
+          <div className="hero-artist-imgs">
+            {artists.map((name) => {
+              const url = artistImgs[name]
+              return url ? (
+                <img key={name} className="hero-artist-avatar" src={url} alt={name} />
+              ) : null
+            })}
+          </div>
+        )}
+        <p className="hero-artist">{displayArtist}</p>
+        {featArtist && (
+          <p className="hero-feat">ft. {featArtist}</p>
+        )}
+        {currentTrack.genre && (
+          <span className="hero-genre-tag">{currentTrack.genre}</span>
+        )}
       </div>
+
+      {/* Album Info */}
+      {albumName && (
+        <div className="hero-album">
+          <span className="hero-album-icon">💿</span>
+          <span className="hero-album-name">{albumName}</span>
+          {albumYear && <span className="hero-album-year">{albumYear}</span>}
+        </div>
+      )}
 
       {/* Scrolling Lyrics */}
       {hasLyrics && showLyrics && (
