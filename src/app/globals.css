@@ -937,45 +937,53 @@ section + section::before {
 /* ─── Artist Grid ─── */
 .artist-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 20px 12px;
 }
 .artist-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 12px 8px;
-  background: var(--bg-card);
-  border: 1.5px solid var(--border);
-  border-radius: 12px;
+  gap: 8px;
+  padding: 4px;
   cursor: pointer;
   font: inherit;
   color: inherit;
-  transition: all var(--transition);
+  background: none;
+  border: none;
+  transition: transform var(--transition);
 }
 .artist-card:hover {
-  border-color: var(--accent);
-  box-shadow: var(--shadow);
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+}
+.artist-card:hover .artist-card-img {
+  box-shadow: 0 0 0 3px var(--accent), 0 8px 24px rgba(0,0,0,.12);
+}
+.artist-card:hover .artist-card-placeholder {
+  box-shadow: 0 0 0 3px var(--accent), 0 8px 24px rgba(0,0,0,.12);
 }
 .artist-card-img {
-  width: 60px;
-  height: 60px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   object-fit: cover;
+  transition: box-shadow var(--transition);
 }
 .artist-card-placeholder {
+  width: 80px;
+  height: 80px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--accent-glow);
   color: var(--accent-dark);
-  font-size: 1.4rem;
+  font-size: 1.8rem;
   font-weight: 700;
+  border-radius: 50%;
+  transition: box-shadow var(--transition);
 }
 .artist-card-name {
-  font-size: .76rem;
+  font-size: .8rem;
   font-weight: 600;
   color: var(--text-bright);
   text-align: center;
@@ -985,7 +993,7 @@ section + section::before {
   white-space: nowrap;
 }
 .artist-card-count {
-  font-size: .66rem;
+  font-size: .68rem;
   color: var(--text-dim);
 }
 
