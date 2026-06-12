@@ -1,7 +1,30 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { usePlayer } from '@/components/music/player-provider'
+
+interface LyricLine {
+  time: number
+  text: string
+}
+
+function parseLRC(lrc: string): LyricLine[] {
+  const lines: LyricLine[] = []
+  const re = /^\[(\d{2}):(\d{2})\.(\d{2,3})\]/
+
+  for (const raw of lrc.split('\n')) {
+    const m = raw.match(re)
+    if (!m) continue
+    const min = parseInt(m[1], 10)
+    const sec = parseInt(m[2], 10)
+    const ms = parseInt(m[3].padEnd(3, '0'), 10)
+    const time = min * 60 + sec + ms / 1000
+    const text = raw.slice(m[0].length).trim()
+    if (text) lines.push({ time, text })
+  }
+
+  return lines
+}
 
 function formatTime(s: number): string {
   if (!isFinite(s) || s < 0) return '0:00'
@@ -19,7 +42,6 @@ export function MusicHero() {
     volume,
     isShuffled,
     repeatMode,
-    audioRef,
     resume,
     pause,
     next,
@@ -31,14 +53,46 @@ export function MusicHero() {
   } = usePlayer()
 
   const [showLyrics, setShowLyrics] = useState(false)
-  const lyrics = currentTrack?.lyrics ?? null
-  const hasLyrics = !!lyrics
+  const lyricsRef = useRef<HTMLDivElement>(null)
+  const activeRef = useRef<HTMLParagraphElement>(null)
+
+  const rawLyrics = currentTrack?.lyrics ?? null
+
+  const lrcLines = useMemo(() => {
+    if (!rawLyrics) return null
+    const parsed = parseLRC(rawLyrics)
+    return parsed.length > 0 ? parsed : null
+  }, [rawLyrics, currentTrack?.id])
+
+  const hasLyrics = !!lrcLines
+
+  // Find current lyric line index
+  const activeIndex = useMemo(() => {
+    if (!lrcLines) return -1
+    let idx = -1
+    for (let i = 0; i < lrcLines.length; i++) {
+      if (lrcLines[i].time <= currentTime) idx = i
+      else break
+    }
+    return idx
+  }, [lrcLines, currentTime])
+
+  // Auto-scroll to active line
+  useEffect(() => {
+    if (activeRef.current && showLyrics) {
+      activeRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [activeIndex, showLyrics])
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
 
   const handleProgressChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const t = parseFloat(e.target.value)
     seek(t)
+  }, [seek])
+
+  const handleLyricClick = useCallback((time: number) => {
+    seek(time)
   }, [seek])
 
   const repeatLabel = repeatMode === 'one' ? '🔂' : repeatMode === 'all' ? '🔁' : '🔁'
@@ -79,14 +133,22 @@ export function MusicHero() {
         </p>
       </div>
 
-      {/* Lyrics */}
+      {/* Scrolling Lyrics */}
       {hasLyrics && showLyrics && (
-        <div className="hero-lyrics">
-          {lyrics!.split('\n').map((line, i) => (
-            <p key={i} className={line.trim() ? '' : 'lyrics-break'}>
-              {line.trim() || ' '}
-            </p>
-          ))}
+        <div className="hero-lyrics" ref={lyricsRef}>
+          {lrcLines!.map((line, i) => {
+            const isActive = i === activeIndex
+            return (
+              <p
+                key={i}
+                ref={isActive ? activeRef : null}
+                className={`lrc-line${isActive ? ' lrc-active' : ''}`}
+                onClick={() => handleLyricClick(line.time)}
+              >
+                {line.text}
+              </p>
+            )
+          })}
         </div>
       )}
 
