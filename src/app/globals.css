@@ -438,58 +438,6 @@ section + section::before {
   font-size: 2rem;
 }
 
-/* MV Inline */
-.mv-inline {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  overflow: hidden;
-  background: #000;
-}
-.mv-video-inline {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  border-radius: 12px;
-}
-.mv-inline-controls {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  right: 8px;
-  display: flex;
-  justify-content: space-between;
-  z-index: 2;
-}
-.mv-ctrl-btn {
-  min-width: 36px;
-  min-height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,.5);
-  color: #fff;
-  border: 1px solid rgba(255,255,255,.2);
-  border-radius: 50%;
-  font-size: .85rem;
-  cursor: pointer;
-  padding: 0 12px;
-  font-family: var(--font);
-  transition: all .2s;
-}
-.mv-ctrl-btn:hover { background: rgba(0,0,0,.7); border-color: rgba(255,255,255,.4); }
-.mv-quality-badge {
-  font-size: .72rem;
-  font-weight: 600;
-  letter-spacing: .5px;
-  border-radius: 99px;
-  min-width: auto;
-}
-
 /* Hero Info */
 .hero-info {
   text-align: center;
@@ -653,31 +601,6 @@ section + section::before {
   cursor: pointer;
 }
 
-/* MV Loading Spinner */
-.mv-loading {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  z-index: 2;
-  color: rgba(255,255,255,.8);
-  font-size: .85rem;
-}
-.mv-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid rgba(255,255,255,.2);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: mvSpinner .7s linear infinite;
-}
-@keyframes mvSpinner {
-  to { transform: rotate(360deg); }
-}
-
 /* ─── Track List Section ─── */
 .track-list-section {
   width: 100%;
@@ -813,18 +736,6 @@ section + section::before {
   height: 24px;
   background: var(--accent);
   border-radius: 0 3px 3px 0;
-}
-.track-mv-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 1px 6px;
-  background: linear-gradient(135deg, var(--accent), var(--warm));
-  color: #fff;
-  font-size: .6rem;
-  font-weight: 700;
-  border-radius: 99px;
-  letter-spacing: .5px;
-  flex-shrink: 0;
 }
 .track-eq {
   display: inline-flex;
@@ -991,8 +902,6 @@ section + section::before {
   .track-card .track-cover { width: 38px; height: 38px; }
 }
 
-/* ─── Fullscreen MV Overlay (non-songs pages) ─── */
-
 /* ─── Footer ─── */
 footer { text-align: center; padding: 28px 24px; font-size: .76rem; color: var(--text-dim); border-top: 1px solid var(--border); background: var(--bg-muted); }
 
@@ -1088,104 +997,3 @@ footer { text-align: center; padding: 28px 24px; font-size: .76rem; color: var(-
   .auth-box { padding: 28px; border-radius: var(--radius); }
 }
 
-/* ─── Fullscreen MV Overlay (non-songs pages) ─── */
-.mv-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 99;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: mvFadeIn .35s ease;
-}
-@keyframes mvFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-.mv-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,.88);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-}
-.mv-video {
-  position: relative;
-  z-index: 1;
-  max-width: min(90vw, 960px);
-  max-height: min(80vh, 540px);
-  width: auto;
-  height: auto;
-  border-radius: var(--radius);
-  box-shadow: 0 0 60px rgba(0,0,0,.5);
-  background: #000;
-}
-.mv-close-btn {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  z-index: 2;
-  min-width: 44px;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,.55);
-  color: #fff;
-  border: 1px solid rgba(255,255,255,.25);
-  border-radius: 50%;
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: all .2s ease;
-}
-.mv-close-btn:hover {
-  background: rgba(0,0,0,.75);
-  border-color: rgba(255,255,255,.5);
-}
-.mv-quality-btn {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  z-index: 2;
-  min-height: 44px;
-  padding: 6px 16px;
-  background: rgba(0,0,0,.55);
-  color: #fff;
-  border: 1px solid rgba(255,255,255,.25);
-  border-radius: 99px;
-  font-size: .76rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all .2s ease;
-  font-family: var(--font);
-}
-.mv-quality-btn:hover {
-  background: rgba(0,0,0,.75);
-  border-color: rgba(255,255,255,.5);
-}
-
-@media (max-width: 768px) {
-  .mv-video {
-    max-width: 96vw;
-    max-height: 50vh;
-    border-radius: var(--radius-sm);
-  }
-}
-
-/* ─── MV Binder Mobile Cards ─── */
-
-/* ─── MV Binder Mobile Cards ─── */
-@media (max-width: 768px) {
-  .mv-binder-table { display: none !important; }
-  .mv-binder-cards { display: flex !important; }
-}
-
-@media (min-width: 769px) {
-  .mv-binder-cards { display: none !important; }
-}
-
-.mv-binder-cards {
-  display: none;
-  flex-direction: column;
-  gap: 12px;
-}

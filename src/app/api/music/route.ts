@@ -5,7 +5,7 @@ export async function GET() {
   const supabase = await createClient()
   const { data } = await supabase
     .from('music')
-    .select('id,title,mv_urls')
+    .select('id,title')
     .order('created_at', { ascending: false })
 
   const sample = (data ?? []).slice(0, 3)

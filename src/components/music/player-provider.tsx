@@ -1,7 +1,6 @@
 'use client'
 
 import { createContext, useContext, useState, useRef, useEffect, useCallback, type ReactNode } from 'react'
-import type { MvUrls } from '@/lib/supabase/types'
 
 export interface PlayerTrack {
   id: string
@@ -11,7 +10,6 @@ export interface PlayerTrack {
   audio_url: string
   cover_url: string | null
   duration: string | null
-  mv_urls: MvUrls | null
 }
 
 export type RepeatMode = 'off' | 'one' | 'all'
@@ -20,8 +18,6 @@ interface PlayerState {
   currentTrack: PlayerTrack | null
   isPlaying: boolean
   playlist: PlayerTrack[]
-  isMvActive: boolean
-  mvQuality: 'low' | 'medium' | 'high' | 'auto'
   currentTime: number
   duration: number
   volume: number
@@ -36,19 +32,14 @@ interface PlayerState {
   seek: (time: number) => void
   setVolume: (v: number) => void
   setPlaylist: (tracks: PlayerTrack[]) => void
-  setMvQuality: (q: 'low' | 'medium' | 'high' | 'auto') => void
   toggleShuffle: () => void
   toggleRepeat: () => void
-  onMvEnd: () => void
-  onMvError: () => void
 }
 
 const PlayerContext = createContext<PlayerState>({
   currentTrack: null,
   isPlaying: false,
   playlist: [],
-  isMvActive: false,
-  mvQuality: 'auto',
   currentTime: 0,
   duration: 0,
   volume: 0.8,
@@ -63,11 +54,8 @@ const PlayerContext = createContext<PlayerState>({
   seek: () => {},
   setVolume: () => {},
   setPlaylist: () => {},
-  setMvQuality: () => {},
   toggleShuffle: () => {},
   toggleRepeat: () => {},
-  onMvEnd: () => {},
-  onMvError: () => {},
 })
 
 export function usePlayer() {
@@ -78,8 +66,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [currentTrack, setCurrentTrack] = useState<PlayerTrack | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [playlist, setPlaylist] = useState<PlayerTrack[]>([])
-  const [isMvActive, setIsMvActive] = useState(false)
-  const [mvQuality, setMvQuality] = useState<'low' | 'medium' | 'high' | 'auto'>('auto')
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [volume, setVolumeState] = useState(0.8)
@@ -165,8 +151,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     else if (!playlist.some((t) => t.id === track.id)) {
       setPlaylist([track])
     }
-    const hasMv = !!(track.mv_urls && (track.mv_urls.low || track.mv_urls.medium || track.mv_urls.high))
-    setIsMvActive(hasMv)
   }, [playlist])
 
   const pause = useCallback(() => setIsPlaying(false), [])
@@ -177,16 +161,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const idx = playlist.findIndex((t) => t.id === currentTrack.id)
     if (idx < 0) { setIsPlaying(false); return }
 
-    setIsMvActive(false)
-
     // Last track
     if (idx >= playlist.length - 1) {
       if (repeatMode === 'all') {
         const nextTrack = playlist[0]
         setCurrentTrack(nextTrack)
         setIsPlaying(true)
-        const hasMv = !!(nextTrack.mv_urls && (nextTrack.mv_urls.low || nextTrack.mv_urls.medium || nextTrack.mv_urls.high))
-        if (hasMv) setIsMvActive(true)
         return
       }
       setIsPlaying(false)
@@ -203,19 +183,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const nextTrack = playlist[nextIdx]
     setCurrentTrack(nextTrack)
     setIsPlaying(true)
-    const hasMv = !!(nextTrack.mv_urls && (nextTrack.mv_urls.low || nextTrack.mv_urls.medium || nextTrack.mv_urls.high))
-    if (hasMv) setIsMvActive(true)
   }, [currentTrack, playlist, isShuffled, repeatMode, getShuffledIndex])
   nextRef.current = next
 
   const prev = useCallback(() => {
     if (!currentTrack) return
     const audio = audioRef.current
-
-    // If MV active, close it first
-    if (isMvActive) {
-      setIsMvActive(false)
-    }
 
     // If more than 3s in, restart current track
     if (audio && audio.currentTime > 3) {
@@ -231,9 +204,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const prevTrack = playlist[idx - 1]
     setCurrentTrack(prevTrack)
     setIsPlaying(true)
-    const hasMv = !!(prevTrack.mv_urls && (prevTrack.mv_urls.low || prevTrack.mv_urls.medium || prevTrack.mv_urls.high))
-    if (hasMv) setIsMvActive(true)
-  }, [currentTrack, playlist, isMvActive])
+  }, [currentTrack, playlist])
 
   const seek = useCallback((time: number) => {
     const audio = audioRef.current
@@ -251,17 +222,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setRepeatMode((m) => m === 'off' ? 'all' : m === 'all' ? 'one' : 'off')
   }, [])
 
-  const onMvEnd = useCallback(() => setIsMvActive(false), [])
-  const onMvError = useCallback(() => setIsMvActive(false), [])
-
   return (
     <PlayerContext.Provider
       value={{
         currentTrack,
         isPlaying,
         playlist,
-        isMvActive,
-        mvQuality,
         currentTime,
         duration,
         volume,
@@ -276,11 +242,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         seek,
         setVolume,
         setPlaylist,
-        setMvQuality,
         toggleShuffle,
         toggleRepeat,
-        onMvEnd,
-        onMvError,
       }}
     >
       {children}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import type { Music, MvUrls } from '@/lib/supabase/types'
+import type { Music } from '@/lib/supabase/types'
 import { usePlayer, type PlayerTrack } from '@/components/music/player-provider'
 
 function toPlayerTrack(t: Music): PlayerTrack {
@@ -13,13 +13,7 @@ function toPlayerTrack(t: Music): PlayerTrack {
     audio_url: t.audio_url,
     cover_url: t.cover_url,
     duration: t.duration,
-    mv_urls: t.mv_urls as MvUrls | null,
   }
-}
-
-function hasMv(t: Music): boolean {
-  const mv = t.mv_urls as MvUrls | null
-  return !!(mv && (mv.low || mv.medium || mv.high))
 }
 
 export function TrackList({ tracks }: { tracks: Music[] }) {
@@ -91,7 +85,6 @@ export function TrackList({ tracks }: { tracks: Music[] }) {
               <div className="track-info">
                 <div className="track-title-row">
                   <span className="track-title">{track.title}</span>
-                  {hasMv(track) && <span className="track-mv-badge">MV</span>}
                   {isCurrent && isPlaying && (
                     <span className="track-eq">
                       <span />

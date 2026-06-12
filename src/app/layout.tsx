@@ -8,8 +8,6 @@ import { PlayerProvider } from '@/components/music/player-provider'
 import { ToastProvider } from '@/components/layout/toast-provider'
 import { MainContent } from '@/components/layout/main-content'
 import { FloatingPlayer } from '@/components/music/floating-player'
-import { MvOverlay } from '@/components/music/mv-overlay'
-
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
@@ -35,7 +33,6 @@ export default function RootLayout({
                 <Nav />
                 <MainContent>{children}</MainContent>
                 <FloatingPlayer />
-                <MvOverlay />
               </ToastProvider>
             </PlayerProvider>
           </AuthProvider>

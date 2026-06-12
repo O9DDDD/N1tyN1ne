@@ -26,7 +26,6 @@ export async function PATCH(
       audio_url: body.audio_url,
       cover_url: body.cover_url,
       lyrics: body.lyrics,
-      mv_urls: body.mv_urls,
     })
     .eq('id', id)
     .select()
