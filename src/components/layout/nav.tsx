@@ -23,7 +23,7 @@ export function Nav() {
         <div className="nav-right">
           <div className="links">
             <Link href="/">首页</Link>
-            <Link href="/songs">音乐</Link>
+            <Link href="/music">音乐</Link>
           </div>
 
           {loading ? (
