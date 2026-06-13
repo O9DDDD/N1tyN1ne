@@ -331,7 +331,7 @@ function AlbumDetailView({
         ← 返回专辑列表
       </button>
 
-      {/* Header: cover + artists */}
+      {/* Header: cover + info + description */}
       <div className="album-detail-header">
         <div className="album-detail-cover-wrap">
           {coverUrl ? (
@@ -340,60 +340,55 @@ function AlbumDetailView({
             <div className="album-detail-cover album-detail-cover-ph">💿</div>
           )}
         </div>
-        <div className="album-detail-artists">
-          {artists.length > 0 && artists.map((name) => (
-            <div key={name} className="album-detail-artist-chip">
-              {artistImgs[name] ? (
-                <img className="album-detail-artist-avatar" src={artistImgs[name]!} alt={name} />
-              ) : (
-                <div className="album-detail-artist-avatar album-detail-artist-ph">
-                  {name.charAt(0)}
-                </div>
+        <div className="album-detail-meta">
+          <h3 className="album-detail-album-name">{albumName}</h3>
+          {albumYear && <span className="album-detail-year">{albumYear}</span>}
+
+          <div className="album-detail-artists">
+            {artists.length > 0 && artists.map((name) => (
+              <div key={name} className="album-detail-artist-chip">
+                {artistImgs[name] ? (
+                  <img className="album-detail-artist-avatar" src={artistImgs[name]!} alt={name} />
+                ) : (
+                  <div className="album-detail-artist-avatar album-detail-artist-ph">
+                    {name.charAt(0)}
+                  </div>
+                )}
+                <span className="album-detail-artist-name">{name}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Description — inline, no box */}
+          {editingDesc ? (
+            <div className="album-desc-edit">
+              <textarea
+                className="album-desc-textarea"
+                value={descDraft}
+                onChange={(e) => setDescDraft(e.target.value)}
+                placeholder="输入专辑简介..."
+                rows={3}
+              />
+              <div className="album-desc-edit-actions">
+                <button onClick={saveDescription} disabled={savingDesc}>
+                  {savingDesc ? '保存中...' : '保存'}
+                </button>
+                <button onClick={() => setEditingDesc(false)}>取消</button>
+              </div>
+            </div>
+          ) : (
+            <div className="album-desc-inline">
+              {description ? (
+                <p className="album-desc-text">{description}</p>
+              ) : null}
+              {isAdmin && (
+                <button className="album-desc-edit-btn" onClick={startEdit}>
+                  {description ? '✎' : '+ 添加简介'}
+                </button>
               )}
-              <span className="album-detail-artist-name">{name}</span>
             </div>
-          ))}
+          )}
         </div>
-      </div>
-
-      {/* Info */}
-      <div className="album-detail-info">
-        <h3 className="album-detail-album-name">{albumName}</h3>
-        {albumYear && <span className="album-detail-year">{albumYear}</span>}
-      </div>
-
-      {/* Description */}
-      <div className="album-detail-desc">
-        {editingDesc ? (
-          <div className="album-desc-edit">
-            <textarea
-              className="album-desc-textarea"
-              value={descDraft}
-              onChange={(e) => setDescDraft(e.target.value)}
-              placeholder="输入专辑简介..."
-              rows={3}
-            />
-            <div className="album-desc-edit-actions">
-              <button onClick={saveDescription} disabled={savingDesc}>
-                {savingDesc ? '保存中...' : '保存'}
-              </button>
-              <button onClick={() => setEditingDesc(false)}>取消</button>
-            </div>
-          </div>
-        ) : (
-          <div className="album-desc-display">
-            {description ? (
-              <p className="album-desc-text">{description}</p>
-            ) : (
-              <p className="album-desc-empty">暂无简介</p>
-            )}
-            {isAdmin && (
-              <button className="album-desc-edit-btn" onClick={startEdit}>
-                ✎ 编辑
-              </button>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Track listing */}

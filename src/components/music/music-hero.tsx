@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { usePlayer } from '@/components/music/player-provider'
 import { parseLRC, getActiveIndex } from '@/lib/lrc'
 import { splitArtists, extractFeat } from '@/lib/artist'
@@ -32,23 +33,34 @@ export function MusicHero() {
     toggleRepeat,
   } = usePlayer()
 
+  const router = useRouter()
+  const [recovered, setRecovered] = useState(false)
+
   const lyricsRef = useRef<HTMLDivElement>(null)
   const activeRef = useRef<HTMLParagraphElement>(null)
 
   // sessionStorage recovery
   useEffect(() => {
     const trackJson = sessionStorage.getItem('pendingTrack')
-    if (!trackJson) return
+    if (!trackJson) { setRecovered(true); return }
     try {
       const track = JSON.parse(trackJson)
-      if (currentTrack?.id === track.id) return
+      if (currentTrack?.id === track.id) { setRecovered(true); return }
       const playlistJson = sessionStorage.getItem('pendingPlaylist')
       const playlist = playlistJson ? JSON.parse(playlistJson) : [track]
       sessionStorage.removeItem('pendingTrack')
       sessionStorage.removeItem('pendingPlaylist')
       play(track, playlist)
-    } catch { /* ignore */ }
+      setRecovered(true)
+    } catch { setRecovered(true) }
   }, [currentTrack?.id, play])
+
+  // Auto-redirect to /music if no track after recovery
+  useEffect(() => {
+    if (recovered && !currentTrack) {
+      router.replace('/music')
+    }
+  }, [recovered, currentTrack, router])
 
   const rawLyrics = currentTrack?.lyrics ?? null
 
@@ -118,8 +130,7 @@ export function MusicHero() {
   if (!currentTrack) {
     return (
       <div className="playback-page-empty">
-        <div style={{ fontSize: '3rem', color: 'var(--border)', marginBottom: 4 }}>♪</div>
-        <p>选择一首歌曲开始播放</p>
+        <p>加载中...</p>
       </div>
     )
   }

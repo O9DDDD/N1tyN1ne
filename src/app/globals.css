@@ -720,35 +720,29 @@ section + section::before {
   font-weight: 500;
 }
 
-/* Info row */
-.album-detail-info {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin-bottom: 16px;
+/* Right meta area */
+.album-detail-meta {
+  flex: 1;
+  min-width: 0;
 }
 .album-detail-album-name {
   font-size: 1.15rem;
   font-weight: 700;
   color: var(--text-bright);
-  margin: 0;
+  margin: 0 0 2px;
 }
 .album-detail-year {
   font-size: .78rem;
   color: var(--text-dim);
   opacity: .6;
 }
-
-/* Album Description */
-.album-detail-desc {
-  margin-bottom: 24px;
-  padding: 14px 16px;
-  background: var(--bg-muted);
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  position: relative;
+.album-detail-meta .album-detail-artists {
+  margin-top: 10px;
 }
-.album-desc-display {
+
+/* Album Description — inline text, no box */
+.album-desc-inline {
+  margin-top: 12px;
   display: flex;
   align-items: flex-start;
   gap: 8px;
@@ -759,14 +753,6 @@ section + section::before {
   line-height: 1.7;
   flex: 1;
   margin: 0;
-}
-.album-desc-empty {
-  font-size: .82rem;
-  color: var(--text-dim);
-  opacity: .5;
-  font-style: italic;
-  margin: 0;
-  flex: 1;
 }
 .album-desc-edit-btn {
   flex-shrink: 0;
@@ -779,6 +765,7 @@ section + section::before {
   border-radius: 99px;
   cursor: pointer;
   transition: all .2s;
+  white-space: nowrap;
 }
 .album-desc-edit-btn:hover {
   border-color: var(--accent);
@@ -1686,9 +1673,11 @@ section + section::before {
   .track-card .track-cover { width: 38px; height: 38px; }
 
   /* Detail views responsive */
-  .album-detail-header { flex-direction: column; align-items: center; text-align: center; }
+  .album-detail-header { flex-direction: column; align-items: center; }
+  .album-detail-meta { text-align: center; }
   .album-detail-cover-wrap { width: 180px; }
   .album-detail-artists { justify-content: center; }
+  .album-desc-inline { flex-direction: column; align-items: center; }
   .artist-detail-header { flex-direction: column; align-items: center; text-align: center; }
   .artist-detail-info { align-items: center; }
   .album-track-num { width: 22px; font-size: .76rem; }
