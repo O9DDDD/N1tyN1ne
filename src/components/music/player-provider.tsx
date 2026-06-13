@@ -196,6 +196,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [currentTrack?.id, playlist, isShuffled, repeatMode, getShuffledIndex])
 
   const play = useCallback((track: PlayerTrack, newPlaylist?: PlayerTrack[]) => {
+    nextTrackRef.current = null
     setCurrentTrack(track)
     setIsPlaying(true)
     if (newPlaylist) setPlaylist(newPlaylist)
@@ -212,8 +213,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
     // Use pre-computed next track from preload effect when available
     const preloaded = nextTrackRef.current
-    if (preloaded) {
-      nextTrackRef.current = null
+    nextTrackRef.current = null
+    if (preloaded && preloaded.id !== currentTrack.id) {
       setCurrentTrack(preloaded)
       setIsPlaying(true)
       return
