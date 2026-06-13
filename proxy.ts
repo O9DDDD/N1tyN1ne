@@ -7,7 +7,7 @@ function isAdminPath(pathname: string): boolean {
   return ADMIN_PATTERNS.some((p) => pathname.startsWith(p))
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { supabase, supabaseResponse } = createClient(request)
 
   const {
