@@ -562,7 +562,7 @@ section + section::before {
   max-width: 520px;
   align-self: stretch;
   padding-top: 8px;
-  overflow: hidden;
+  overflow: clip;
 }
 
 .songs-info {
