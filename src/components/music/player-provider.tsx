@@ -78,6 +78,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [isShuffled, setIsShuffled] = useState(false)
   const [repeatMode, setRepeatMode] = useState<RepeatMode>('off')
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const preloadRef = useRef<HTMLAudioElement | null>(null)
+  const nextTrackRef = useRef<PlayerTrack | null>(null)
   const nextRef = useRef<() => void>(() => {})
   const isPlayingRef = useRef(false)
   const lastTimeRef = useRef(0)
@@ -163,6 +165,36 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     return idx
   }, [])
 
+  // Preload next track in background
+  useEffect(() => {
+    if (!currentTrack || playlist.length <= 1) return
+    const idx = playlist.findIndex((t) => t.id === currentTrack.id)
+    if (idx < 0) { nextTrackRef.current = null; return }
+
+    let nextIdx: number
+    if (isShuffled) {
+      nextIdx = getShuffledIndex(idx, playlist.length)
+    } else {
+      nextIdx = idx + 1
+      if (nextIdx >= playlist.length) {
+        nextTrackRef.current = repeatMode === 'all' ? playlist[0] : null
+        if (!nextTrackRef.current) return
+        if (!preloadRef.current) preloadRef.current = new Audio()
+        preloadRef.current.src = playlist[0].audio_url
+        preloadRef.current.load()
+        return
+      }
+    }
+
+    const nextTrack = playlist[nextIdx]
+    nextTrackRef.current = nextTrack
+    if (!nextTrack) return
+
+    if (!preloadRef.current) preloadRef.current = new Audio()
+    preloadRef.current.src = nextTrack.audio_url
+    preloadRef.current.load()
+  }, [currentTrack?.id, playlist, isShuffled, repeatMode, getShuffledIndex])
+
   const play = useCallback((track: PlayerTrack, newPlaylist?: PlayerTrack[]) => {
     setCurrentTrack(track)
     setIsPlaying(true)
@@ -177,14 +209,23 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const next = useCallback(() => {
     if (!currentTrack) return
+
+    // Use pre-computed next track from preload effect when available
+    const preloaded = nextTrackRef.current
+    if (preloaded) {
+      nextTrackRef.current = null
+      setCurrentTrack(preloaded)
+      setIsPlaying(true)
+      return
+    }
+
+    // Fallback: compute on the fly
     const idx = playlist.findIndex((t) => t.id === currentTrack.id)
     if (idx < 0) { setIsPlaying(false); return }
 
-    // Last track
     if (idx >= playlist.length - 1) {
       if (repeatMode === 'all') {
-        const nextTrack = playlist[0]
-        setCurrentTrack(nextTrack)
+        setCurrentTrack(playlist[0])
         setIsPlaying(true)
         return
       }
@@ -198,9 +239,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     } else {
       nextIdx = idx + 1
     }
-
-    const nextTrack = playlist[nextIdx]
-    setCurrentTrack(nextTrack)
+    setCurrentTrack(playlist[nextIdx])
     setIsPlaying(true)
   }, [currentTrack, playlist, isShuffled, repeatMode, getShuffledIndex])
   nextRef.current = next
