@@ -1,17 +1,32 @@
 /* eslint-disable no-restricted-imports */
 import { NextRequest, NextResponse } from 'next/server'
 import { guardAdmin } from '@/lib/auth/api-guard'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 
 const MAX_SIZE: Record<string, number> = {
   music: 50 * 1024 * 1024, // 50MB
-  covers: 5 * 1024 * 1024, // 5MB
+  covers: 5 * 1024 * 1024,  // 5MB
 }
 
 const ALLOWED_TYPES: Record<string, string[]> = {
   music: ['audio/mpeg', 'audio/flac', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/aac'],
   covers: ['image/jpeg', 'image/png', 'image/webp', 'image/avif'],
 }
+
+const S3_ENDPOINT = process.env.RAINYUN_S3_ENDPOINT!
+const S3_BUCKET = process.env.RAINYUN_S3_BUCKET!
+const S3_ACCESS_KEY = process.env.RAINYUN_S3_ACCESS_KEY!
+const S3_SECRET_KEY = process.env.RAINYUN_S3_SECRET_KEY!
+
+const s3 = new S3Client({
+  region: 'cn-sy1',
+  endpoint: S3_ENDPOINT,
+  credentials: {
+    accessKeyId: S3_ACCESS_KEY,
+    secretAccessKey: S3_SECRET_KEY,
+  },
+  forcePathStyle: true,
+})
 
 export async function POST(request: NextRequest) {
   const user = await guardAdmin()
@@ -23,12 +38,10 @@ export async function POST(request: NextRequest) {
 
   if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
 
-  // 校验 bucket
   if (!Object.keys(MAX_SIZE).includes(bucket)) {
     return NextResponse.json({ error: 'Invalid bucket' }, { status: 400 })
   }
 
-  // 校验大小
   if (file.size > MAX_SIZE[bucket]) {
     return NextResponse.json(
       { error: `File too large, max ${MAX_SIZE[bucket] / 1024 / 1024}MB` },
@@ -36,25 +49,31 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // 校验类型
   if (!ALLOWED_TYPES[bucket].includes(file.type)) {
     return NextResponse.json({ error: 'Invalid file type' }, { status: 400 })
   }
 
-  // 安全文件名
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-  const path = `${Date.now()}_${safeName}`
+  const key = `${bucket}/${Date.now()}_${safeName}`
 
-  const adminDb = createAdminClient()
-  const { data, error } = await adminDb.storage
-    .from(bucket)
-    .upload(path, file, { upsert: false })
+  const buffer = Buffer.from(await file.arrayBuffer())
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  const command = new PutObjectCommand({
+    Bucket: S3_BUCKET,
+    Key: key,
+    Body: buffer,
+    ContentType: file.type,
+    ContentLength: buffer.length,
+  })
 
-  const {
-    data: { publicUrl },
-  } = adminDb.storage.from(bucket).getPublicUrl(data.path)
+  try {
+    await s3.send(command)
+  } catch (err: any) {
+    console.error('S3 upload error:', err)
+    return NextResponse.json({ error: err.message || 'Upload failed' }, { status: 500 })
+  }
 
-  return NextResponse.json({ url: publicUrl, path: data.path })
+  const publicUrl = `${S3_ENDPOINT}/${S3_BUCKET}/${key}`
+
+  return NextResponse.json({ url: publicUrl, path: key })
 }
