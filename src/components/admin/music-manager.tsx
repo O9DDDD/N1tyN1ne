@@ -27,6 +27,7 @@ export function MusicManager({ tracks: initialTracks }: { tracks: Music[] }) {
 
       const xhr = new XMLHttpRequest()
       xhr.open('POST', '/api/admin/upload')
+      xhr.withCredentials = true
 
       xhr.upload.addEventListener('progress', (e) => {
         if (e.lengthComputable) {
