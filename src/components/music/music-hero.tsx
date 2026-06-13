@@ -87,8 +87,6 @@ export function MusicHero() {
     seek(time)
   }, [seek])
 
-  const repeatLabel = repeatMode === 'one' ? '🔂' : repeatMode === 'all' ? '🔁' : '🔁'
-
   // artists
   const artists = useMemo(() => splitArtists(currentTrack?.artist ?? null), [currentTrack?.artist])
   const displayArtist = artists.length > 0 ? artists.join(' · ') : (currentTrack?.artist ?? '未知艺术家')
