@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useMemo, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import type { Music } from '@/lib/supabase/types'
 import { usePlayer, type PlayerTrack } from '@/components/music/player-provider'
 
@@ -23,15 +23,19 @@ function toPlayerTrack(t: Music): PlayerTrack {
   }
 }
 
-function TrackListInner({ tracks }: { tracks: Music[] }) {
+export function TrackList({
+  tracks,
+  filterAlbum,
+  filterArtist,
+}: {
+  tracks: Music[]
+  filterAlbum: string | null
+  filterArtist: string | null
+}) {
   const { currentTrack, isPlaying, play } = usePlayer()
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [search, setSearch] = useState('')
   const [genre, setGenre] = useState<string | null>(null)
-
-  const urlAlbum = searchParams.get('album')
-  const urlArtist = searchParams.get('artist')
 
   const genres = useMemo(() => {
     const set = new Set<string>()
@@ -44,19 +48,19 @@ function TrackListInner({ tracks }: { tracks: Music[] }) {
   const filtered = useMemo(() => {
     let result = tracks.filter(() => true)
 
-    // URL param: album filter
-    if (urlAlbum) {
-      const albumTarget = urlAlbum === '未知专辑' ? null : urlAlbum
+    // Album filter (from URL/props)
+    if (filterAlbum) {
+      const albumTarget = filterAlbum === '未知专辑' ? null : filterAlbum
       result = result.filter((t) => {
         if (albumTarget === null) return !t.album
         return t.album === albumTarget
       })
     }
 
-    // URL param: artist filter
-    if (urlArtist) {
+    // Artist filter (from URL/props)
+    if (filterArtist) {
       result = result.filter((t) =>
-        t.artist ? t.artist.toLowerCase().includes(urlArtist.toLowerCase()) : false
+        t.artist ? t.artist.toLowerCase().includes(filterArtist.toLowerCase()) : false
       )
     }
 
@@ -72,20 +76,20 @@ function TrackListInner({ tracks }: { tracks: Music[] }) {
     }
 
     // Sort
-    if (urlAlbum) {
+    if (filterAlbum) {
       result = [...result].sort((a, b) => {
         const an = a.track_number ?? Number.MAX_SAFE_INTEGER
         const bn = b.track_number ?? Number.MAX_SAFE_INTEGER
         return an - bn
       })
-    } else if (urlArtist) {
+    } else if (filterArtist) {
       result = [...result].sort((a, b) =>
         a.title.localeCompare(b.title, 'zh')
       )
     }
 
     return result
-  }, [tracks, urlAlbum, urlArtist, search, genre])
+  }, [tracks, filterAlbum, filterArtist, search, genre])
 
   function handlePlay(track: Music) {
     const mapped = toPlayerTrack(track)
@@ -135,22 +139,22 @@ function TrackListInner({ tracks }: { tracks: Music[] }) {
       </div>
 
       {/* Active URL filter chips */}
-      {(urlAlbum || urlArtist) && (
+      {(filterAlbum || filterArtist) && (
         <div className="url-filter-bar">
-          {urlAlbum && (
+          {filterAlbum && (
             <button
               className="url-filter-chip"
               onClick={() => router.push('/music')}
             >
-              专辑: {urlAlbum} ✕
+              专辑: {filterAlbum} ✕
             </button>
           )}
-          {urlArtist && (
+          {filterArtist && (
             <button
               className="url-filter-chip"
               onClick={() => router.push('/music')}
             >
-              艺术家: {urlArtist} ✕
+              艺术家: {filterArtist} ✕
             </button>
           )}
         </div>
@@ -213,10 +217,10 @@ function TrackListInner({ tracks }: { tracks: Music[] }) {
 
         {filtered.length === 0 && (
           <div className="track-empty">
-            {urlAlbum
-              ? `专辑 "${urlAlbum}" 中没有歌曲`
-              : urlArtist
-                ? `未找到艺术家 "${urlArtist}" 的歌曲`
+            {filterAlbum
+              ? `专辑 "${filterAlbum}" 中没有歌曲`
+              : filterArtist
+                ? `未找到艺术家 "${filterArtist}" 的歌曲`
                 : search || genre
                   ? '没有匹配的歌曲'
                   : '暂无音乐'}
@@ -224,13 +228,5 @@ function TrackListInner({ tracks }: { tracks: Music[] }) {
         )}
       </div>
     </div>
-  )
-}
-
-export function TrackList({ tracks }: { tracks: Music[] }) {
-  return (
-    <Suspense fallback={null}>
-      <TrackListInner tracks={tracks} />
-    </Suspense>
   )
 }

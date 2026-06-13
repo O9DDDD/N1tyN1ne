@@ -179,7 +179,15 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'albums', label: '专辑' },
 ]
 
-export function MusicTabs({ tracks }: { tracks: Music[] }) {
+export function MusicTabs({
+  tracks,
+  filterAlbum,
+  filterArtist,
+}: {
+  tracks: Music[]
+  filterAlbum: string | null
+  filterArtist: string | null
+}) {
   const [tab, setTab] = useState<Tab>('tracks')
 
   return (
@@ -196,7 +204,13 @@ export function MusicTabs({ tracks }: { tracks: Music[] }) {
         ))}
       </div>
       <div className="music-tab-content">
-        {tab === 'tracks' && <TrackList tracks={tracks} />}
+        {tab === 'tracks' && (
+          <TrackList
+            tracks={tracks}
+            filterAlbum={filterAlbum}
+            filterArtist={filterArtist}
+          />
+        )}
         {tab === 'artists' && <ArtistGrid tracks={tracks} />}
         {tab === 'albums' && <AlbumGrid tracks={tracks} />}
       </div>
