@@ -8,7 +8,7 @@ export default function SongsError({
   reset: () => void
 }) {
   return (
-    <div className="music-page music-page-fullscreen" style={{ padding: 40, textAlign: 'center' }}>
+    <div className="music-page" style={{ paddingTop: 80, textAlign: 'center' }}>
       <h2 style={{ color: 'var(--text-bright)' }}>播放页面加载失败</h2>
       <pre style={{
         color: 'var(--text-dim)',
