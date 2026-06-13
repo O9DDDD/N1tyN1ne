@@ -4,13 +4,31 @@ import { guardAdmin } from '@/lib/auth/api-guard'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 
 const MAX_SIZE: Record<string, number> = {
-  music: 50 * 1024 * 1024, // 50MB
-  covers: 5 * 1024 * 1024,  // 5MB
+  music: 50 * 1024 * 1024,
+  covers: 5 * 1024 * 1024,
 }
 
-const ALLOWED_TYPES: Record<string, string[]> = {
-  music: ['audio/mpeg', 'audio/flac', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/aac'],
-  covers: ['image/jpeg', 'image/png', 'image/webp', 'image/avif'],
+// 宽松的 MIME + 扩展名双重校验
+const ALLOWED_EXTS: Record<string, string[]> = {
+  music: ['.mp3', '.flac', '.wav', '.ogg', '.m4a', '.aac', '.wma', '.opus'],
+  covers: ['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif', '.bmp', '.svg'],
+}
+
+function getExt(filename: string): string {
+  const i = filename.lastIndexOf('.')
+  return i >= 0 ? filename.slice(i).toLowerCase() : ''
+}
+
+function detectBucket(filename: string, mimeType: string): string | null {
+  // 优先用扩展名判断
+  const ext = getExt(filename)
+  for (const [bucket, exts] of Object.entries(ALLOWED_EXTS)) {
+    if (exts.includes(ext)) return bucket
+  }
+  // 回退到 MIME 类型判断
+  if (mimeType.startsWith('audio/') || mimeType.startsWith('video/')) return 'music'
+  if (mimeType.startsWith('image/')) return 'covers'
+  return null
 }
 
 const S3_ENDPOINT = process.env.RAINYUN_S3_ENDPOINT!
@@ -34,27 +52,29 @@ export async function POST(request: NextRequest) {
 
   const formData = await request.formData()
   const file = formData.get('file') as File | null
-  const bucket = (formData.get('bucket') as string) || 'music'
+  const clientBucket = (formData.get('bucket') as string) || undefined
 
   if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
 
-  if (!Object.keys(MAX_SIZE).includes(bucket)) {
-    return NextResponse.json({ error: 'Invalid bucket' }, { status: 400 })
+  // 用扩展名 + MIME 综合判断文件类型
+  const detectedBucket = clientBucket && Object.keys(MAX_SIZE).includes(clientBucket)
+    ? clientBucket
+    : detectBucket(file.name, file.type)
+
+  if (!detectedBucket) {
+    return NextResponse.json({
+      error: `无法识别文件类型: ${file.name} (${file.type || '未知类型'})`,
+    }, { status: 400 })
   }
 
-  if (file.size > MAX_SIZE[bucket]) {
-    return NextResponse.json(
-      { error: `File too large, max ${MAX_SIZE[bucket] / 1024 / 1024}MB` },
-      { status: 400 }
-    )
-  }
-
-  if (!ALLOWED_TYPES[bucket].includes(file.type)) {
-    return NextResponse.json({ error: 'Invalid file type' }, { status: 400 })
+  if (file.size > MAX_SIZE[detectedBucket]) {
+    return NextResponse.json({
+      error: `文件过大，最大 ${MAX_SIZE[detectedBucket] / 1024 / 1024}MB`,
+    }, { status: 400 })
   }
 
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-  const key = `${bucket}/${Date.now()}_${safeName}`
+  const key = `${detectedBucket}/${Date.now()}_${safeName}`
 
   const buffer = Buffer.from(await file.arrayBuffer())
 
@@ -62,7 +82,7 @@ export async function POST(request: NextRequest) {
     Bucket: S3_BUCKET,
     Key: key,
     Body: buffer,
-    ContentType: file.type,
+    ContentType: file.type || 'application/octet-stream',
     ContentLength: buffer.length,
   })
 
@@ -70,7 +90,7 @@ export async function POST(request: NextRequest) {
     await s3.send(command)
   } catch (err: any) {
     console.error('S3 upload error:', err)
-    return NextResponse.json({ error: err.message || 'Upload failed' }, { status: 500 })
+    return NextResponse.json({ error: `S3 上传失败: ${err.message || err}` }, { status: 500 })
   }
 
   const publicUrl = `${S3_ENDPOINT}/${S3_BUCKET}/${key}`
