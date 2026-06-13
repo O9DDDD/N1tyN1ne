@@ -232,20 +232,22 @@ export function MusicHero() {
 
           {/* Lyrics */}
           {hasLyrics ? (
-            <div className="songs-lyrics" ref={lyricsRef}>
-              {lrcLines!.map((line, i) => {
-                const isActive = i === activeIndex
-                return (
-                  <p
-                    key={i}
-                    ref={isActive ? activeRef : null}
-                    className={`songs-lyric-line${isActive ? ' songs-lyric-active' : ''}`}
-                    onClick={() => handleLyricClick(line.time)}
-                  >
-                    {line.text}
-                  </p>
-                )
-              })}
+            <div className="songs-lyrics-wrap">
+              <div className="songs-lyrics" ref={lyricsRef}>
+                {lrcLines!.map((line, i) => {
+                  const isActive = i === activeIndex
+                  return (
+                    <p
+                      key={i}
+                      ref={isActive ? activeRef : null}
+                      className={`songs-lyric-line${isActive ? ' songs-lyric-active' : ''}`}
+                      onClick={() => handleLyricClick(line.time)}
+                    >
+                      {line.text}
+                    </p>
+                  )
+                })}
+              </div>
             </div>
           ) : (
             <div className="songs-no-lyrics">暂无歌词</div>
