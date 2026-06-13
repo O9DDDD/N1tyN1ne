@@ -1688,6 +1688,43 @@ section + section::before {
 footer { text-align: center; padding: 28px 24px; font-size: .76rem; color: var(--text-dim); border-top: 1px solid var(--border); background: var(--bg-muted); }
 
 /* ─── Admin ─── */
+
+/* Upload progress */
+.upload-progress-wrap {
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.upload-progress-label {
+  font-size: .76rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+.upload-progress-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 99px;
+  background: var(--bg-muted);
+  overflow: hidden;
+}
+.upload-progress-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--accent), var(--warm));
+  transition: width .3s ease;
+}
+.upload-progress-pct {
+  font-size: .74rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  min-width: 36px;
+  text-align: right;
+}
+
 .admin-layout { display: grid; grid-template-columns: 210px 1fr; min-height: calc(100vh - var(--nav-h)); margin-top: var(--nav-h); }
 .admin-sidebar { background: var(--bg-card); border-right: 1px solid var(--border); padding: 20px 0; }
 .admin-sidebar a { display: flex; align-items: center; gap: 10px; padding: 11px 24px; color: var(--text-dim); font-size: .85rem; font-weight: 500; transition: var(--transition); border-left: 3px solid transparent; text-decoration: none; }
