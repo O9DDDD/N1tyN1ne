@@ -4,7 +4,6 @@ import './globals.css'
 import { AuthProvider } from '@/components/auth/auth-provider'
 import { Nav } from '@/components/layout/nav'
 import { NavProgress } from '@/components/layout/nav-progress'
-import { ThemeProvider } from '@/components/layout/theme-provider'
 import { PlayerProvider } from '@/components/music/player-provider'
 import { ToastProvider } from '@/components/layout/toast-provider'
 import { MainContent } from '@/components/layout/main-content'
@@ -25,24 +24,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN" className={`${geistSans.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="zh-CN" className={`${geistSans.variable} h-full antialiased`} data-theme="dark">
       <head>
         <link rel="preconnect" href="https://fjybxoqfatxtgydltvuw.supabase.co" />
         <link rel="preconnect" href="https://cn-sy1.rains3.com" />
       </head>
       <body className="min-h-full flex flex-col" style={{ fontFamily: 'var(--font)' }}>
-        <ThemeProvider>
-          <AuthProvider>
-            <PlayerProvider>
-              <ToastProvider>
-                <NavProgress />
-                <Nav />
-                <MainContent>{children}</MainContent>
-                <FloatingPlayer />
-              </ToastProvider>
-            </PlayerProvider>
-          </AuthProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          <PlayerProvider>
+            <ToastProvider>
+              <NavProgress />
+              <Nav />
+              <MainContent>{children}</MainContent>
+              <FloatingPlayer />
+            </ToastProvider>
+          </PlayerProvider>
+        </AuthProvider>
       </body>
     </html>
   )
