@@ -32,7 +32,6 @@ export function MusicHero() {
     toggleRepeat,
   } = usePlayer()
 
-  const [showLyrics, setShowLyrics] = useState(false)
   const lyricsRef = useRef<HTMLDivElement>(null)
   const activeRef = useRef<HTMLParagraphElement>(null)
 
@@ -67,10 +66,10 @@ export function MusicHero() {
   }, [lrcLines, currentTime])
 
   useEffect(() => {
-    if (activeRef.current && showLyrics) {
+    if (activeRef.current) {
       activeRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
-  }, [activeIndex, showLyrics])
+  }, [activeIndex])
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
 
@@ -118,159 +117,161 @@ export function MusicHero() {
 
   if (!currentTrack) {
     return (
-      <div className="music-hero music-hero-empty">
-        <div className="hero-empty-icon">♪</div>
+      <div className="playback-page-empty">
+        <div style={{ fontSize: '3rem', color: 'var(--border)', marginBottom: 4 }}>♪</div>
         <p>选择一首歌曲开始播放</p>
       </div>
     )
   }
 
   return (
-    <div className="music-hero">
-      {/* Visual: Vinyl */}
-      <div className="hero-visual">
-        <div className={`vinyl-wrap${isPlaying ? ' spinning' : ''}`}>
-          <div className="vinyl-disc" />
-          {currentTrack.cover_url ? (
-            <img
-              className="vinyl-cover"
-              src={currentTrack.cover_url}
-              alt={currentTrack.title}
-            />
-          ) : (
-            <div className="vinyl-cover vinyl-cover-placeholder">♪</div>
-          )}
-        </div>
+    <div className="playback-page">
+      {/* Blurred background */}
+      <div className="playback-bg">
+        {currentTrack.cover_url ? (
+          <img src={currentTrack.cover_url} alt="" aria-hidden="true" />
+        ) : (
+          <div className="playback-bg-fallback" />
+        )}
+        <div className="playback-bg-overlay" />
       </div>
 
-      {/* Track Info */}
-      <div className="hero-info">
-        <h2 className="hero-title">{currentTrack.title}</h2>
-        {/* Artist Avatars */}
-        {artists.length > 0 && Object.values(artistImgs).some(Boolean) && (
-          <div className="hero-artist-imgs">
-            {artists.map((name) => {
-              const url = artistImgs[name]
-              return url ? (
-                <img key={name} className="hero-artist-avatar" src={url} alt={name} />
-              ) : null
-            })}
+      {/* Content */}
+      <div className="playback-content">
+        <div className="playback-columns">
+          {/* LEFT: Cover + Vinyl */}
+          <div className="playback-cover-col">
+            <div className="playback-cover-wrap">
+              <div className={`playback-vinyl${isPlaying ? ' spinning' : ''}`} />
+              {currentTrack.cover_url ? (
+                <img
+                  className="playback-cover"
+                  src={currentTrack.cover_url}
+                  alt={currentTrack.title}
+                />
+              ) : (
+                <div className="playback-cover-placeholder">♪</div>
+              )}
+            </div>
           </div>
-        )}
-        <p className="hero-artist">{displayArtist}</p>
-        {featArtist && (
-          <p className="hero-feat">ft. {featArtist}</p>
-        )}
-        {currentTrack.genre && (
-          <span className="hero-genre-tag">{currentTrack.genre}</span>
-        )}
-      </div>
 
-      {/* Album Info */}
-      {albumName && (
-        <div className="hero-album">
-          <span className="hero-album-icon">💿</span>
-          <span className="hero-album-name">{albumName}</span>
-          {albumYear && <span className="hero-album-year">{albumYear}</span>}
-        </div>
-      )}
+          {/* RIGHT: Info + Lyrics */}
+          <div className="playback-lyrics-col">
+            <div className="playback-info">
+              {/* Artist avatars */}
+              {artists.length > 0 && Object.values(artistImgs).some(Boolean) && (
+                <div className="playback-artist-imgs">
+                  {artists.map((name) => {
+                    const url = artistImgs[name]
+                    return url ? (
+                      <img key={name} className="playback-artist-avatar" src={url} alt={name} />
+                    ) : null
+                  })}
+                </div>
+              )}
+              <p className="playback-artist">{displayArtist}</p>
+              <h2 className="playback-title">{currentTrack.title}</h2>
+              {featArtist && (
+                <p className="playback-feat">ft. {featArtist}</p>
+              )}
+              {albumName && (
+                <p className="playback-album">
+                  💿 {albumName}{albumYear ? ` · ${albumYear}` : ''}
+                </p>
+              )}
+              {currentTrack.genre && (
+                <span className="playback-genre-tag">{currentTrack.genre}</span>
+              )}
+            </div>
 
-      {/* Scrolling Lyrics */}
-      {hasLyrics && showLyrics && (
-        <div className="hero-lyrics" ref={lyricsRef}>
-          {lrcLines!.map((line, i) => {
-            const isActive = i === activeIndex
-            return (
-              <p
-                key={i}
-                ref={isActive ? activeRef : null}
-                className={`lrc-line${isActive ? ' lrc-active' : ''}`}
-                onClick={() => handleLyricClick(line.time)}
-              >
-                {line.text}
-              </p>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Progress Bar */}
-      <div className="hero-progress">
-        <span className="hero-time">{formatTime(currentTime)}</span>
-        <input
-          type="range"
-          className="hero-progress-bar"
-          min={0}
-          max={duration || 0}
-          step={0.1}
-          value={currentTime}
-          onChange={handleProgressChange}
-          style={{ '--progress': `${progress}%` } as React.CSSProperties}
-        />
-        <span className="hero-time">{formatTime(duration)}</span>
-      </div>
-
-      {/* Controls */}
-      <div className="hero-controls">
-        <div className="hero-ctrl-main">
-          <button className="hero-btn" onClick={prev} title="上一首" aria-label="上一首">
-            ⏮
-          </button>
-          <button
-            className="hero-btn hero-btn-play"
-            onClick={() => (isPlaying ? pause() : resume())}
-            title={isPlaying ? '暂停' : '播放'}
-            aria-label={isPlaying ? '暂停' : '播放'}
-          >
-            {isPlaying ? '⏸' : '▶'}
-          </button>
-          <button className="hero-btn" onClick={next} title="下一首" aria-label="下一首">
-            ⏭
-          </button>
+            {/* Lyrics */}
+            {hasLyrics ? (
+              <div className="playback-lyrics" ref={lyricsRef}>
+                {lrcLines!.map((line, i) => {
+                  const isActive = i === activeIndex
+                  return (
+                    <p
+                      key={i}
+                      ref={isActive ? activeRef : null}
+                      className={`lrc-line${isActive ? ' lrc-active' : ''}`}
+                      onClick={() => handleLyricClick(line.time)}
+                    >
+                      {line.text}
+                    </p>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="playback-no-lyrics">暂无歌词</div>
+            )}
+          </div>
         </div>
 
-        <div className="hero-ctrl-extra">
-          {/* Shuffle */}
-          <button
-            className={`hero-btn-sm${isShuffled ? ' active' : ''}`}
-            onClick={toggleShuffle}
-            title={isShuffled ? '关闭随机' : '随机播放'}
-          >
-            🔀
-          </button>
-
-          {/* Repeat */}
-          <button
-            className={`hero-btn-sm${repeatMode !== 'off' ? ' active' : ''}`}
-            onClick={toggleRepeat}
-            title={repeatMode === 'off' ? '列表循环' : repeatMode === 'all' ? '单曲循环' : '关闭循环'}
-          >
-            {repeatLabel}
-          </button>
-
-          {/* Lyrics toggle */}
-          {hasLyrics && (
-            <button
-              className={`hero-btn-sm${showLyrics ? ' active' : ''}`}
-              onClick={() => setShowLyrics((v) => !v)}
-              title={showLyrics ? '隐藏歌词' : '显示歌词'}
-            >
-              词
-            </button>
-          )}
-
-          {/* Volume */}
-          <div className="hero-volume">
-            <span className="hero-volume-icon">🔊</span>
+        {/* Bottom: Progress + Controls */}
+        <div className="playback-bottom">
+          <div className="hero-progress">
+            <span className="hero-time">{formatTime(currentTime)}</span>
             <input
               type="range"
-              className="hero-volume-slider"
+              className="hero-progress-bar"
               min={0}
-              max={1}
-              step={0.05}
-              value={volume}
-              onChange={(e) => setVolume(parseFloat(e.target.value))}
+              max={duration || 0}
+              step={0.1}
+              value={currentTime}
+              onChange={handleProgressChange}
+              style={{ '--progress': `${progress}%` } as React.CSSProperties}
             />
+            <span className="hero-time">{formatTime(duration)}</span>
+          </div>
+
+          <div className="hero-controls">
+            <div className="hero-ctrl-main">
+              <button className="hero-btn" onClick={prev} title="上一首" aria-label="上一首">
+                ⏮
+              </button>
+              <button
+                className="hero-btn hero-btn-play"
+                onClick={() => (isPlaying ? pause() : resume())}
+                title={isPlaying ? '暂停' : '播放'}
+                aria-label={isPlaying ? '暂停' : '播放'}
+              >
+                {isPlaying ? '⏸' : '▶'}
+              </button>
+              <button className="hero-btn" onClick={next} title="下一首" aria-label="下一首">
+                ⏭
+              </button>
+            </div>
+
+            <div className="hero-ctrl-extra">
+              <button
+                className={`hero-btn-sm${isShuffled ? ' active' : ''}`}
+                onClick={toggleShuffle}
+                title={isShuffled ? '关闭随机' : '随机播放'}
+              >
+                🔀
+              </button>
+
+              <button
+                className={`hero-btn-sm${repeatMode !== 'off' ? ' active' : ''}`}
+                onClick={toggleRepeat}
+                title={repeatMode === 'off' ? '列表循环' : repeatMode === 'all' ? '单曲循环' : '关闭循环'}
+              >
+                {repeatLabel}
+              </button>
+
+              <div className="hero-volume">
+                <span className="hero-volume-icon">🔊</span>
+                <input
+                  type="range"
+                  className="hero-volume-slider"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={volume}
+                  onChange={(e) => setVolume(parseFloat(e.target.value))}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
