@@ -5,21 +5,21 @@ export interface LyricLine {
 
 /**
  * Parse LRC lyrics string into timed lines.
- * Handles standard [mm:ss.xx], [mm:ss.xxx], and multi-tag lines.
+ * Handles [mm:ss.xx], [mm:ss.xxx], [mm:ss], and multi-tag lines.
  */
 export function parseLRC(lrc: string): LyricLine[] {
   const lines: LyricLine[] = []
   if (!lrc) return lines
 
-  // Match all time tags in a line: [mm:ss.xx] or [mm:ss.xxx]
-  const timeRe = /\[(\d{1,3}):(\d{1,2})\.(\d{2,3})\]/g
+  // Match time tags: [mm:ss.xx], [mm:ss.xxx], or [mm:ss] (no ms)
+  const timeRe = /\[(\d{1,3}):(\d{1,2})(?:\.(\d{2,3}))?\]/g
 
   for (const raw of lrc.split('\n')) {
     const trimmed = raw.trim()
     if (!trimmed) continue
 
     // Skip metadata tags: [ti:...], [ar:...], [al:...], [by:...], [offset:...], [length:...]
-    if (/^\[\w+:/.test(trimmed)) continue
+    if (/^\[\D+:/.test(trimmed)) continue
 
     // Collect all time stamps on this line
     const times: number[] = []
@@ -28,7 +28,10 @@ export function parseLRC(lrc: string): LyricLine[] {
     while ((m = timeRe.exec(trimmed)) !== null) {
       const min = parseInt(m[1], 10)
       const sec = parseInt(m[2], 10)
-      const ms = parseInt(m[3].length === 2 ? m[3] + '0' : m[3], 10)
+      const msStr = m[3]
+      const ms = msStr
+        ? parseInt(msStr.length === 2 ? msStr + '0' : msStr, 10)
+        : 0
       times.push(min * 60 + sec + ms / 1000)
     }
 

@@ -5,18 +5,16 @@ import { join } from 'path'
 const CACHE_FILE = join('/tmp', 'artist-images.json')
 const TTL = 7 * 24 * 60 * 60 * 1000 // 7 days
 
-let cache: Map<string, { url: string | null; ts: number }> | null = null
+let cache: Map<string, { url: string; ts: number }> | null = null
 
-function loadCache(): Map<string, { url: string | null; ts: number }> {
+function loadCache(): Map<string, { url: string; ts: number }> {
   if (cache) return cache
   try {
     if (existsSync(CACHE_FILE)) {
-      const raw = readFileSync(CACHE_FILE, 'utf-8')
-      const entries = JSON.parse(raw)
-      cache = new Map(entries)
+      cache = new Map(JSON.parse(readFileSync(CACHE_FILE, 'utf-8')))
       return cache
     }
-  } catch { /* corrupt file, start fresh */ }
+  } catch { /* corrupt, start fresh */ }
   cache = new Map()
   return cache
 }
@@ -25,7 +23,7 @@ function saveCache() {
   try {
     if (!existsSync('/tmp')) mkdirSync('/tmp', { recursive: true })
     writeFileSync(CACHE_FILE, JSON.stringify([...cache!.entries()]))
-  } catch { /* ignore write errors */ }
+  } catch { /* ignore */ }
 }
 
 async function searchArtist(name: string): Promise<string | null> {
@@ -43,11 +41,8 @@ async function searchArtist(name: string): Promise<string | null> {
       if (artists && artists.length > 0 && artists[0].picUrl) {
         return artists[0].picUrl
       }
-    } catch {
-      continue
-    }
+    } catch { continue }
   }
-
   return null
 }
 
@@ -72,17 +67,21 @@ export async function GET(request: NextRequest) {
   }
 
   if (toFetch.length > 0) {
-    const fetched = await Promise.all(
+    await Promise.all(
       toFetch.map(async (name) => {
         const url = await searchArtist(name)
-        c.set(name, { url, ts: Date.now() })
-        results[name] = url
+        if (url) {
+          c.set(name, { url, ts: Date.now() })
+          results[name] = url
+        } else {
+          results[name] = null
+          c.set(name, { url: '', ts: Date.now() }) // cache the "not found" state
+        }
       })
     )
     saveCache()
   }
 
-  // Single name → simple response (backwards compat)
   if (names.length === 1) {
     return NextResponse.json({ url: results[names[0]] })
   }

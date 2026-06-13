@@ -91,12 +91,25 @@ export function TrackList({
     return result
   }, [tracks, filterAlbum, filterArtist, search, genre])
 
-  function handlePlay(track: Music) {
+  function handlePlay(track: Music, e?: React.MouseEvent<HTMLElement>) {
     const mapped = toPlayerTrack(track)
     const fullPlaylist = tracks.map(toPlayerTrack)
     sessionStorage.setItem('pendingTrack', JSON.stringify(mapped))
     sessionStorage.setItem('pendingPlaylist', JSON.stringify(fullPlaylist))
-    router.push('/songs')
+    const el = e?.currentTarget as HTMLElement | null
+    if (el) {
+      el.classList.add('ptr-clicked')
+      setTimeout(() => el.classList.remove('ptr-clicked'), 400)
+    }
+    // Crossfade transition to playback page
+    if (document.startViewTransition) {
+      document.startViewTransition(() => {
+        router.push('/songs')
+        return new Promise((resolve) => setTimeout(resolve, 200))
+      })
+    } else {
+      router.push('/songs')
+    }
   }
 
   return (
@@ -166,7 +179,7 @@ export function TrackList({
             <div
               key={track.id}
               className={`track-card${isCurrent ? ' track-current' : ''}`}
-              onClick={() => handlePlay(track)}
+              onClick={(e) => handlePlay(track, e)}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handlePlay(track) }}
@@ -176,6 +189,8 @@ export function TrackList({
                   src={track.cover_url}
                   alt={track.title}
                   className="track-cover"
+                  loading="lazy"
+                  decoding="async"
                 />
               ) : (
                 <div className="track-cover track-cover-placeholder">

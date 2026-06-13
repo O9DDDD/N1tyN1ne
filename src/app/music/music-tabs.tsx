@@ -28,11 +28,30 @@ function toPlayerTrack(t: Music): PlayerTrack {
   }
 }
 
-function navigateToPlayTrack(router: ReturnType<typeof useRouter>, track: Music, playlist: Music[]) {
+function navigateToPlayTrack(
+  router: ReturnType<typeof useRouter>,
+  track: Music,
+  playlist: Music[],
+  e?: React.MouseEvent<HTMLElement>,
+) {
   const mapped = playlist.map(toPlayerTrack)
   sessionStorage.setItem('pendingTrack', JSON.stringify(toPlayerTrack(track)))
   sessionStorage.setItem('pendingPlaylist', JSON.stringify(mapped))
-  router.push('/songs')
+  // Click animation
+  const el = e?.currentTarget as HTMLElement | null
+  if (el) {
+    el.classList.add('ptr-clicked')
+    setTimeout(() => el.classList.remove('ptr-clicked'), 400)
+  }
+  // Crossfade transition to playback page
+  if (document.startViewTransition) {
+    document.startViewTransition(() => {
+      router.push('/songs')
+      return new Promise((resolve) => setTimeout(resolve, 200))
+    })
+  } else {
+    router.push('/songs')
+  }
 }
 
 function ArtistGrid({ tracks, onSelectArtist }: { tracks: Music[]; onSelectArtist: (name: string) => void }) {
@@ -82,10 +101,15 @@ function ArtistGrid({ tracks, onSelectArtist }: { tracks: Music[]; onSelectArtis
           <button
             key={name}
             className="artist-card"
-            onClick={() => onSelectArtist(name)}
+            onClick={(e) => {
+              const el = e.currentTarget as HTMLElement
+              el.classList.add('ptr-clicked')
+              setTimeout(() => el.classList.remove('ptr-clicked'), 400)
+              setTimeout(() => onSelectArtist(name), 100)
+            }}
           >
             {artistImgs[name] ? (
-              <img className="artist-card-img" src={artistImgs[name]!} alt={name} />
+              <img className="artist-card-img" src={artistImgs[name]!} alt={name} loading="lazy" decoding="async" />
             ) : (
               <div className="artist-card-img artist-card-placeholder">{name.charAt(0)}</div>
             )}
@@ -127,10 +151,15 @@ function AlbumGrid({ tracks, onSelectAlbum }: { tracks: Music[]; onSelectAlbum: 
             key={name}
             type="button"
             className="album-card"
-            onClick={() => onSelectAlbum(name)}
+            onClick={(e) => {
+              const el = e.currentTarget as HTMLElement
+              el.classList.add('ptr-clicked')
+              setTimeout(() => el.classList.remove('ptr-clicked'), 400)
+              setTimeout(() => onSelectAlbum(name), 100)
+            }}
           >
             {track.cover_url ? (
-              <img className="album-card-cover" src={track.cover_url} alt={name} />
+              <img className="album-card-cover" src={track.cover_url} alt={name} loading="lazy" decoding="async" />
             ) : (
               <div className="album-card-cover album-card-placeholder">💿</div>
             )}
@@ -191,7 +220,7 @@ function ArtistDetailView({
 
       <div className="artist-detail-header">
         {artistImg ? (
-          <img className="artist-detail-avatar" src={artistImg} alt={artistName} />
+          <img className="artist-detail-avatar" src={artistImg} alt={artistName} loading="lazy" decoding="async" />
         ) : (
           <div className="artist-detail-avatar artist-detail-avatar-ph">
             {artistName.charAt(0)}
@@ -208,13 +237,13 @@ function ArtistDetailView({
           <div
             key={track.id}
             className="track-card"
-            onClick={() => navigateToPlayTrack(router, track, filtered)}
+            onClick={(e) => navigateToPlayTrack(router, track, filtered, e)}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigateToPlayTrack(router, track, filtered) }}
           >
             {track.cover_url ? (
-              <img src={track.cover_url} alt={track.title} className="track-cover" />
+              <img src={track.cover_url} alt={track.title} className="track-cover" loading="lazy" decoding="async" />
             ) : (
               <div className="track-cover track-cover-placeholder">♪</div>
             )}
@@ -335,7 +364,7 @@ function AlbumDetailView({
       <div className="album-detail-header">
         <div className="album-detail-cover-wrap">
           {coverUrl ? (
-            <img className="album-detail-cover" src={coverUrl} alt={albumName} />
+            <img className="album-detail-cover" src={coverUrl} alt={albumName} loading="lazy" decoding="async" />
           ) : (
             <div className="album-detail-cover album-detail-cover-ph">💿</div>
           )}
@@ -346,16 +375,21 @@ function AlbumDetailView({
 
           <div className="album-detail-artists">
             {artists.length > 0 && artists.map((name) => (
-              <div key={name} className="album-detail-artist-chip">
+              <button
+                key={name}
+                type="button"
+                className="album-detail-artist-chip"
+                onClick={() => router.push(`/music?tab=artists&artist=${encodeURIComponent(name)}`)}
+              >
                 {artistImgs[name] ? (
-                  <img className="album-detail-artist-avatar" src={artistImgs[name]!} alt={name} />
+                  <img className="album-detail-artist-avatar" src={artistImgs[name]!} alt={name} loading="lazy" decoding="async" />
                 ) : (
                   <div className="album-detail-artist-avatar album-detail-artist-ph">
                     {name.charAt(0)}
                   </div>
                 )}
                 <span className="album-detail-artist-name">{name}</span>
-              </div>
+              </button>
             ))}
           </div>
 
@@ -397,7 +431,7 @@ function AlbumDetailView({
           <div
             key={track.id}
             className="album-track-card"
-            onClick={() => navigateToPlayTrack(router, track, albumTracks)}
+            onClick={(e) => navigateToPlayTrack(router, track, albumTracks, e)}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
@@ -408,7 +442,7 @@ function AlbumDetailView({
               {track.track_number != null ? track.track_number : '-'}
             </span>
             {track.cover_url ? (
-              <img className="album-track-cover" src={track.cover_url} alt={track.title} />
+              <img className="album-track-cover" src={track.cover_url} alt={track.title} loading="lazy" decoding="async" />
             ) : (
               <div className="album-track-cover album-track-cover-ph">♪</div>
             )}
@@ -436,14 +470,20 @@ export function MusicTabs({
   tracks,
   filterAlbum,
   filterArtist,
+  initialTab,
+  initialArtist,
+  initialAlbum,
 }: {
   tracks: Music[]
   filterAlbum: string | null
   filterArtist: string | null
+  initialTab?: Tab
+  initialArtist?: string | null
+  initialAlbum?: string | null
 }) {
-  const [tab, setTab] = useState<Tab>('tracks')
-  const [selectedArtist, setSelectedArtist] = useState<string | null>(null)
-  const [selectedAlbum, setSelectedAlbum] = useState<string | null>(null)
+  const [tab, setTab] = useState<Tab>(initialTab ?? 'tracks')
+  const [selectedArtist, setSelectedArtist] = useState<string | null>(initialArtist ?? null)
+  const [selectedAlbum, setSelectedAlbum] = useState<string | null>(initialAlbum ?? null)
 
   function handleTabChange(t: Tab) {
     setTab(t)

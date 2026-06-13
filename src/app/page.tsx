@@ -106,6 +106,9 @@ export default async function HomePage() {
       {/* Footer */}
       <footer>
         <p>&copy; {new Date().getFullYear()} N1tyN1ne. Built with ♥ and Next.js.</p>
+        <p style={{ marginTop: 4, fontSize: '.74rem', color: 'var(--text-dim)' }}>
+          Powered by Salt Player
+        </p>
       </footer>
     </div>
   )

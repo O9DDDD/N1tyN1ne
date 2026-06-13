@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 export default async function MusicPage({
   searchParams,
 }: {
-  searchParams: Promise<{ album?: string; artist?: string }>
+  searchParams: Promise<{ album?: string; artist?: string; tab?: string }>
 }) {
   const supabase = await createClient()
   const params = await searchParams
@@ -18,12 +18,18 @@ export default async function MusicPage({
 
   const trackList = tracks ?? []
 
+  const validTabs = ['tracks', 'artists', 'albums']
+  const initialTab = params.tab && validTabs.includes(params.tab) ? params.tab as 'tracks' | 'artists' | 'albums' : undefined
+
   return (
     <div className="music-page">
       <MusicTabs
         tracks={trackList}
         filterAlbum={params.album ?? null}
         filterArtist={params.artist ?? null}
+        initialTab={initialTab}
+        initialArtist={params.artist ?? null}
+        initialAlbum={params.album ?? null}
       />
     </div>
   )

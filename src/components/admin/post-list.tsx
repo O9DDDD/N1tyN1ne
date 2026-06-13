@@ -1,15 +1,21 @@
 'use client'
 
-import { useState } from 'react'
 import type { Post } from '@/lib/supabase/types'
 
-export function PostList({ posts: initialPosts }: { posts: Post[] }) {
-  const [posts, setPosts] = useState(initialPosts)
+export function PostList({ posts, onUpdate }: { posts: Post[]; onUpdate?: (posts: Post[]) => void }) {
+  function updatePost(updated: Post) {
+    const next = posts.map((p) => (p.id === updated.id ? updated : p))
+    onUpdate?.(next)
+  }
+
+  function removePost(id: string) {
+    onUpdate?.(posts.filter((p) => p.id !== id))
+  }
 
   async function handleDelete(id: string) {
     if (!confirm('确认删除？')) return
     const res = await fetch(`/api/admin/posts/${id}`, { method: 'DELETE' })
-    if (res.ok) setPosts((prev) => prev.filter((p) => p.id !== id))
+    if (res.ok) removePost(id)
   }
 
   async function handlePublishToggle(post: Post) {
@@ -20,7 +26,7 @@ export function PostList({ posts: initialPosts }: { posts: Post[] }) {
     })
     if (res.ok) {
       const updated = await res.json()
-      setPosts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+      updatePost(updated)
     }
   }
 
@@ -32,7 +38,7 @@ export function PostList({ posts: initialPosts }: { posts: Post[] }) {
     })
     if (res.ok) {
       const updated = await res.json()
-      setPosts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+      updatePost(updated)
     }
   }
 

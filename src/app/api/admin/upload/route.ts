@@ -36,8 +36,13 @@ const S3_BUCKET = process.env.RAINYUN_S3_BUCKET!
 const S3_ACCESS_KEY = process.env.RAINYUN_S3_ACCESS_KEY!
 const S3_SECRET_KEY = process.env.RAINYUN_S3_SECRET_KEY!
 
+function buildPublicUrl(key: string): string {
+  const base = S3_ENDPOINT.replace(/\/+$/, '')
+  return `${base}/${S3_BUCKET}/${key}`
+}
+
 const s3 = new S3Client({
-  region: 'cn-sy1',
+  region: 'rainyun',
   endpoint: S3_ENDPOINT,
   credentials: {
     accessKeyId: S3_ACCESS_KEY,
@@ -93,7 +98,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: `S3 上传失败: ${err.message || err}` }, { status: 500 })
   }
 
-  const publicUrl = `${S3_ENDPOINT}/${S3_BUCKET}/${key}`
+  const publicUrl = buildPublicUrl(key)
 
   return NextResponse.json({ url: publicUrl, path: key })
 }

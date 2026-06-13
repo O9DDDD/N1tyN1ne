@@ -80,6 +80,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const nextRef = useRef<() => void>(() => {})
   const isPlayingRef = useRef(false)
+  const lastTimeRef = useRef(0)
 
   // Lazy-init audio element
   useEffect(() => {
@@ -90,7 +91,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
     const audio = audioRef.current
 
-    const onTimeUpdate = () => setCurrentTime(audio.currentTime)
+    const onTimeUpdate = () => {
+      const now = performance.now()
+      if (now - lastTimeRef.current < 500) return
+      lastTimeRef.current = now
+      setCurrentTime(audio.currentTime)
+    }
     const onLoadedMeta = () => setDuration(audio.duration)
     const onEnded = () => nextRef.current()
 
@@ -110,8 +116,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const audio = audioRef.current
     if (!audio || !currentTrack) return
 
-    audio.currentTime = 0
     audio.src = currentTrack.audio_url
+    audio.currentTime = 0
     const playWhenReady = () => {
       audio.removeEventListener('canplay', playWhenReady)
       audio.currentTime = 0
