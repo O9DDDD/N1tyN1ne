@@ -37,20 +37,21 @@ export function MusicHero() {
   // Reset cover error on track change
   useEffect(() => { setCoverError(false) }, [currentTrack?.id])
 
-  // sessionStorage recovery
+  // sessionStorage recovery — always check, skip only if same track already active
   useEffect(() => {
-    if (currentTrack) return
     const trackJson = sessionStorage.getItem('pendingTrack')
     if (!trackJson) return
     try {
       const track = JSON.parse(trackJson)
+      // Skip if this exact track is already playing
+      if (currentTrack?.id === track.id) return
       const playlistJson = sessionStorage.getItem('pendingPlaylist')
       const playlist = playlistJson ? JSON.parse(playlistJson) : [track]
       sessionStorage.removeItem('pendingTrack')
       sessionStorage.removeItem('pendingPlaylist')
       play(track, playlist)
     } catch { /* ignore */ }
-  }, [])
+  }, [currentTrack?.id])
 
   const lyricsRef = useRef<HTMLDivElement>(null)
   const activeRef = useRef<HTMLParagraphElement>(null)

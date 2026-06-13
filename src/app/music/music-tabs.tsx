@@ -5,13 +5,11 @@ import { useRouter } from 'next/navigation'
 import type { Music } from '@/lib/supabase/types'
 import { TrackList } from './track-list'
 import { splitArtists } from '@/lib/artist'
-import { usePlayer, type PlayerTrack } from '@/components/music/player-provider'
 
 type Tab = 'tracks' | 'artists' | 'albums'
 
 function ArtistGrid({ tracks }: { tracks: Music[] }) {
   const router = useRouter()
-  const { play } = usePlayer()
   const [artistImgs, setArtistImgs] = useState<Record<string, string | null>>({})
 
   const artists = useMemo(() => {
@@ -65,7 +63,6 @@ function ArtistGrid({ tracks }: { tracks: Music[] }) {
       duration: t.duration,
       lyrics: t.lyrics,
     }))
-    play(mapped[0], mapped)
     sessionStorage.setItem('pendingTrack', JSON.stringify(mapped[0]))
     sessionStorage.setItem('pendingPlaylist', JSON.stringify(mapped))
     router.push('/songs')
@@ -99,7 +96,6 @@ function ArtistGrid({ tracks }: { tracks: Music[] }) {
 
 function AlbumGrid({ tracks }: { tracks: Music[] }) {
   const router = useRouter()
-  const { play } = usePlayer()
   const albums = useMemo(() => {
     const map = new Map<string, Music>()
     for (const t of tracks) {
@@ -126,7 +122,6 @@ function AlbumGrid({ tracks }: { tracks: Music[] }) {
       duration: t.duration,
       lyrics: t.lyrics,
     }))
-    play(mapped[0], mapped)
     sessionStorage.setItem('pendingTrack', JSON.stringify(mapped[0]))
     sessionStorage.setItem('pendingPlaylist', JSON.stringify(mapped))
     router.push('/songs')

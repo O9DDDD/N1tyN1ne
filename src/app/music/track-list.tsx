@@ -32,7 +32,7 @@ export function TrackList({
   filterAlbum: string | null
   filterArtist: string | null
 }) {
-  const { currentTrack, isPlaying, play } = usePlayer()
+  const { currentTrack, isPlaying } = usePlayer()
   const router = useRouter()
   const [search, setSearch] = useState('')
   const [genre, setGenre] = useState<string | null>(null)
@@ -94,7 +94,6 @@ export function TrackList({
   function handlePlay(track: Music) {
     const mapped = toPlayerTrack(track)
     const fullPlaylist = tracks.map(toPlayerTrack)
-    play(mapped, fullPlaylist)
     sessionStorage.setItem('pendingTrack', JSON.stringify(mapped))
     sessionStorage.setItem('pendingPlaylist', JSON.stringify(fullPlaylist))
     router.push('/songs')
