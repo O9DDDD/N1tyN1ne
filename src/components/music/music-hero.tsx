@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { usePlayer } from '@/components/music/player-provider'
 import { parseLRC, getActiveIndex } from '@/lib/lrc'
-import { splitArtists, extractFeat } from '@/lib/artist'
+import { splitArtists } from '@/lib/artist'
 
 function formatTime(s: number): string {
   if (!isFinite(s) || s < 0) return '0:00'
@@ -31,8 +32,12 @@ export function MusicHero() {
     toggleShuffle,
     toggleRepeat,
   } = usePlayer()
+  const router = useRouter()
 
-  // 从 sessionStorage 恢复硬导航传来的播放数据
+  // Reset cover error on track change
+  useEffect(() => { setCoverError(false) }, [currentTrack?.id])
+
+  // sessionStorage recovery
   useEffect(() => {
     if (currentTrack) return
     const trackJson = sessionStorage.getItem('pendingTrack')
@@ -47,7 +52,6 @@ export function MusicHero() {
     } catch { /* ignore */ }
   }, [])
 
-  const [showLyrics, setShowLyrics] = useState(false)
   const lyricsRef = useRef<HTMLDivElement>(null)
   const activeRef = useRef<HTMLParagraphElement>(null)
 
@@ -67,16 +71,15 @@ export function MusicHero() {
   }, [lrcLines, currentTime])
 
   useEffect(() => {
-    if (activeRef.current && showLyrics) {
+    if (activeRef.current) {
       activeRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
-  }, [activeIndex, showLyrics])
+  }, [activeIndex])
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
 
   const handleProgressChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const t = parseFloat(e.target.value)
-    seek(t)
+    seek(parseFloat(e.target.value))
   }, [seek])
 
   const handleLyricClick = useCallback((time: number) => {
@@ -85,14 +88,15 @@ export function MusicHero() {
 
   const repeatLabel = repeatMode === 'one' ? '🔂' : repeatMode === 'all' ? '🔁' : '🔁'
 
-  // Parse artists
+  // artists
   const artists = useMemo(() => splitArtists(currentTrack?.artist ?? null), [currentTrack?.artist])
-  const featArtist = useMemo(() => extractFeat(currentTrack?.artist ?? null), [currentTrack?.artist])
   const displayArtist = artists.length > 0 ? artists.join(' · ') : (currentTrack?.artist ?? '未知艺术家')
-  const albumName = currentTrack?.album_artist || currentTrack?.album || null
+  const albumName = currentTrack?.album || null
   const albumYear = currentTrack?.album_year || null
+  const albumArtist = currentTrack?.album_artist || null
 
-  // Artist images
+  // artist images
+  const [coverError, setCoverError] = useState(false)
   const [artistImgs, setArtistImgs] = useState<Record<string, string | null>>({})
   useEffect(() => {
     if (artists.length === 0) return
@@ -117,162 +121,193 @@ export function MusicHero() {
     return () => { canceled = true }
   }, [artists.join(',')])
 
+  // Empty state
   if (!currentTrack) {
     return (
-      <div className="music-hero music-hero-empty">
-        <div className="hero-empty-icon">♪</div>
-        <p>选择一首歌曲开始播放</p>
+      <div className="songs-empty">
+        <div className="songs-empty-icon">♪</div>
+        <p>在音乐库中选择一首歌曲开始播放</p>
       </div>
     )
   }
 
   return (
-    <div className="music-hero">
-      {/* Visual: Vinyl */}
-      <div className="hero-visual">
-        <div className={`vinyl-wrap${isPlaying ? ' spinning' : ''}`}>
-          <div className="vinyl-disc" />
-          {currentTrack.cover_url ? (
-            <img
-              className="vinyl-cover"
-              src={currentTrack.cover_url}
-              alt={currentTrack.title}
-            />
+    <div className="songs-player">
+      {/* Ambient background */}
+      {currentTrack.cover_url && (
+        <div className="songs-bg">
+          <img className="songs-bg-img" src={currentTrack.cover_url} alt="" />
+          <div className="songs-bg-overlay" />
+        </div>
+      )}
+
+      {/* Back button */}
+      <button className="songs-back" onClick={() => { router.push('/music') }}>
+        ← 返回音乐库
+      </button>
+
+      {/* Main content */}
+      <div className="songs-content">
+        {/* Cover */}
+        <div className="songs-visual">
+          <div className={`songs-cover-wrap${isPlaying ? ' playing' : ''}`}>
+            {currentTrack.cover_url && !coverError ? (
+              <img
+                className="songs-cover"
+                src={currentTrack.cover_url}
+                alt={currentTrack.title}
+                onError={() => setCoverError(true)}
+              />
+            ) : (
+              <div className="songs-cover songs-cover-placeholder">♪</div>
+            )}
+          </div>
+        </div>
+
+        {/* Info + Lyrics */}
+        <div className="songs-main">
+          <div className="songs-info">
+            <h1 className="songs-title">{currentTrack.title}</h1>
+
+            <div className="songs-artist-row">
+              {artists.length > 0 && Object.values(artistImgs).some(Boolean) && (
+                <div className="songs-artist-avatars">
+                  {artists.map((name) => {
+                    const url = artistImgs[name]
+                    return url ? (
+                      <img key={name} className="songs-artist-avatar" src={url} alt={name} />
+                    ) : null
+                  })}
+                </div>
+              )}
+              <span className="songs-artist">
+                {artists.length > 0 ? (
+                  artists.map((name, i) => (
+                    <span key={name}>
+                      {i > 0 && <span> · </span>}
+                      <button
+                        className="songs-artist-link"
+                        onClick={() => router.push(`/music?artist=${encodeURIComponent(name)}`)}
+                      >
+                        {name}
+                      </button>
+                    </span>
+                  ))
+                ) : (
+                  displayArtist
+                )}
+              </span>
+            </div>
+
+            <div className="songs-meta">
+              {albumArtist && <span>{albumArtist}</span>}
+              {albumArtist && albumName && albumName !== albumArtist && (
+                <>
+                  <span style={{ margin: '0 2px' }}>·</span>
+                  <button
+                    className="songs-meta-link"
+                    onClick={() => router.push(`/music?album=${encodeURIComponent(albumName)}`)}
+                  >
+                    {albumName}
+                  </button>
+                </>
+              )}
+              {!albumArtist && albumName && (
+                <button
+                  className="songs-meta-link"
+                  onClick={() => router.push(`/music?album=${encodeURIComponent(albumName)}`)}
+                >
+                  {albumName}
+                </button>
+              )}
+              {albumYear && <span className="songs-meta-dot" style={{ margin: '0 2px' }} />}
+              {albumYear && <span>{albumYear}</span>}
+            </div>
+
+            {currentTrack.genre && (
+              <span className="songs-genre">{currentTrack.genre}</span>
+            )}
+          </div>
+
+          {/* Lyrics */}
+          {hasLyrics ? (
+            <div className="songs-lyrics" ref={lyricsRef}>
+              {lrcLines!.map((line, i) => {
+                const isActive = i === activeIndex
+                return (
+                  <p
+                    key={i}
+                    ref={isActive ? activeRef : null}
+                    className={`songs-lyric-line${isActive ? ' songs-lyric-active' : ''}`}
+                    onClick={() => handleLyricClick(line.time)}
+                  >
+                    {line.text}
+                  </p>
+                )
+              })}
+            </div>
           ) : (
-            <div className="vinyl-cover vinyl-cover-placeholder">♪</div>
+            <div className="songs-no-lyrics">暂无歌词</div>
           )}
         </div>
       </div>
 
-      {/* Track Info */}
-      <div className="hero-info">
-        <h2 className="hero-title">{currentTrack.title}</h2>
-        {/* Artist Avatars */}
-        {artists.length > 0 && Object.values(artistImgs).some(Boolean) && (
-          <div className="hero-artist-imgs">
-            {artists.map((name) => {
-              const url = artistImgs[name]
-              return url ? (
-                <img key={name} className="hero-artist-avatar" src={url} alt={name} />
-              ) : null
-            })}
-          </div>
-        )}
-        <p className="hero-artist">{displayArtist}</p>
-        {featArtist && (
-          <p className="hero-feat">ft. {featArtist}</p>
-        )}
-        {currentTrack.genre && (
-          <span className="hero-genre-tag">{currentTrack.genre}</span>
-        )}
-      </div>
-
-      {/* Album Info */}
-      {albumName && (
-        <div className="hero-album">
-          <span className="hero-album-icon">💿</span>
-          <span className="hero-album-name">{albumName}</span>
-          {albumYear && <span className="hero-album-year">{albumYear}</span>}
+      {/* Bottom bar */}
+      <div className="songs-bottom">
+        <div className="songs-progress">
+          <span className="songs-time">{formatTime(currentTime)}</span>
+          <input
+            type="range"
+            className="songs-progress-bar"
+            min={0}
+            max={duration || 1}
+            step={0.1}
+            value={currentTime}
+            onChange={handleProgressChange}
+            style={{ '--progress': `${progress}%` } as React.CSSProperties}
+          />
+          <span className="songs-time">{formatTime(duration)}</span>
         </div>
-      )}
 
-      {/* Scrolling Lyrics */}
-      {hasLyrics && showLyrics && (
-        <div className="hero-lyrics" ref={lyricsRef}>
-          {lrcLines!.map((line, i) => {
-            const isActive = i === activeIndex
-            return (
-              <p
-                key={i}
-                ref={isActive ? activeRef : null}
-                className={`lrc-line${isActive ? ' lrc-active' : ''}`}
-                onClick={() => handleLyricClick(line.time)}
-              >
-                {line.text}
-              </p>
-            )
-          })}
-        </div>
-      )}
+        <div className="songs-controls">
+          <button className="songs-ctrl-sm active" onClick={toggleShuffle}>
+            {isShuffled ? '🔀 随机' : '🔀 顺序'}
+          </button>
 
-      {/* Progress Bar */}
-      <div className="hero-progress">
-        <span className="hero-time">{formatTime(currentTime)}</span>
-        <input
-          type="range"
-          className="hero-progress-bar"
-          min={0}
-          max={duration || 0}
-          step={0.1}
-          value={currentTime}
-          onChange={handleProgressChange}
-          style={{ '--progress': `${progress}%` } as React.CSSProperties}
-        />
-        <span className="hero-time">{formatTime(duration)}</span>
-      </div>
-
-      {/* Controls */}
-      <div className="hero-controls">
-        <div className="hero-ctrl-main">
-          <button className="hero-btn" onClick={prev} title="上一首" aria-label="上一首">
+          <button className="songs-ctrl-btn" onClick={prev} aria-label="上一首">
             ⏮
           </button>
+
           <button
-            className="hero-btn hero-btn-play"
+            className="songs-ctrl-play"
             onClick={() => (isPlaying ? pause() : resume())}
-            title={isPlaying ? '暂停' : '播放'}
             aria-label={isPlaying ? '暂停' : '播放'}
           >
             {isPlaying ? '⏸' : '▶'}
           </button>
-          <button className="hero-btn" onClick={next} title="下一首" aria-label="下一首">
+
+          <button className="songs-ctrl-btn" onClick={next} aria-label="下一首">
             ⏭
           </button>
-        </div>
 
-        <div className="hero-ctrl-extra">
-          {/* Shuffle */}
-          <button
-            className={`hero-btn-sm${isShuffled ? ' active' : ''}`}
-            onClick={toggleShuffle}
-            title={isShuffled ? '关闭随机' : '随机播放'}
-          >
-            🔀
+          <button className="songs-ctrl-sm active" onClick={toggleRepeat}>
+            {repeatMode === 'one' ? '🔂 单曲' : repeatMode === 'all' ? '🔁 列表' : '🔁 关闭'}
           </button>
 
-          {/* Repeat */}
-          <button
-            className={`hero-btn-sm${repeatMode !== 'off' ? ' active' : ''}`}
-            onClick={toggleRepeat}
-            title={repeatMode === 'off' ? '列表循环' : repeatMode === 'all' ? '单曲循环' : '关闭循环'}
-          >
-            {repeatLabel}
-          </button>
-
-          {/* Lyrics toggle */}
           {hasLyrics && (
-            <button
-              className={`hero-btn-sm${showLyrics ? ' active' : ''}`}
-              onClick={() => setShowLyrics((v) => !v)}
-              title={showLyrics ? '隐藏歌词' : '显示歌词'}
-            >
-              词
-            </button>
+            <div className="songs-volume">
+              <span className="songs-volume-icon">🔊</span>
+              <input
+                type="range"
+                className="songs-volume-slider"
+                min={0}
+                max={1}
+                step={0.05}
+                value={volume}
+                onChange={(e) => setVolume(parseFloat(e.target.value))}
+              />
+            </div>
           )}
-
-          {/* Volume */}
-          <div className="hero-volume">
-            <span className="hero-volume-icon">🔊</span>
-            <input
-              type="range"
-              className="hero-volume-slider"
-              min={0}
-              max={1}
-              step={0.05}
-              value={volume}
-              onChange={(e) => setVolume(parseFloat(e.target.value))}
-            />
-          </div>
         </div>
       </div>
     </div>

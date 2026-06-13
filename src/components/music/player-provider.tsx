@@ -11,6 +11,7 @@ export interface PlayerTrack {
   album_year: string | null
   album_description: string | null
   genre: string | null
+  track_number: number | null
   audio_url: string
   cover_url: string | null
   duration: string | null

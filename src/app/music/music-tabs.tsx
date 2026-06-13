@@ -1,13 +1,17 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import type { Music } from '@/lib/supabase/types'
 import { TrackList } from './track-list'
 import { splitArtists } from '@/lib/artist'
+import { usePlayer, type PlayerTrack } from '@/components/music/player-provider'
 
 type Tab = 'tracks' | 'artists' | 'albums'
 
 function ArtistGrid({ tracks }: { tracks: Music[] }) {
+  const router = useRouter()
+  const { play } = usePlayer()
   const [artistImgs, setArtistImgs] = useState<Record<string, string | null>>({})
 
   const artists = useMemo(() => {
@@ -55,14 +59,16 @@ function ArtistGrid({ tracks }: { tracks: Music[] }) {
       album_year: t.album_year,
       album_description: t.album_description,
       genre: t.genre,
+      track_number: t.track_number,
       audio_url: t.audio_url,
       cover_url: t.cover_url,
       duration: t.duration,
       lyrics: t.lyrics,
     }))
+    play(mapped[0], mapped)
     sessionStorage.setItem('pendingTrack', JSON.stringify(mapped[0]))
     sessionStorage.setItem('pendingPlaylist', JSON.stringify(mapped))
-    window.location.href = '/songs'
+    router.push('/songs')
   }
 
   const count = artists.length
@@ -92,6 +98,8 @@ function ArtistGrid({ tracks }: { tracks: Music[] }) {
 }
 
 function AlbumGrid({ tracks }: { tracks: Music[] }) {
+  const router = useRouter()
+  const { play } = usePlayer()
   const albums = useMemo(() => {
     const map = new Map<string, Music>()
     for (const t of tracks) {
@@ -112,14 +120,16 @@ function AlbumGrid({ tracks }: { tracks: Music[] }) {
       album_year: t.album_year,
       album_description: t.album_description,
       genre: t.genre,
+      track_number: t.track_number,
       audio_url: t.audio_url,
       cover_url: t.cover_url,
       duration: t.duration,
       lyrics: t.lyrics,
     }))
+    play(mapped[0], mapped)
     sessionStorage.setItem('pendingTrack', JSON.stringify(mapped[0]))
     sessionStorage.setItem('pendingPlaylist', JSON.stringify(mapped))
-    window.location.href = '/songs'
+    router.push('/songs')
   }
 
   const count = albums.length
